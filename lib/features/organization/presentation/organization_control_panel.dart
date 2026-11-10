@@ -54,7 +54,15 @@ class _OrganizationControlPanelState extends State<OrganizationControlPanel> {
               title: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.school_outlined, color: Color(0xFF176A66)),
+                  ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(7)),
+                    child: Image(
+                      image: AssetImage('assets/app_logo/app_icon.jpeg'),
+                      width: 34,
+                      height: 34,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                   SizedBox(width: 12),
                   Flexible(child: Text('Pohantoon AI  /  Organization')),
                 ],
