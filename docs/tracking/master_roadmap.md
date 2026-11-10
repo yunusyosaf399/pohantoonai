@@ -21,8 +21,8 @@
 
 | Progress metric | Completed | Planned | Progress |
 |---|---:|---:|---|
-| Required modular `docs/` files | 2 | 14 | 14% |
-| All atomic checklist items | 5 | 133 | 4% |
+| Required modular `docs/` files | 4 | 14 | 29% |
+| All atomic checklist items | 8 | 137 | 6% |
 | Target Supabase schema/RLS migrations | 0 | To be planned after contract freeze | 0 implemented |
 | Flutter migrated feature modules | 0 | To be inventoried | 0 implemented |
 | Cross-school isolation test suites | 0 | Required before any production access | 0 validated |
@@ -31,12 +31,12 @@
 **Progress bars (completed versus planned, updated after each accepted task):**
 
 ```text
-Required documentation  [██░░░░░░░░░░░░]  2/14  (14%)
-All checklist items     [█░░░░░░░░░░░░░░░░░░░]  5/133 (4%)
+Required documentation  [████░░░░░░░░░░]  4/14  (29%)
+All checklist items     [█░░░░░░░░░░░░░░░░░░░]  8/137 (6%)
 Accepted implementation [░░░░░░░░░░░░░░░░░░░░]  0/19 milestones
 ```
 
-> **Tracker authority:** This file is the canonical master status. `docs/tracking/current_sprint.md` will own the active execution queue; `docs/tracking/independent_tasks.md` will own session-specific, file-locked work orders. Both are pending creation. Update all three after each accepted task; never mark a future test as passed.
+> **Tracker authority:** This file is the canonical master status. [`docs/tracking/current_sprint.md`](current_sprint.md) owns the sprint queue; [`docs/tracking/independent_tasks.md`](independent_tasks.md) owns session-specific work orders. Both have been created. Update all three after each accepted task; never mark a future test as passed.
 
 ## 2. Milestone summary and dependencies
 
@@ -62,7 +62,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 | M17 | Legacy data migration and tenant cutover | M04, domain schema + validated import | [Not Started] | SERIAL per cutover |
 | M18 | Security audit, operations and release | All required gates | [Not Started] | SERIAL release authority |
 
-**Database-first rule:** M03–M15 establish physical contracts and business acceptance before broad Flutter feature implementation. Independent Flutter design documents can start earlier; operational screens wait for approved APIs and security checks.
+**Two-track rule (2026-11-10):** Database catalog/schema design and Flutter mock-only UI work may run in parallel on disjoint files. No SQL table creation until owner approval of candidate names and first physical batch. Build small batches with primary keys and immutable `school_id` in a non-exposed development schema; do not expose live tenant records while RLS, ACL or relational integrity gates are incomplete. Flutter switches from mocks to Supabase only after safe verified APIs and school A/B denial tests. See [catalog](../architecture/table_catalog.md), [sprint](current_sprint.md) and [session registry](independent_tasks.md).
 
 ## 3. Atomic implementation checklist
 
@@ -74,6 +74,8 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - [ ] **M00.05** [I-NOW] Inventory all source migrations, table ownership, authentication flows, private functions, storage and test coverage; append to the inventory file only.
 - [ ] **M00.06** [SERIAL] Classify source capabilities as reuse / redesign / defer / reject under single-project tenancy.
 - [ ] **M00.07** [SERIAL] Record all unresolved domain decisions, privacy requirements and migration blockers.
+- [x] **M00.08** [SERIAL] Publish [383-table candidate catalog](../architecture/table_catalog.md) (30 domains; names proposed, not approved).
+- [ ] **M00.09** [SERIAL] Obtain explicit owner approval of names/merges/deferrals and first-batch shortlist.
 
 ### M01 — Documentation system (14 required files)
 - [x] **M01.01** [SERIAL] Create `docs/tracking/master_roadmap.md` (this roadmap).
@@ -88,8 +90,8 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - [ ] **M01.10** [I-NOW] Create `docs/roles/org_owner.md`.
 - [ ] **M01.11** [I-NOW] Create `docs/roles/school_roles.md` with proposed permissions and explicit approval status.
 - [ ] **M01.12** [I-NOW] Create `docs/errors/error_handling_standards.md`.
-- [ ] **M01.13** [SERIAL] Create `docs/tracking/current_sprint.md`; identify the first gated sprint.
-- [ ] **M01.14** [SERIAL] Create `docs/tracking/independent_tasks.md`; assign file locks and session handoffs.
+- [x] **M01.13** [SERIAL] Create [`docs/tracking/current_sprint.md`](current_sprint.md) for parallel tracks and approval gates.
+- [x] **M01.14** [SERIAL] Create [`docs/tracking/independent_tasks.md`](independent_tasks.md), with exclusive ownership and handoffs.
 - [ ] **M01.15** [SERIAL] Check relative links, consistent nomenclature, outdated assumptions, and milestone counts.
 
 ### M02 — Architecture decisions and contract freeze
@@ -101,6 +103,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - [ ] **M02.06** [SERIAL] Decide subscription/billing provider interface, suspension behavior and entitlements.
 - [ ] **M02.07** [SERIAL] Decide Flutter state management/router after checking current package compatibility.
 - [ ] **M02.08** [SERIAL] Publish approved ADRs, unresolved issues and a versioned contract snapshot.
+- [ ] **M02.09** [SERIAL] Freeze approved table-catalog version and first physical table batch before SQL.
 
 ### M03 — Single-project database foundation
 - [ ] **M03.01** [SERIAL] Initialize target Supabase CLI project, pin toolchain and lock deployment environments.
@@ -208,6 +211,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - [ ] **M15.07** [I-GATED: approved domain APIs] Global error taxonomy, tracing and alerting.
 
 ### M16 — Flutter application and role-based interfaces
+- [ ] **M16.00** [I-GATED: folder/state docs] Draft isolated Flutter mock contracts and testable screens without live Supabase access.
 - [ ] **M16.01** [SERIAL] Initialize feature-first `lib/` architecture, DI, router and state mechanism.
 - [ ] **M16.02** [SERIAL] Implement Supabase Auth, selected-school context and context-change invalidation.
 - [ ] **M16.03** [SERIAL] Implement permission-aware guards; UI guards never substitute for RLS.
@@ -249,11 +253,11 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 
 ## 5. Immediate execution queue
 
-1. **M01.13–M01.14 [SERIAL]:** create the sprint queue and independent-session registry using this roadmap.
-2. **M00.04–M00.07:** complete feature-to-file inventory and classify legacy migrations against immutable `school_id`.
-3. **M02.01–M02.05:** review and freeze tenant, identity, RBAC, API exposure and school-bootstrap decisions.
-4. **M03.01–M03.06:** implement a disposable local foundation, *then* write the first tested migration.
-5. **M04.01–M04.09:** prove multi-school isolation before domain data or real student records are imported.
+1. **Owner:** approve/revise the [candidate table catalog](../architecture/table_catalog.md), particularly P0 and first batch; no DDL until approval.
+2. **DB:** finish feature traceability, then propose first table columns/types and tenant anchors in `docs/database/first_batch_schema.md`.
+3. **Flutter:** independently draft folder/state conventions and build mock-only contracts; use distinct feature directories.
+4. **Integrator:** freeze identity, names, migration sequence and API contracts; one owner for shared files.
+5. **Safety gate:** test tenant A/B and authorization before allowing Flutter live database queries.
 
 ## 6. Risk and decision register
 
@@ -275,6 +279,8 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 | Task | Evidence | Current result |
 |---|---|---|
 | M00.01–M00.03 | Repository tree and source-file inspection, `main`, 2026-11-10 | Source/target preliminary audit only; full feature mapping open |
+| M00.08 | [Candidate table catalog](../architecture/table_catalog.md) | 383 proposed tables, owner approval pending |
+| M01.13–M01.14 | [Sprint](current_sprint.md) and [parallel tasks](independent_tasks.md) | Both created; no SQL/Flutter code deployed |
 | M01.01 | [Roadmap commit](https://github.com/yunusyosaf399/pohantoonai/commit/9345737ea9076e8400fd3fa307d973b6359be1c4) | `master_roadmap.md` present |
 | M01.02 | [Database design commit](https://github.com/yunusyosaf399/pohantoonai/commit/161e45926d4fe03d1e14db6c782f4d8c725685e7) | `database_schema.md` present, proposal only |
 
