@@ -56,11 +56,17 @@ class _OrganizationControlPanelState extends State<OrganizationControlPanel> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.all(Radius.circular(7)),
-                    child: Image(
-                      image: AssetImage('assets/app_logo/app_icon.jpeg'),
+                    child: SizedBox(
                       width: 34,
                       height: 34,
-                      fit: BoxFit.cover,
+                      // The existing logo image contains generous whitespace.
+                      child: Transform.scale(
+                        scale: 2,
+                        child: Image(
+                          image: AssetImage('assets/app_logo/app_icon.jpeg'),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(width: 12),
