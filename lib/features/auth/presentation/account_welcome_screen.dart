@@ -138,7 +138,7 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
                           ),
                           Expanded(
                             flex: 11,
-                            child: Padding(
+                            child: SingleChildScrollView(
                               padding: const EdgeInsets.all(34),
                               child: Column(
                                 children: [
@@ -149,7 +149,7 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
                                       onChanged: widget.onThemeChanged,
                                     ),
                                   ),
-                                  const Spacer(),
+                                  const SizedBox(height: 36),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 28, vertical: 44),
@@ -166,7 +166,7 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
                                     ),
                                     child: _authPanel(),
                                   ),
-                                  const Spacer(),
+                                  const SizedBox(height: 28),
                                 ],
                               ),
                             ),
