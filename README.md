@@ -25,6 +25,24 @@ All SQL lives in [`supabase/`](supabase/README.md):
 
 We will deploy to exactly **one** development Supabase project called `pohantoonai` once the project owner selects a connected Supabase organization. No other school-specific projects are planned. Official migration history must be reconciled when Supabase CLI is configured, allowing the same source-controlled schema to be deployed to a different account later.
 
+## App logo and native launch icon
+
+The existing official assets in `assets/app_logo/` are registered in `pubspec.yaml`. The control-panel header displays `app_icon.jpeg` instead of the generic school icon. The same file is the launcher-icon source for Windows, Android, iOS, Web, and macOS.
+
+Native launch icons are **generated build artifacts**, not Flutter runtime assets. To replace the Windows executable/taskbar icon and all other platform placeholders, run on your development machine:
+
+```powershell
+git pull origin main
+flutter pub get
+dart run flutter_launcher_icons
+flutter clean
+flutter run -d windows
+```
+
+This produces `windows/runner/resources/app_icon.ico` used by `windows/runner/Runner.rc`, as well as the configured platform icons. Commit the generated platform icon files and refreshed `pubspec.lock` so future clones share the same branding. If Windows still shows the old icon after rebuilding, close the running executable, remove outdated taskbar shortcuts/pins and rebuild; Windows may cache icon images.
+
+Launcher icon configuration is in [`flutter_launcher_icons.yaml`](flutter_launcher_icons.yaml); icons are generated **from the existing JPEG logo**, with no extra image generation. The native icon resources in the repository are not replaced until the generator has run.
+
 ## Architecture and progress
 
 - [Complete candidate table catalog](docs/architecture/table_catalog.md) — 383 proposed tables (not all created)
