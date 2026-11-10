@@ -125,8 +125,10 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
     String? hint,
     TextInputType? keyboardType,
     List<TextInputFormatter>? formatters,
+    Key? fieldKey,
   }) {
     return TextFormField(
+      key: fieldKey,
       controller: controller,
       enabled: !_submitting,
       keyboardType: keyboardType,
@@ -294,7 +296,7 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
                             AdaptiveGrid(
                               columnsForWidth: AppBreakpoints.contentColumns,
                               children: [
-                                _field('School name *', _school, validator: _required),
+                                _field('School name *', _school, validator: _required, fieldKey: const Key('school-name-field')),
                                 _field('Legal school name', _legalName),
                                 _field('Registration / license number', _registration),
                                 DropdownButtonFormField<String>(
@@ -318,16 +320,18 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
                             AdaptiveGrid(
                               columnsForWidth: AppBreakpoints.contentColumns,
                               children: [
-                                _field('Contact name *', _owner, validator: _required),
+                                _field('Contact name *', _owner, validator: _required, fieldKey: const Key('contact-name-field')),
                                 _field('Contact email *', _email,
                                     validator: _emailValidator,
-                                    keyboardType: TextInputType.emailAddress),
+                                    keyboardType: TextInputType.emailAddress,
+                                    fieldKey: const Key('contact-email-field')),
                                 _field('Contact phone', _phone,
                                     keyboardType: TextInputType.phone),
                                 _field('Country code *', _country,
                                     validator: _countryValidator,
+                                    fieldKey: const Key('country-code-field'),
                                     hint: 'SA'),
-                                _field('City *', _city, validator: _required),
+                                _field('City *', _city, validator: _required, fieldKey: const Key('city-field')),
                                 _field('Time zone *', _timezone, validator: _required),
                               ],
                             ),
@@ -353,6 +357,7 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
                                   'Estimated students *', _students,
                                   validator: _positiveNumber,
                                   keyboardType: TextInputType.number,
+                                  fieldKey: const Key('student-estimate-field'),
                                   formatters: [FilteringTextInputFormatter.digitsOnly],
                                 ),
                                 _field(
