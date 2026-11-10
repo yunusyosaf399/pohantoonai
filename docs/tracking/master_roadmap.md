@@ -22,10 +22,19 @@
 | Progress metric | Completed | Planned | Progress |
 |---|---:|---:|---|
 | Required modular `docs/` files | 2 | 14 | 14% |
+| All atomic checklist items | 5 | 133 | 4% |
 | Target Supabase schema/RLS migrations | 0 | To be planned after contract freeze | 0 implemented |
 | Flutter migrated feature modules | 0 | To be inventoried | 0 implemented |
 | Cross-school isolation test suites | 0 | Required before any production access | 0 validated |
 | Milestones with implementation acceptance | 0 | 19 (M00–M18) | 0% |
+
+**Progress bars (completed versus planned, updated after each accepted task):**
+
+```text
+Required documentation  [██░░░░░░░░░░░░]  2/14  (14%)
+All checklist items     [█░░░░░░░░░░░░░░░░░░░]  5/133 (4%)
+Accepted implementation [░░░░░░░░░░░░░░░░░░░░]  0/19 milestones
+```
 
 > **Tracker authority:** This file is the canonical master status. `docs/tracking/current_sprint.md` will own the active execution queue; `docs/tracking/independent_tasks.md` will own session-specific, file-locked work orders. Both are pending creation. Update all three after each accepted task; never mark a future test as passed.
 
@@ -261,7 +270,15 @@
 | Supabase SDK/CLI breaking changes | Pin versions; verify current CLI v3 / Flutter SDK v3 migration notes | M02–M03 |
 | 2026 API grant default changed | Explicit GRANTs + RLS for all intended Data API objects | M03–M04 |
 
-## 7. Maintenance protocol
+## 7. Completed-task evidence and maintenance protocol
+
+| Task | Evidence | Current result |
+|---|---|---|
+| M00.01–M00.03 | Repository tree and source-file inspection, `main`, 2026-11-10 | Source/target preliminary audit only; full feature mapping open |
+| M01.01 | [Roadmap commit](https://github.com/yunusyosaf399/pohantoonai/commit/9345737ea9076e8400fd3fa307d973b6359be1c4) | `master_roadmap.md` present |
+| M01.02 | [Database design commit](https://github.com/yunusyosaf399/pohantoonai/commit/161e45926d4fe03d1e14db6c782f4d8c725685e7) | `database_schema.md` present, proposal only |
+
+
 
 After **every** accepted task: (1) change its checkbox; (2) set milestone status in section 2; (3) recalculate progress in section 1; (4) update current sprint / independent assignment ownership; (5) link commit, CI, test and relevant ADR evidence; (6) note new blockers and next unblocked action. Do not derive completion from percentage alone or from historical EduSync status.
 
