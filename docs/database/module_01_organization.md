@@ -1,6 +1,6 @@
 # Module 01 — Organization Control Panel, subscriptions and school onboarding
 
-> **State:** [Code committed, database NOT deployed] · **Date:** 2026-11-10 · **Phase:** iterative test implementation  
+> **State:** [Module 01 database deployed and seeded; Flutter API still mock-only] · **Date:** 2026-11-10 · **Phase:** iterative test implementation  
 > **Database:** [SQL](../../supabase/schema/01_platform_onboarding.sql), [demo seed](../../supabase/seed/01_demo_platform.sql), [smoke checks](../../supabase/tests/01_platform_smoke.sql)  
 > **Flutter:** [screen](../../lib/features/organization/presentation/organization_control_panel.dart), [models](../../lib/features/organization/domain/organization_models.dart), [mock repository](../../lib/features/organization/data/mock_organization_repository.dart).
 
@@ -36,7 +36,7 @@ School submission is NOT equivalent to successful subscription and never automat
 | 11 | `school_subscription_requests` | Pending plan requests; **no payment confirmation without verified server flow** |
 | 12 | `school_onboarding_reviews` | Platform operator application decisions/history |
 
-**Status:** SQL and seed are written in GitHub; **none of these tables have been applied to a Supabase project**. Some table names expand the initial 383-table candidate catalog; reconcile names during the next catalog revision rather than silently claiming the original list is final.
+**Status:** Module 01 successfully deployed to the single test project `umlzqlbakfwzgadafhyy` (`pohantoonai`, YouPro School), seeded with synthetic records, and verified 12/12 RLS and zero public client table read/write privileges. Stored migrations: `platform_onboarding_foundation` and `secure_existing_rls_trigger_permissions`. Some table names expand the initial 383-table candidate catalog; reconcile names during the next catalog revision rather than silently claiming the original list is final.
 
 ## School information coverage
 
@@ -52,8 +52,8 @@ The first request form is intentionally short (school name, owner, email, countr
 
 ## Development contracts for next module
 
-1. Select hosting Supabase organization and one project `pohantoonai`.
-2. Deploy database schema, execute seed and verify row-level and table privilege checks in that dedicated test project.
+1. **Done:** Select one Supabase development project: `pohantoonai` in YouPro School.
+2. **Done:** Deploy Module 01, seed sample records and verify RLS/ACL. Also hardened existing `public.rls_auto_enable()` client function grants (documented in `supabase/schema/02_secure_existing_rls_trigger.sql`).
 3. Add operator authentication and server-only plan/config provisioning access.
 4. Add authenticated school application submission and view with ownership checks, audits, rate limits and input validation.
 5. Implement verified subscription/authorized trial status changes before school creation.
@@ -63,3 +63,13 @@ The first request form is intentionally short (school name, owner, email, countr
 ## Portability to another organization
 
 The reviewed SQL and its synthetic seed remain in `supabase/`. Generate official CLI migration files from the reviewed script when CLI is configured, and keep deployment migrations identical across environments. Do not copy project-specific Auth IDs, API keys, credentials or school operational records into Git. The test project is disposable; the version-controlled SQL is the transferable artifact.
+
+## Deployment evidence — 2026-11-10
+
+- Target: `umlzqlbakfwzgadafhyy`, project `pohantoonai`, organization `YouPro School`, Tokyo.
+- SQL migrations applied successfully: `platform_onboarding_foundation` and `secure_existing_rls_trigger_permissions`.
+- Live catalog: 12 `platform` tables; all 12 RLS-enabled; no anon/authenticated table read/write privileges.
+- Synthetic seed: 1 organization, 3 plans, 3 prices, 9 plan features, 1 onboarding request, 1 subscription request, and linked educational/contact/location records.
+- Existing `public.rls_auto_enable()` was a `SECURITY DEFINER` DDL event-trigger function executable by clients; client grants were revoked without deleting the function. Follow-up privilege SQL is source-controlled.
+- Supabase security advisor now lists only 12 INFO `rls_enabled_no_policy` notices (expected for private tables without client policies); no privileged function execute warnings after hardening.
+- Flutter screen remains mock-backed; no authenticated live API exists yet.
