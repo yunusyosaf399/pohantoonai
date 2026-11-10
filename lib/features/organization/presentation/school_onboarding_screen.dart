@@ -24,6 +24,7 @@ class SchoolOnboardingScreen extends StatefulWidget {
 
 class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _scrollController = ScrollController();
   final _school = TextEditingController();
   final _legalName = TextEditingController();
   final _registration = TextEditingController();
@@ -59,6 +60,7 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     for (final controller in [
       _school, _legalName, _registration, _owner, _email, _phone, _country,
       _city, _board, _curriculum, _students, _campuses, _timezone, _currency,
@@ -164,6 +166,18 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
     );
   }
 
+  void _revealFeedback() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   Future<void> _submit() async {
     if (_submitting) return;
     final valid = _formKey.currentState?.validate() ?? false;
@@ -172,6 +186,7 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
         _showValidationSummary = true;
         _error = null;
       });
+      _revealFeedback();
       return;
     }
     if (_selectedPlan == null || _exceedsPlan) {
@@ -179,6 +194,7 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
         _showValidationSummary = false;
         _error = 'Select a plan that covers your estimated students and campuses.';
       });
+      _revealFeedback();
       return;
     }
 
@@ -213,12 +229,14 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
     } on OrganizationFailure catch (error) {
       if (!mounted) return;
       setState(() => _error = error.message);
+      _revealFeedback();
     } catch (error) {
       debugPrint('School onboarding save failed: $error');
       if (!mounted) return;
       setState(() {
         _error = 'We could not save this request. Your information is still here. Please try again.';
       });
+      _revealFeedback();
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -239,6 +257,7 @@ class _SchoolOnboardingScreenState extends State<SchoolOnboardingScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
+            controller: _scrollController,
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: EdgeInsets.symmetric(
               horizontal: constraints.maxWidth < 600 ? 16 : 28,
