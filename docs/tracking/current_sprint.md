@@ -1,63 +1,65 @@
-# Current Sprint — Catalog Approval and Parallel Development Contracts
+# Current Sprint — Module 01 Organization Control Panel
 
-> **Sprint:** S01 · **Date:** 2026-11-10 · **Status:** [In Progress] · **No production deployment authorized**.
-> **Canonical progress:** [master roadmap](master_roadmap.md) · **Catalog pending owner approval:** [table catalog](../architecture/table_catalog.md) · **Session tasks:** [independent tasks](independent_tasks.md).
+> **Sprint:** S01 (2026-11-10) · **Status:** [In Progress]  
+> **Approved delivery method:** Commit portable SQL in `supabase/`, deploy changes to **one** dedicated Supabase development project as we proceed, and develop Flutter concurrently. The database must be isolated/private until authenticated RLS/ACL contracts are verified.
+> **Project creation blocker:** user must choose connected Supabase organization: `YouPro School` or `SchoolAgent`. Neither currently has a project named `pohantoonai`.
 
-## Sprint objective
+## Scope and source
 
-Secure agreement on the 383-table **candidate** inventory (96 P0, 203 P1, 84 P2), without approving all for immediate implementation. In parallel, finalize the first Flutter mock-data contracts and a first *isolated* database base-table design batch. The tracks are independent until the reviewed API integration gate.
+- [Catalog](../architecture/table_catalog.md): 383 **planning candidates**; not a bulk migration plan.
+- [Module 01 implementation contract](../database/module_01_organization.md).
+- [Portable SQL](../../supabase/schema/01_platform_onboarding.sql), [synthetic seed](../../supabase/seed/01_demo_platform.sql) and [SQL smoke test](../../supabase/tests/01_platform_smoke.sql).
+- [Flutter console](../../lib/features/organization/presentation/organization_control_panel.dart), [models](../../lib/features/organization/domain/organization_models.dart), [mock](../../lib/features/organization/data/mock_organization_repository.dart), [widget tests](../../test/widget_test.dart).
 
-**Important safety boundary:** schema-first is welcome, but **raw tenant tables remain unexposed to clients** until Auth, appropriate RLS and tenant isolation checks exist. Flutter uses fixtures/mocks, never a shared unprotected Supabase project. The first physical DDL can contain primary keys and immutable tenant keys; cross-domain FKs, functions, error codes and domain policies can be specified in subsequent gated tasks, **before any shared/live data writes**.
+## Sprint milestones
 
-## Sprint board
+| ID | Deliverable | Status | Evidence / blocker |
+|---|---|---|---|
+| S01-01 | Full table catalog by domain | [Completed — planning] | 383 names / 30 groups |
+| S01-02 | Sprint + session tracking | [Completed] | This file and `independent_tasks.md` |
+| S01-03 | Module 01 private base-schema SQL | [Completed — source only] | 12 `platform` tables under `supabase/schema/` |
+| S01-04 | Synthetic demo seed and SQL verification | [Completed — source only] | No real users, billing or payments |
+| S01-05 | Flutter organization panel mock shell | [Completed — source only] | Overview, plans, school requests, form, mobile/desktop navigation |
+| S01-06 | Flutter widget tests and CI job | [In Progress] | Source tests committed; [GitHub run #1](https://github.com/yunusyosaf399/pohantoonai/actions/runs/42839541478) failed with no job steps/log; code not yet validated |
+| S01-07 | Select Supabase organization | [Blocked — Owner Input] | Choose `YouPro School` or `SchoolAgent` |
+| S01-08 | Create **one** development project `pohantoonai` | [Blocked — S01-07] | Project region recommended `ap-south-1` for test use, subject to preference and cost handling |
+| S01-09 | Deploy Module 01 DDL and fake seed | [Blocked — S01-08] | Verify 12 tables and 3 test plans |
+| S01-10 | Run SQL checks and security advisors | [Blocked — S01-09] | Validate no anonymous access and cross-organization references |
+| S01-11 | Operator authentication and reviewed onboarding API | [Not Started] | Never publish raw `platform` tables |
+| S01-12 | Wire Flutter to **verified** live organization API | [Blocked — S01-11] | No service/secret key in client |
+| S01-13 | Module 02: verified school provisioning and school profile | [Not Started] | Begins after subscription/trial authorization and protected provisioning contract |
 
-| Task | Track | Scope / deliverable | Dependency | Status | Allowed changes |
-|---|---|---|---|---|---|
-| S01-01 | PM | Publish complete candidate table inventory | Source catalog | [Completed] | `docs/architecture/table_catalog.md` |
-| S01-02 | PM | Publish this sprint and independent-session registry | Roadmap | [Completed] | `docs/tracking/current_sprint.md`, `independent_tasks.md` |
-| S01-03 | Owner | Approve / rename / merge / defer catalog tables | S01-01 | [Awaiting Approval] | Owner decision; no auto SQL |
-| S01-04 | DB | Record approved P0 first batch: schools + school_profiles + campuses + academic_years + identities/memberships | S01-03 | [Blocked] | New `docs/database/first_batch_schema.md` |
-| S01-05 | DB | Define base fields and types (no policies/functions yet) | S01-04 | [Blocked] | Same DB design document, single session |
-| S01-06 | DB | Draft isolated local DDL migration; verify catalog, PK and tenant keys | S01-05 | [Blocked] | Integrator-owned `supabase/migrations/` |
-| S01-07 | Flutter | Define feature-first folder layout and mock interface contract | None | [Not Started] | `docs/flutter/folder_structure.md` |
-| S01-08 | Flutter | Select state management and outline active-school switching | None | [Not Started] | `docs/flutter/state_management.md` |
-| S01-09 | Flutter | Prepare mock-only shell/navigation design and fixture data plans | S01-07–08 | [Not Started] | `docs/flutter/mock_contracts.md` |
-| S01-10 | Security gate | Specify testable A/B school read/write isolation and safe Data API exposure | DB batch draft | [Not Started] | `docs/security/tenant_isolation.md` |
-| S01-11 | Integration | Swap Flutter mocks to verified authenticated APIs | S01-06 + S01-10 passing tests | [Blocked] | Shared app integration; serial |
+## Next user-visible vertical flow
 
-## Recommended first vertical demo
+```text
+SaaS Control Panel
+  ├─ Overview and submitted school applications (Flutter MOCK implemented)
+  ├─ Test subscription plans (Flutter MOCK + private SQL prepared)
+  ├─ School application form (Flutter MOCK implemented)
+  ├─ Verified plan selection/payment or trial (not implemented)
+  ├─ Operator review and approve (structure prepared; service not implemented)
+  └─ Provision a real school tenant (Module 02; not implemented)
+```
 
-1. School selection and onboarding preview (Flutter mocked).
-2. School profile, campuses and academic years (mocked list/create/edit UI).
-3. School owner/staff role switch and teacher/parent/student navigation previews (**UI only**, not real authorization).
-4. Student profile, family link, enrollment and school-year preview.
-5. Teacher attendance and parent attendance view.
-6. After safe backend APIs and tenant A/B tests pass, substitute real Supabase repositories screen by screen.
+## Parallel work allocation
 
-This is intentionally **not** a claim of working database authorization.
+- **DB stream:** Module 01 SQL is in the repo; once Supabase organization is selected, deploy to one test project, seed demo rows, run checks, add protected server endpoints.
+- **Flutter stream:** Can improve forms, responsive layouts, state tests and organization UI using the in-memory repository while backend work proceeds. Never expose unguarded private tables merely to make the UI work.
+- **Integrator:** Sole owner for shared `lib/main.dart`, workflow/build graph, official migrations, deployment state and test evidence. Merge other feature modules only when paths are disjoint.
 
-## Approval decisions needed
+## Testing and acceptance
 
-- [ ] **DEC-01** Accept catalog structure or request table changes.
-- [ ] **DEC-02** Confirm P0 first-batch subset, not all 96 P0 tables at once.
-- [ ] **DEC-03** Confirm whether parent shared-family login remains a product feature.
-- [ ] **DEC-04** Confirm initial Flutter targets (source supports Android, Windows, Web; target scaffold inspected).
-- [ ] **DEC-05** Confirm mock-only Flutter development while DB is unexposed.
-- [ ] **DEC-06** Approve switching from mock to real backend only after explicit RLS and tenant tests.
+- **Schema deployment:** [Not Started]; no live Supabase project selected.
+- **Seed execution:** [Not Started]; demo SQL prepared.
+- **RLS/ACL live verification:** [Not Started]; protective DDL written only.
+- **Flutter unit/widget test:** [Unverified]; local Flutter SDK unavailable in execution environment. GitHub Actions run #1 failed before steps; failure cause unconfirmed.
+- **Production:** not authorized; never seed sample records into production.
 
-## Definition of done
+## Decisions requested
 
-A sprint task is complete only when its committed artifact is inspected and linked. DB migrations require a disposable local apply + schema assertions; Flutter work requires code analysis/widget tests once code begins. Real cross-school integration additionally requires documented negative-isolation tests and reviewed RLS and grants.
+- [ ] **ORG-01** Select the development Supabase organization: `YouPro School` or `SchoolAgent`.
+- [ ] **ORG-02** Accept automatic project region `ap-south-1` for testing, or select a different supported region.
+- [ ] **ARCH-01** Confirm catalog table naming changes and Module 01 onboarding information.
+- [ ] **ARCH-02** Confirm future provider for real billing; current flows are simulation only.
 
-## Sprint progress
-
-| Category | Completed | Total | Status |
-|---|---:|---:|---|
-| Sprint work items | 2 | 11 | 18% |
-| Catalog approval decisions | 0 | 6 | Pending |
-| Target SQL migrations | 0 | TBD | Not started |
-| Flutter production feature modules | 0 | TBD | Not started |
-
-## Change log
-
-- **2026-11-10:** Created table catalog and sprint/session task registry. No SQL or Flutter source changes performed. Owner approval is pending.
+**Last tracking update:** 2026-11-10 after committing Module 01 Flutter, private schema, seed and test sources; deployment/test acceptance remains open.
