@@ -1,0 +1,235 @@
+# Master Migration Roadmap — Pohantoon AI
+
+> **Status:** [In Progress] · **Last updated:** 2026-11-10 · **Target:** `yunusyosaf399/pohantoonai` (`main`)  
+> **Source:** `yunusyosaf399/edusync_saas_school_app` (`main`)  
+> **Scope:** migrate the school-management product to **one Supabase project hosting many schools**, with tenant isolation by database constraints, RLS, RBAC and audited server commands.
+>
+> This roadmap tracks **the new target**, not completion claims in EduSync. Source migration files and historical CI runs are reference material, **not** evidence that anything has been deployed in Pohantoon AI.
+
+## 1. Baseline and completion rules
+
+**Verified repository baseline (2026-11-10):**
+
+- Target: Flutter scaffold (`lib/main.dart`, `pubspec.yaml`), no `docs/` and no Supabase migrations before this documentation step.
+- Source: Flutter scaffold plus substantial requirements, architecture, security documents, nine executable Foundation SQL migrations, a non-executable Domain Package 01 draft chain, supporting Python services, and test tooling.
+- Source requirements catalog: [EduSync feature catalog](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/requirements/FEATURE_CATALOG_AND_STATUS.md); original [database completion matrix](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/database/DATABASE_COMPLETION_MATRIX.md).
+- **Incompatible assumption:** EduSync's one-school-per-Supabase-project trust boundary. No source SQL, schema, RLS policy or service is approved for copy/paste until its cross-school implications are reviewed.
+
+**Status legend:** `[Not Started]` / `[In Progress]` / `[Blocked]` / `[Completed]`. Check `[x]` only after the task's acceptance evidence exists; `[ ]` means open. **[I-NOW]** = truly independent task on an exclusive file today; **[I-GATED]** = independently executable *after* named contract/dependency is approved; **[SERIAL]** = integration-sensitive or shared-file work, one owner at a time. A documentation task is complete when its file is committed and reviewed for internal consistency; implementation additionally needs tests.
+
+**Completion rule for a code task:** design approved → migration/code committed → local tests pass → tenant A/B negative-security tests pass where relevant → CI passes on that commit → evidence linked → tracker updated. A successful source-repository test does not satisfy a target-repository gate.
+
+| Progress metric | Completed | Planned | Progress |
+|---|---:|---:|---|
+| Required modular `docs/` files | 2 | 14 | 14% |
+| Target Supabase schema/RLS migrations | 0 | To be planned after contract freeze | 0 implemented |
+| Flutter migrated feature modules | 0 | To be inventoried | 0 implemented |
+| Cross-school isolation test suites | 0 | Required before any production access | 0 validated |
+| Milestones with implementation acceptance | 0 | 19 (M00–M18) | 0% |
+
+> **Tracker authority:** This file is the canonical master status. `docs/tracking/current_sprint.md` will own the active execution queue; `docs/tracking/independent_tasks.md` will own session-specific, file-locked work orders. Both are pending creation. Update all three after each accepted task; never mark a future test as passed.
+
+## 2. Milestone summary and dependencies
+
+| ID | Milestone | Dependency / release gate | Status | Parallel strategy |
+|---|---|---|---|---|
+| M00 | Repository audit and feature traceability | None | [In Progress] | Source inventory read-only, I-NOW |
+| M01 | Modular architecture documentation | M00 preliminary scan | [In Progress] | Separate doc files, I-NOW/I-GATED |
+| M02 | Decisions and architecture contract freeze | M00–M01 design review | [Not Started] | SERIAL |
+| M03 | Tenant/identity/academic foundation schema | M02 | [Not Started] | SERIAL shared migrations |
+| M04 | RLS, RBAC, authorization and isolation tests | M03 | [Not Started] | SERIAL until policy freeze |
+| M05 | Subscription, entitlements and platform operations | M03–M04 | [Not Started] | I-GATED backend boundary |
+| M06 | School configuration and academic structure | M04 | [Not Started] | I-GATED distinct domain |
+| M07 | Students, families, admissions, enrollments | M04, M06 | [Not Started] | I-GATED distinct domain |
+| M08 | Employees, teachers and teaching assignments | M04, M06 | [Not Started] | I-GATED distinct domain |
+| M09 | Calendar, curriculum and timetable | M06, M08 | [Not Started] | I-GATED distinct domain |
+| M10 | Attendance, corrections and source adapters | M07–M09 | [Not Started] | I-GATED distinct domain |
+| M11 | Learning work, online tests, exams and results | M07–M09 | [Not Started] | I-GATED distinct domain |
+| M12 | Fees, invoices, payments and accounting | M05, M07 | [Not Started] | I-GATED distinct domain |
+| M13 | HR, employee attendance, leave and payroll | M08, M12 integration contract | [Not Started] | I-GATED distinct domain |
+| M14 | Optional campus services and private documents | M04, domain anchors | [Not Started] | I-GATED per service |
+| M15 | Notifications, reports, search, audit and AI | Domain permissions and events | [Not Started] | I-GATED per capability |
+| M16 | Flutter shared shell, role routing and modules | M04 plus stable domain APIs | [Not Started] | I-GATED disjoint `lib/features/` |
+| M17 | Legacy data migration and tenant cutover | M04, domain schema + validated import | [Not Started] | SERIAL per cutover |
+| M18 | Security audit, operations and release | All required gates | [Not Started] | SERIAL release authority |
+
+**Database-first rule:** M03–M15 establish physical contracts and business acceptance before broad Flutter feature implementation. Independent Flutter design documents can start earlier; operational screens wait for approved APIs and security checks.
+
+## 3. Atomic implementation checklist
+
+### M00 — Repository audit and traceability
+- [x] **M00.01** [SERIAL] Locate and inspect both GitHub repositories and default branches.
+- [x] **M00.02** [SERIAL] Establish the target Flutter-scaffold baseline.
+- [x] **M00.03** [SERIAL] Identify source requirements catalog, Foundation SQL, draft SQL and security documents.
+- [ ] **M00.04** [I-NOW] Produce `docs/tracking/edusync_feature_inventory.md` with feature → source path → target module → current evidence → gap; edit this file only.
+- [ ] **M00.05** [I-NOW] Inventory all source migrations, table ownership, authentication flows, private functions, storage and test coverage; append to the inventory file only.
+- [ ] **M00.06** [SERIAL] Classify source capabilities as reuse / redesign / defer / reject under single-project tenancy.
+- [ ] **M00.07** [SERIAL] Record all unresolved domain decisions, privacy requirements and migration blockers.
+
+### M01 — Documentation system (14 required files)
+- [x] **M01.01** [SERIAL] Create `docs/tracking/master_roadmap.md` (this roadmap).
+- [x] **M01.02** [SERIAL] Create `docs/architecture/database_schema.md` (initial design; not approved DDL).
+- [ ] **M01.03** [I-NOW] Create `docs/architecture/single_tenant_vs_multitenant.md`.
+- [ ] **M01.04** [I-GATED: M02] Create `docs/architecture/auth_and_rls.md`.
+- [ ] **M01.05** [I-NOW] Create `docs/flutter/folder_structure.md`.
+- [ ] **M01.06** [I-NOW] Create `docs/flutter/state_management.md` (compare alternatives; no package lock until M02).
+- [ ] **M01.07** [I-GATED: M04] Create `docs/flutter/role_routing.md`.
+- [ ] **M01.08** [I-GATED: M04] Create `docs/security/rls_policies.md` with approved policy matrix.
+- [ ] **M01.09** [I-GATED: M03] Create `docs/security/tenant_isolation.md` with runnable verification contract.
+- [ ] **M01.10** [I-NOW] Create `docs/roles/org_owner.md`.
+- [ ] **M01.11** [I-NOW] Create `docs/roles/school_roles.md` with proposed permissions and explicit approval status.
+- [ ] **M01.12** [I-NOW] Create `docs/errors/error_handling_standards.md`.
+- [ ] **M01.13** [SERIAL] Create `docs/tracking/current_sprint.md`; identify the first gated sprint.
+- [ ] **M01.14** [SERIAL] Create `docs/tracking/independent_tasks.md`; assign file locks and session handoffs.
+- [ ] **M01.15** [SERIAL] Check relative links, consistent nomenclature, outdated assumptions, and milestone counts.
+
+### M02 — Architecture decisions and contract freeze
+- [ ] **M02.01** [SERIAL] Approve platform-owner versus school-owner trust boundaries.
+- [ ] **M02.02** [SERIAL] Approve school identity, shared-family account, and multi-school account model.
+- [ ] **M02.03** [SERIAL] Freeze roles, permission codes and exact scope-binding semantics.
+- [ ] **M02.04** [SERIAL] Freeze immutable `school_id` and composite-FK conventions.
+- [ ] **M02.05** [SERIAL] Select API-exposed schema(s), RPC versus view strategy and server-worker trust boundary.
+- [ ] **M02.06** [SERIAL] Decide subscription/billing provider interface, suspension behavior and entitlements.
+- [ ] **M02.07** [SERIAL] Decide Flutter state management/router after checking current package compatibility.
+- [ ] **M02.08** [SERIAL] Publish approved ADRs, unresolved issues and a versioned contract snapshot.
+
+### M03 — Single-project database foundation
+- [ ] **M03.01** [SERIAL] Initialize target Supabase CLI project, pin toolchain and lock deployment environments.
+- [ ] **M03.02** [SERIAL] Define private/internal/API schemas and explicit Postgres grants.
+- [ ] **M03.03** [SERIAL] Implement `schools` and school lifecycle / code uniqueness.
+- [ ] **M03.04** [SERIAL] Implement account profiles and verified Auth bindings, including FAMILY kind.
+- [ ] **M03.05** [SERIAL] Implement school memberships, role definitions and permission catalog.
+- [ ] **M03.06** [SERIAL] Implement role grants, membership-role assignments, typed scope bindings and revocation.
+- [ ] **M03.07** [SERIAL] Implement campuses, academic years, school settings and numbering contracts.
+- [ ] **M03.08** [SERIAL] Add immutable `school_id` guards, composite foreign keys and tenant-leading indexes.
+- [ ] **M03.09** [SERIAL] Implement typed command receipts, audit ledger, outbox and approval foundations.
+- [ ] **M03.10** [SERIAL] Provide transactional bootstrap for the first school and its owner; no client self-grant.
+- [ ] **M03.11** [SERIAL] Validate clean database install, repeated idempotent setup and upgrade path.
+
+### M04 — RLS/RBAC and hard isolation
+- [ ] **M04.01** [SERIAL] Enable and test default-deny RLS on every exposed tenant table.
+- [ ] **M04.02** [SERIAL] Implement live-membership permission evaluator without recursive RLS.
+- [ ] **M04.03** [SERIAL] Verify scope intersection (school, campus, class, section, subject, assignment, own).
+- [ ] **M04.04** [SERIAL] Deny tenant reassignment and cross-school reference forgery at database level.
+- [ ] **M04.05** [SERIAL] Separate operator-only administration from school-user sessions and exports.
+- [ ] **M04.06** [SERIAL] Lock down private functions, views, storage, Realtime and service credentials.
+- [ ] **M04.07** [SERIAL] Build A/B school tests: anonymous, suspended, wrong tenant, dual-school user, role revocation.
+- [ ] **M04.08** [SERIAL] Test parent/child and teacher-assignment boundaries; verify hidden fields stay hidden.
+- [ ] **M04.09** [SERIAL] Run SQL advisors/lint, negative permission tests and threat-model review.
+
+### M05 — SaaS subscriptions and platform operator
+- [ ] **M05.01** [I-GATED: M04] Define plan/features and school-subscription tables in a private boundary.
+- [ ] **M05.02** [I-GATED: M04] Implement owner-mediated purchase/onboarding with verified payment state.
+- [ ] **M05.03** [I-GATED: M04] Define entitlement snapshots, quota enforcement and renewal/expiry transitions.
+- [ ] **M05.04** [I-GATED: M04] Implement platform analytics with privacy limits and no ambient school-row access.
+- [ ] **M05.05** [I-GATED: M04] Implement time-bounded audited support access and emergency revocation.
+- [ ] **M05.06** [SERIAL] Test cross-school billing denial, event replay and subscription downgrade preservation.
+
+### M06 — School setup and academic structure
+- [ ] **M06.01** [I-GATED: M04] School profile, branding, timezone, locale, currencies and campus lifecycle.
+- [ ] **M06.02** [I-GATED: M04] Academic-year, level, class, section, room and capacity lifecycle.
+- [ ] **M06.03** [I-GATED: M04] School-specific numbering/roll policies and historical configuration.
+- [ ] **M06.04** [I-GATED: M04] Scoped reads, approved mutations, audit/replay and A/B tenant tests.
+
+### M07 — Students, families and admissions
+- [ ] **M07.01** [I-GATED: M06] Student identity/profile and sensitive-field partitioning.
+- [ ] **M07.02** [I-GATED: M06] Parent/family account-to-student verified relationship and revocation.
+- [ ] **M07.03** [I-GATED: M06] Admissions stages, applications, decisions, deduplication and handoff.
+- [ ] **M07.04** [I-GATED: M06] Enrollment/transfer/promotion/withdrawal, history and roll integrity.
+- [ ] **M07.05** [I-GATED: M06] Scoped parent/student checked reads, approvals and race/replay tests.
+
+### M08 — HR identities and teaching assignments
+- [ ] **M08.01** [I-GATED: M06] Staff/employee records, department, designation and service history.
+- [ ] **M08.02** [I-GATED: M06] Employment status, contract visibility, qualifications and experience.
+- [ ] **M08.03** [I-GATED: M06] Class teacher, subject teacher and campus assignment histories.
+- [ ] **M08.04** [I-GATED: M06] Test effective dates, scope revocation, overlap and sensitive-profile access.
+
+### M09 — Curriculum, calendar and timetable
+- [ ] **M09.01** [I-GATED: M06/M08] Curriculum and class-year subject offerings/electives.
+- [ ] **M09.02** [I-GATED: M06/M08] Student optional-subject selection and teacher qualification checks.
+- [ ] **M09.03** [I-GATED: M06/M08] Calendar, events, term/period definitions and holidays.
+- [ ] **M09.04** [I-GATED: M06/M08] Manual/versioned timetable with section/teacher/room conflict checks.
+- [ ] **M09.05** [I-GATED: M09.04] Auto-scheduling as proposal + manual override, not direct unreviewed publish.
+
+### M10 — Attendance
+- [ ] **M10.01** [I-GATED: M07/M09] Canonical attendance sessions, roster eligibility and marks.
+- [ ] **M10.02** [I-GATED: M07/M09] Manual and QR inputs into the same idempotent command.
+- [ ] **M10.03** [I-GATED: M10.01] Corrections, approval history, locking and conflict/replay tests.
+- [ ] **M10.04** [I-GATED: M10.01] Teacher/parent scoped views and per-tenant reporting.
+- [ ] **M10.05** [I-GATED: approved privacy policy] Future biometric, camera and RFID adapters; never separate attendance truth.
+
+### M11 — Learning, tests and examinations
+- [ ] **M11.01** [I-GATED: M07/M09] Homework, attachments, submissions, marking and feedback.
+- [ ] **M11.02** [I-GATED: M07/M09] Question bank, online test attempts, timing and confidentiality.
+- [ ] **M11.03** [I-GATED: M07/M09] Exams/assessment rules, grades, GPA and component constraints.
+- [ ] **M11.04** [I-GATED: M11.03] Result review, publication, locking and audited correction.
+- [ ] **M11.05** [I-GATED: M11.04] Promotion decisions and immutable historical result exports.
+
+### M12 — Finance and accounting
+- [ ] **M12.01** [I-GATED: M05/M07] Fee types, structures, revisions, concessions and scholarships.
+- [ ] **M12.02** [I-GATED: M12.01] Assessed obligations, invoices and immutable line histories.
+- [ ] **M12.03** [I-GATED: M12.02] Pending evidence verification and official payment/receipt issuance.
+- [ ] **M12.04** [I-GATED: M12.03] Allocation, partial/advance payment, overpayment, refund and reversal.
+- [ ] **M12.05** [I-GATED: M12.04] Test arithmetic conservation, idempotency, approval and bank evidence isolation.
+- [ ] **M12.06** [I-GATED: provider decision] Future payment-gateway adapters and webhook verification.
+
+### M13 — HR operations, leave and payroll
+- [ ] **M13.01** [I-GATED: M08] Employment contracts, leave policies and approval flows.
+- [ ] **M13.02** [I-GATED: M08] Employee attendance, overtime and approved corrections.
+- [ ] **M13.03** [I-GATED: M08] Salary component revisions, deductions and restricted compensation reads.
+- [ ] **M13.04** [I-GATED: M12/M13.03] Monthly payroll runs, finalization, receipts and reversal controls.
+- [ ] **M13.05** [I-GATED: M13.04] Verify segregation of duties, self-salary visibility and tenant A/B leaks.
+
+### M14 — Optional and shared services
+- [ ] **M14.01** [I-GATED: M04] Library catalog, borrowing, overdue and optional activation.
+- [ ] **M14.02** [I-GATED: M04] Transport routes, vehicles, drivers and student assignments.
+- [ ] **M14.03** [I-GATED: M04] Hostel buildings, rooms, beds, occupancy and effective-history checks.
+- [ ] **M14.04** [I-GATED: M04] Medical incidents and separately authorized sensitive data.
+- [ ] **M14.05** [I-GATED: M04] Private file metadata, storage entitlement and signed-access worker.
+- [ ] **M14.06** [I-GATED: M14.05] On-demand certificates, ID cards and document generation.
+- [ ] **M14.07** [I-GATED: provider decision] GPS / messaging / hardware integration contracts; defer device capture.
+
+### M15 — Cross-cutting intelligence and communications
+- [ ] **M15.01** [I-GATED: M03] Notifications, outbox processing and retry/idempotency semantics.
+- [ ] **M15.02** [I-GATED: M04] Row- and column-scoped search, report builders, CSV/Excel/PDF export.
+- [ ] **M15.03** [I-GATED: M04] School dashboards and aggregated platform metrics with no hidden PII leak.
+- [ ] **M15.04** [I-GATED: M04] AI teacher/student/parent assistants with retrieved-data authorization.
+- [ ] **M15.05** [I-GATED: M15.04] Prompt-injection, cross-tenant retrieval and sensitive output tests.
+- [ ] **M15.06** [I-GATED: M04] Offline encrypted cache, sync, conflict and revocation contract.
+- [ ] **M15.07** [I-GATED: approved domain APIs] Global error taxonomy, tracing and alerting.
+
+### M16 — Flutter application and role-based interfaces
+- [ ] **M16.01** [SERIAL] Initialize feature-first `lib/` architecture, DI, router and state mechanism.
+- [ ] **M16.02** [SERIAL] Implement Supabase Auth, selected-school context and context-change invalidation.
+- [ ] **M16.03** [SERIAL] Implement permission-aware guards; UI guards never substitute for RLS.
+- [ ] **M16.04** [I-GATED: M16.01/M04] Organization-owner operations shell in exclusive `lib/features/platform/`.
+- [ ] **M16.05** [I-GATED: M16.01/M06] School-owner/admin setup in exclusive `lib/features/school_setup/`.
+- [ ] **M16.06** [I-GATED: M16.01/M07] Student/parent portals in exclusive `lib/features/student_portal/`.
+- [ ] **M16.07** [I-GATED: M16.01/M08] HR/teacher portals in exclusive `lib/features/staff_portal/`.
+- [ ] **M16.08** [I-GATED: M16.01/M12] Accountant/finance portal in exclusive `lib/features/finance/`.
+- [ ] **M16.09** [I-GATED: M16.01] Adaptive Android, Windows and Web layout/accessibility checks.
+- [ ] **M16.10** [SERIAL] Integrate navigation and cross-role flows; widget/integration tests.
+
+### M17 — Legacy migration and cutover
+- [ ] **M17.01** [SERIAL] Inventory source per-school Supabase projects, schemas, files and Auth identifiers.
+- [ ] **M17.02** [SERIAL] Build deterministic `legacy_project + legacy_id → school_id + new_id` mapping.
+- [ ] **M17.03** [SERIAL] Reconcile duplicate users/emails and select safe invite/reauthentication.
+- [ ] **M17.04** [SERIAL] Implement tenant-stamped extract/transform/load with composite-FK verification.
+- [ ] **M17.05** [SERIAL] Reconcile row counts, money ledgers, file references and audit/event history.
+- [ ] **M17.06** [SERIAL] Test staging cutover, maintenance window, rollback and recovery per school.
+- [ ] **M17.07** [SERIAL] Obtain school-by-school sign-off; never drop legacy source before retention gate.
+
+### M18 — Production hardening and release
+- [ ] **M18.01** [SERIAL] Dependency/security scan, SQL advisors, secrets audit and threat model.
+- [ ] **M18.02** [SERIAL] Run complete tenant A/B, approval, data-export, offline and operator-access matrix.
+- [ ] **M18.03** [SERIAL] Validate tenant quotas, performance, indexes and capacity under mixed-school load.
+- [ ] **M18.04** [SERIAL] Validate full-project PITR plus selective school export/restore rehearsal.
+- [ ] **M18.05** [SERIAL] Configure monitoring, runbooks, incident response, billing reconciliation and support logs.
+- [ ] **M18.06** [SERIAL] Confirm accessibility, localization, release channels and platform compatibility.
+- [ ] **M18.07** [SERIAL] Final acceptance, rollback rehearsal, release approval and post-release observation.
+
+## 4. Parallel ChatGPT session policy
+
+**Safe now, provided each session edits only its named output file:** M00.04 (`edusync_feature_inventory.md`), M01.03, M01.05, M01.06, M01.10, M01.11 and M01.12. Sessions may read any source, but must not edit `master_roadmap.md`, `database_schema.md`, shared SQL, `pubspec.yaml` or another session's paths.
+
+**Gated:** all `[I-GATED]` entries require their stated completed dependency and a pinned schema/API/permission contract. After gate approval, separate worktrees/branches and exclusive `lib/features/<feature>/`, service or draft-migration subdirectories may be developed independently. An assigned integrator alone edits ordered `supabase/migrations
