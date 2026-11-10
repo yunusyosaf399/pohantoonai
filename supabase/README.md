@@ -1,12 +1,13 @@
 # Supabase — Pohantoon AI
 
-This folder is the **portable database source of truth**. It is intended to be reused later with a different Supabase organization or project. The immediate target is **one** dedicated development project named `pohantoonai` (organization selection pending); no school-per-project architecture.
+This folder is the **portable database source of truth**. It is intended to be reused later with a different Supabase organization or project. The immediate target is **one** dedicated development project named `pohantoonai` (deployed in `YouPro School`, project ref `umlzqlbakfwzgadafhyy`); no school-per-project architecture.
 
 ## Folder organization
 
 | Path | Role |
 |---|---|
-| `schema/01_platform_onboarding.sql` | First module's SQL structure: SaaS organization, plans, school onboarding, subscription request and review records |
+| `schema/01_platform_onboarding.sql` | Deployed Module 01 private SaaS organization, plans, school onboarding, subscription request and review records |
+| `schema/02_secure_existing_rls_trigger.sql` | Deployed hardening of an existing public event-trigger function's execute privileges |
 | `seed/01_demo_platform.sql` | Idempotent **fake/demo-only** seed with plans and a sample application |
 | `tests/01_platform_smoke.sql` | Read-only smoke checks after deployment |
 | `migrations/` | Official timestamped migrations created with `supabase migration new ...` once Supabase CLI is available |
@@ -15,11 +16,11 @@ This folder is the **portable database source of truth**. It is intended to be r
 
 ## Deployment workflow
 
-1. Pick the connected Supabase **organization** to host the single `pohantoonai` development project. Creation can incur provider charges and may require cost confirmation.
-2. Create that one project; confirm it is healthy. Keep a record of its project ref in a non-secret environment configuration.
-3. Review the SQL, then deploy `schema/01_platform_onboarding.sql` in one tracked migration transaction.
-4. Apply `seed/01_demo_platform.sql` only to the test database. It uses synthetic `example.invalid` contact details and creates **no real payments**.
-5. Run `tests/01_platform_smoke.sql`, inspect table count, RLS, grants and seeded rows; record evidence in `docs/tracking/current_sprint.md`.
+1. **Done:** Use the user-created project `pohantoonai` (`umlzqlbakfwzgadafhyy`) in the `YouPro School` organization.
+2. **Done:** Apply `schema/01_platform_onboarding.sql` in a tracked Supabase migration (`platform_onboarding_foundation`).
+3. **Done:** Apply `seed/01_demo_platform.sql` on this disposable test database; it creates synthetic `example.invalid` records, not real payments.
+4. **Done:** Verify 12/12 RLS, zero public client data access, 3 plans, and sample request; apply `schema/02_secure_existing_rls_trigger.sql` as a second tracked migration (`secure_existing_rls_trigger_permissions`).
+5. **Next:** Add operator authentication and protected APIs before wiring Flutter to live records.
 6. When Supabase CLI is available, use `supabase migration new platform_onboarding` and put the reviewed SQL into the generated timestamped file under `migrations/`; reconcile the test project's existing migration history before pushing elsewhere. The same SQL must never be applied twice with competing migration names.
 7. Add authenticated read/write API endpoints **only after** implementing current membership, reviewed RLS, tenant isolation, transactional onboarding and verified subscription/payment status. No direct client access to these private tables.
 
@@ -38,6 +39,7 @@ A school onboarding request is **not yet a school**. The request captures instit
 
 ## Current evidence
 
-- First SQL and seed files committed to GitHub.
-- **Not deployed**, because two connected Supabase organizations are available and the owner has not selected one.
-- SQL and Flutter were **not runtime-tested** in this session (Supabase CLI and Flutter SDK are unavailable in this execution environment). Live apply/verification is pending.
+- SQL and seed files committed to GitHub; Module 01 and privilege-hardening migrations applied successfully to the test Supabase project.
+- Verified 12 platform tables with RLS and no client read/write grants. Sample school application and 3 plans exist.
+- Supabase security linter reports 12 INFO policy-free private tables (intentional). No remaining exposed privileged helper warnings after privilege revocation.
+- Flutter code/tests have not passed a confirmed CI run; live API integration is still pending.
