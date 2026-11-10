@@ -1,10 +1,21 @@
 # Pohantoon AI — Multi-Tenant School Management SaaS
 
-A single Flutter codebase and a **single Supabase project serving multiple independent schools**, with school-scoped data and a SaaS Organization Control Panel.
+One Flutter application across Android, iOS, Windows, macOS, Linux and Web, backed by **one Supabase project** serving multiple independent schools.
 
-## Current implementation — Module 01
+## Current app entry: Step 1 of 6 — Create Account
 
-**Development only.** The Flutter app opens a responsive Organization Control Panel with mock plans, a school-application list, and a demo onboarding form. It does **not** yet connect to a live database, authenticate operators, collect payments or create schools.
+The first screen now matches the supplied mobile and desktop design references: teal/navy branding, school illustration, six-step progress indicator, and separate Google and **Continue with email** actions. The UI adapts to portrait mobile and wide desktop. Appearance settings provide **System / Light / Dark** modes, persisted locally and for signed-in users in Supabase.
+
+- [Flutter sign-in screen](lib/features/auth/presentation/account_welcome_screen.dart)
+- [Supabase Auth gateway](lib/features/auth/data/account_auth_gateway.dart)
+- [Theme settings](lib/core/settings/theme_controller.dart)
+- [New widget tests](test/auth/account_welcome_test.dart)
+- [Back-end schema](supabase/schema/03_account_identity_preferences.sql)
+- [Auth onboarding contract](docs/database/module_01_account_auth.md)
+
+**Security:** Authentication never grants organization or school administrator status. The existing Organization Control Panel feature is still in [`lib/features/organization/`](lib/features/organization/) for future role-protected integration; it's only accessible through an explicit test/development preview flag today.
+
+## Run Flutter
 
 ```bash
 flutter pub get
@@ -13,51 +24,31 @@ flutter analyze
 flutter test
 ```
 
-The Flutter SDK is required locally. An experimental GitHub Actions workflow is included for analysis and widget tests; check its run status instead of assuming it passed.
+The development Supabase URL and **publishable** key are configured in `lib/core/config/supabase_configuration.dart` (safe for clients). No service key, OAuth client secret or database password is shipped in Flutter. For a different organization later, override public settings at build time:
 
-## Supabase database as portable code
-
-All SQL lives in [`supabase/`](supabase/README.md):
-
-- [Module 01 schema](supabase/schema/01_platform_onboarding.sql) — 12 private SaaS/onboarding tables, tenant-aware organization foreign keys, closed client access
-- [Synthetic development seed](supabase/seed/01_demo_platform.sql) — 3 demo plans and 1 entirely fictional school request
-- [Read-only SQL smoke checks](supabase/tests/01_platform_smoke.sql)
-
-We will deploy to exactly **one** development Supabase project called `pohantoonai` once the project owner selects a connected Supabase organization. No other school-specific projects are planned. Official migration history must be reconciled when Supabase CLI is configured, allowing the same source-controlled schema to be deployed to a different account later.
-
-## App logo and native launch icon
-
-The existing official assets in `assets/app_logo/` are registered in `pubspec.yaml`. The control-panel header displays `app_icon.jpeg` instead of the generic school icon. The same file is the launcher-icon source for Windows, Android, iOS, Web, and macOS.
-
-Native launch icons are **generated build artifacts**, not Flutter runtime assets. To replace the Windows executable/taskbar icon and all other platform placeholders, run on your development machine:
-
-```powershell
-git pull origin main
-flutter pub get
-dart run flutter_launcher_icons
-flutter clean
-flutter run -d windows
+```bash
+flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
 ```
 
-This produces `windows/runner/resources/app_icon.ico` used by `windows/runner/Runner.rc`, as well as the configured platform icons. Commit the generated platform icon files and refreshed `pubspec.lock` so future clones share the same branding. If Windows still shows the old icon after rebuilding, close the running executable, remove outdated taskbar shortcuts/pins and rebuild; Windows may cache icon images.
+**Important:** The package lockfile must be regenerated and committed by running `flutter pub get` with a working Flutter SDK (not available in this execution environment). Current GitHub Actions runs fail before job steps; build/test success is not yet verified.
 
-Launcher icon configuration is in [`flutter_launcher_icons.yaml`](flutter_launcher_icons.yaml); icons are generated **from the existing JPEG logo**, with no extra image generation. The native icon resources in the repository are not replaced until the generator has run.
+## Authentication provider setup
 
-## Architecture and progress
+Flutter uses Supabase-managed Google OAuth and passwordless email magic links. Google provider credentials, email sender/SMTP and callback URL allowlists **must** be configured in the project's Supabase dashboard before end-to-end login will work. See [exact provider and redirect setup](docs/database/module_01_account_auth.md).
 
-- [Complete candidate table catalog](docs/architecture/table_catalog.md) — 383 proposed tables (not all created)
-- [Module 01 design and workflow](docs/database/module_01_organization.md)
-- [Master roadmap](docs/tracking/master_roadmap.md)
-- [Current sprint](docs/tracking/current_sprint.md)
-- [Independent work sessions](docs/tracking/independent_tasks.md)
-- [Database/RLS architecture](docs/architecture/database_schema.md)
+## Database source code and progress
 
-## Delivery sequence
+Every database-owned artifact is stored under [`supabase/`](supabase/README.md). The single live development database is `pohantoonai` in the connected YouPro School organization. Database authentication tables and Edge Function are deployed with RLS:
 
-1. SaaS organization plans, interest and school onboarding.
-2. Subscription/trial approval, organization operator review and protected school provisioning.
-3. School profile, campuses, academic years and school-owner invitations.
-4. Admissions/students/families, enrollments, teachers and academic modules.
-5. Attendance, fees/finance, HR/payroll, documents and optional modules.
+- [Module 01 organization onboarding SQL](supabase/schema/01_platform_onboarding.sql)
+- [Module 01.1 accounts and theme SQL](supabase/schema/03_account_identity_preferences.sql)
+- [JWT-verified account bootstrap Edge Function](supabase/functions/account-bootstrap/index.ts)
+- [Source and test-data verification](supabase/tests/03_account_auth_smoke.sql)
 
-**Security boundary:** Flutter uses mock repositories until authenticated application APIs and tenant isolation have been tested. A private schema without public grants and RLS enabled is the baseline; production-grade functions and scoped access are added before any live client access. No service-role credentials are stored in Flutter or Git.
+Project planning: [table catalog](docs/architecture/table_catalog.md), [roadmap](docs/tracking/master_roadmap.md), [sprint](docs/tracking/current_sprint.md), [session tasks](docs/tracking/independent_tasks.md).
+
+## Delivery order
+
+Account creation → choose subscription plan → collect legal and operational school details → operator review → verified payment or approved trial → protected school provisioning → student admissions → fees, teachers, attendance and later modules.
+
+**Do not use real student data until the corresponding school-scoped RLS, workflows and cross-tenant denial tests have been implemented.**
