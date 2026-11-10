@@ -1,0 +1,20 @@
+# Pohantoon AI launcher icons — generated from the existing repository logo.
+# Run: flutter pub get && dart run flutter_launcher_icons
+# Commit the generated native icon files after running on a machine with Flutter.
+flutter_launcher_icons:
+  image_path: assets/app_logo/app_icon.jpeg
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: assets/app_logo/app_icon.jpeg
+    background_color: "#F6F8FB"
+    theme_color: "#176A66"
+  windows:
+    generate: true
+    image_path: assets/app_logo/app_icon.jpeg
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: assets/app_logo/app_icon.jpeg
