@@ -51,7 +51,7 @@ class _OrganizationControlPanelState extends State<OrganizationControlPanel> {
           return Scaffold(
             backgroundColor: const Color(0xFFF6F8FB),
             appBar: AppBar(
-              title: const Row(
+              title: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ClipRRect(
