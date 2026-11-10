@@ -45,7 +45,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 | M00 | Repository audit and feature traceability | None | [In Progress] | Source inventory read-only, I-NOW |
 | M01 | Modular architecture documentation | M00 preliminary scan | [In Progress] | Separate doc files, I-NOW/I-GATED |
 | M02 | Decisions and architecture contract freeze | M00–M01 design review | [Not Started] | SERIAL |
-| M03 | Tenant/identity/academic foundation schema | M02 | [Not Started] | SERIAL shared migrations |
+| M03 | Tenant/identity/academic foundation schema | M02 (full gate) | [In Progress — platform SQL drafted only] | SERIAL shared migrations |
 | M04 | RLS, RBAC, authorization and isolation tests | M03 | [Not Started] | SERIAL until policy freeze |
 | M05 | Subscription, entitlements and platform operations | M03–M04 | [Not Started] | I-GATED backend boundary |
 | M06 | School configuration and academic structure | M04 | [Not Started] | I-GATED distinct domain |
@@ -58,7 +58,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 | M13 | HR, employee attendance, leave and payroll | M08, M12 integration contract | [Not Started] | I-GATED distinct domain |
 | M14 | Optional campus services and private documents | M04, domain anchors | [Not Started] | I-GATED per service |
 | M15 | Notifications, reports, search, audit and AI | Domain permissions and events | [Not Started] | I-GATED per capability |
-| M16 | Flutter shared shell, role routing and modules | M04 plus stable domain APIs | [Not Started] | I-GATED disjoint `lib/features/` |
+| M16 | Flutter shared shell, role routing and modules | Mock UI can precede M04; live APIs cannot | [In Progress — mock only] | I-GATED disjoint `lib/features/` |
 | M17 | Legacy data migration and tenant cutover | M04, domain schema + validated import | [Not Started] | SERIAL per cutover |
 | M18 | Security audit, operations and release | All required gates | [Not Started] | SERIAL release authority |
 
@@ -106,7 +106,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - [ ] **M02.09** [SERIAL] Freeze approved table-catalog version and first physical table batch before SQL.
 
 ### M03 — Single-project database foundation
-- [ ] **M03.01** [SERIAL] Initialize target Supabase CLI project, pin toolchain and lock deployment environments.
+- [ ] **M03.01** [Blocked: Supabase org selection] Create one named development project; pin toolchain, then prepare official migration history. Module 01 portable SQL is drafted in `supabase/schema/`.
 - [ ] **M03.02** [SERIAL] Define private/internal/API schemas and explicit Postgres grants.
 - [ ] **M03.03** [SERIAL] Implement `schools` and school lifecycle / code uniqueness.
 - [ ] **M03.04** [SERIAL] Implement account profiles and verified Auth bindings, including FAMILY kind.
@@ -211,7 +211,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - [ ] **M15.07** [I-GATED: approved domain APIs] Global error taxonomy, tracing and alerting.
 
 ### M16 — Flutter application and role-based interfaces
-- [ ] **M16.00** [I-GATED: folder/state docs] Draft isolated Flutter mock contracts and testable screens without live Supabase access.
+- [ ] **M16.00** [In Progress] Build and validate mock-only Flutter organization screens; source code and widget tests exist, passing test evidence pending.
 - [ ] **M16.01** [SERIAL] Initialize feature-first `lib/` architecture, DI, router and state mechanism.
 - [ ] **M16.02** [SERIAL] Implement Supabase Auth, selected-school context and context-change invalidation.
 - [ ] **M16.03** [SERIAL] Implement permission-aware guards; UI guards never substitute for RLS.
@@ -252,6 +252,8 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 **Session handoff contract:** record task ID; base commit SHA; prerequisite contract/version; exact allowed paths; prohibited paths; test commands; expected acceptance artifacts; commit/PR link; newly discovered risks. Mark `[Blocked]` when a dependency or boundary changes. Merge only after contract compatibility checks. The lead/integrator, not a worker session, updates these canonical trackers.
 
 ## 5. Immediate execution queue
+
+**Latest execution evidence:** [Module 01 private SQL](../../supabase/schema/01_platform_onboarding.sql), [demo seed](../../supabase/seed/01_demo_platform.sql), [SQL smoke checks](../../supabase/tests/01_platform_smoke.sql) and [Flutter mock console](../../lib/features/organization/presentation/organization_control_panel.dart) are committed. **No Supabase project or schema has been created, and Flutter runtime checks are not verified.** [Flutter CI #1](https://github.com/yunusyosaf399/pohantoonai/actions/runs/42839541478) failed without job steps or accessible logs; do not treat it as a code test failure without more evidence.
 
 1. **Owner:** approve/revise the [candidate table catalog](../architecture/table_catalog.md), particularly P0 and first batch; no DDL until approval.
 2. **DB:** finish feature traceability, then propose first table columns/types and tenant anchors in `docs/database/first_batch_schema.md`.
