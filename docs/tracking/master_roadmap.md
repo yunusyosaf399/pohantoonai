@@ -23,8 +23,8 @@
 |---|---:|---:|---|
 | Required modular `docs/` files | 4 | 14 | 29% |
 | All atomic checklist items | 8 | 137 | 6% |
-| Target Supabase schema/RLS migrations | 0 | To be planned after contract freeze | 0 implemented |
-| Flutter migrated feature modules | 0 | To be inventoried | 0 implemented |
+| Target Supabase migrations | 2 | Further module batches TBD | Module 01 schema + function-grant hardening applied on test project |
+| Flutter feature modules | 1 mock-only module | Full integration gated | Organization console source committed; tests not verified |
 | Cross-school isolation test suites | 0 | Required before any production access | 0 validated |
 | Milestones with implementation acceptance | 0 | 19 (M00–M18) | 0% |
 
@@ -62,7 +62,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 | M17 | Legacy data migration and tenant cutover | M04, domain schema + validated import | [Not Started] | SERIAL per cutover |
 | M18 | Security audit, operations and release | All required gates | [Not Started] | SERIAL release authority |
 
-**Two-track rule (2026-11-10):** Database catalog/schema design and Flutter mock-only UI work may run in parallel on disjoint files. No SQL table creation until owner approval of candidate names and first physical batch. Build small batches with primary keys and immutable `school_id` in a non-exposed development schema; do not expose live tenant records while RLS, ACL or relational integrity gates are incomplete. Flutter switches from mocks to Supabase only after safe verified APIs and school A/B denial tests. See [catalog](../architecture/table_catalog.md), [sprint](current_sprint.md) and [session registry](independent_tasks.md).
+**Two-track rule (2026-11-10):** Database catalog/schema design and Flutter mock-only UI work may run in parallel on disjoint files. **Owner authorized iterative test-project deployment by module rather than waiting for all catalog names to be formally approved.** Module 01 has now been applied and tested on the single development Supabase project. Build small batches with primary keys and immutable `school_id` in a non-exposed development schema; do not expose live tenant records while RLS, ACL or relational integrity gates are incomplete. Flutter switches from mocks to Supabase only after safe verified APIs and school A/B denial tests. See [catalog](../architecture/table_catalog.md), [sprint](current_sprint.md) and [session registry](independent_tasks.md).
 
 ## 3. Atomic implementation checklist
 
@@ -253,7 +253,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 
 ## 5. Immediate execution queue
 
-**Latest execution evidence:** [Module 01 private SQL](../../supabase/schema/01_platform_onboarding.sql), [demo seed](../../supabase/seed/01_demo_platform.sql), [SQL smoke checks](../../supabase/tests/01_platform_smoke.sql) and [Flutter mock console](../../lib/features/organization/presentation/organization_control_panel.dart) are committed. **No Supabase project or schema has been created, and Flutter runtime checks are not verified.** [Flutter CI #1](https://github.com/yunusyosaf399/pohantoonai/actions/runs/42839541478) failed without job steps or accessible logs; do not treat it as a code test failure without more evidence.
+**Latest execution evidence (2026-11-10):** Module 01 applied successfully to the one user-created Supabase development project `pohantoonai` (ref `umlzqlbakfwzgadafhyy`, YouPro School). The [12 private onboarding tables](../../supabase/schema/01_platform_onboarding.sql) and [fake seed](../../supabase/seed/01_demo_platform.sql) are deployed; 12/12 have RLS enabled, and 0 have anon/authenticated table read/write access. A previously existing `public.rls_auto_enable()` function had exposed SECURITY DEFINER execution grants; these were revoked via [second SQL patch](../../supabase/schema/02_secure_existing_rls_trigger.sql) and verified. The 12 policy-free private tables produce expected informational linter notices, but no exposed definer warnings remain. [Flutter mock console](../../lib/features/organization/presentation/organization_control_panel.dart) committed; its CI runs have not yet passed. **Live Flutter API/auth and real school provisioning are NOT implemented.**
 
 1. **Owner:** approve/revise the [candidate table catalog](../architecture/table_catalog.md), particularly P0 and first batch; no DDL until approval.
 2. **DB:** finish feature traceability, then propose first table columns/types and tenant anchors in `docs/database/first_batch_schema.md`.
