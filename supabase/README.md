@@ -43,3 +43,14 @@ A school onboarding request is **not yet a school**. The request captures instit
 - Verified 12 platform tables with RLS and no client read/write grants. Sample school application and 3 plans exist.
 - Supabase security linter reports 12 INFO policy-free private tables (intentional). No remaining exposed privileged helper warnings after privilege revocation.
 - Flutter code/tests have not passed a confirmed CI run; live API integration is still pending.
+
+
+## Module 01.1 — First-screen Auth and appearance (2026-11-10)
+
+- [Source SQL](schema/03_account_identity_preferences.sql) deployed as version `20261110174324`, `account_profiles_theme_preferences_rls`.
+- `public.user_profiles` and `public.user_preferences` are RLS-protected, self-service authenticated records, **not** platform or school roles. `auth.users` remains managed by Supabase.
+- [Edge function](functions/account-bootstrap/index.ts) `account-bootstrap` deployed ACTIVE v1, `verify_jwt=true`. Caller token revalidated with Auth; no service-role use or privileged memberships granted.
+- [Smoke test](tests/03_account_auth_smoke.sql) checks ownership-policy inventory, anonymized grants and theme-mode constraint.
+- [Provider configuration](../docs/database/module_01_account_auth.md) requires Google OAuth client ID/secret, email delivery settings and callback allowlist via Dashboard; cannot be performed by currently available Supabase connector calls.
+- `supabase_flutter: 2.18.3` and `shared_preferences: 2.5.5` pinned in pubspec; **lockfile regeneration and Flutter CI are outstanding**. Do not claim successful auth end-to-end without provider configuration.
+- When moving to another Supabase organization, replay the reviewed schema scripts in recorded dependency order and create matching official timestamped CLI migrations; reconcile existing live migration history. **Do not blindly replay the same SQL under new migration names in the existing test project.**
