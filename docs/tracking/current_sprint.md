@@ -71,3 +71,23 @@ SaaS Control Panel
 - [ ] **ARCH-02** Confirm future provider for real billing; current flows are simulation only.
 
 **Last tracking update:** 2026-11-10 after live deployment, synthetic seeding, RLS/ACL verification and unrelated exposed event-trigger function privilege hardening. Flutter CI and live application APIs remain open.
+
+
+## Update — 2026-11-10: First onboarding screen and account authentication
+
+| Task | State | Evidence / remaining gate |
+|---|---|---|
+| Account-profile/theme physical schema | [Completed — deployed] | `public.user_profiles`, `public.user_preferences`; 3 owner-only RLS policies each |
+| Auth account-bootstrap Edge Function | [Completed — deployed] | `account-bootstrap` ACTIVE v1; `verify_jwt=true`, own-row calls |
+| Auth schema lint and grants | [Completed — tested] | 2 tables have RLS, no `anon` grants; older 12 `platform` INFO notices intentionally private |
+| First screen desktop/mobile Flutter UI | [Code committed — needs runtime tests] | Reference-based adaptive layout, progress, logo and original vector illustration |
+| Sign in with Google | [Implemented — provider setup pending] | Supabase OAuth; no client secret; configure Google in Auth dashboard |
+| Continue with email | [Implemented — delivery setup pending] | Supabase email magic link; SMTP and callback URL required |
+| Theme settings | [Implemented — runtime test pending] | System/Light/Dark locally and through `public.user_preferences` |
+| Flutter dependencies / lockfile | [Partially complete] | Pins committed; generate updated `pubspec.lock` with Flutter toolchain |
+| Flutter CI | [Blocked] | [Latest workflow run](https://github.com/yunusyosaf399/pohantoonai/actions/runs/42870388602) failed before reporting job steps; compilation cannot be confirmed |
+| Authenticated sign-in E2E | [Blocked] | Provider credentials, test user and valid deep links not yet tested |
+| Organization operator access | [Not Started] | No automatic admin access after sign-in |
+
+**Next:** Configure provider settings and email delivery, fix Flutter CI execution, generate lockfile, then test the first screen and Auth flow on Android and Windows/Web. Continue plan-selection UI only after account creation is confirmed. Do not start student/finance live table exposure without RLS.
+
