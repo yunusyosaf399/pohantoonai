@@ -1,12 +1,25 @@
-enum OnboardingStatus { draft, submitted, inReview, approved }
+enum OnboardingStatus {
+  draft,
+  submitted,
+  inReview,
+  moreInformation,
+  approved,
+  rejected,
+  provisioned,
+  cancelled,
+}
 
 extension OnboardingStatusLabel on OnboardingStatus {
   String get label => switch (this) {
-    OnboardingStatus.draft => 'Draft',
-    OnboardingStatus.submitted => 'Submitted',
-    OnboardingStatus.inReview => 'In review',
-    OnboardingStatus.approved => 'Approved',
-  };
+        OnboardingStatus.draft => 'Draft',
+        OnboardingStatus.submitted => 'Submitted',
+        OnboardingStatus.inReview => 'In review',
+        OnboardingStatus.moreInformation => 'Information required',
+        OnboardingStatus.approved => 'Approved',
+        OnboardingStatus.rejected => 'Rejected',
+        OnboardingStatus.provisioned => 'Provisioned',
+        OnboardingStatus.cancelled => 'Cancelled',
+      };
 }
 
 class SubscriptionPlan {
@@ -27,8 +40,8 @@ class SubscriptionPlan {
   final int trialDays;
 
   String get displayLimits =>
-      (studentLimit == null ? 'Unlimited' : studentLimit.toString()) + ' students · ' +
-      (campusLimit == null ? 'Unlimited' : campusLimit.toString()) + ' campuses';
+      (studentLimit?.toString() ?? 'Unlimited') + ' students · ' +
+      (campusLimit?.toString() ?? 'Unlimited') + ' campuses';
 }
 
 class SchoolOnboardingRequest {
@@ -59,6 +72,7 @@ class SchoolOnboardingRequest {
   final DateTime createdAt;
 }
 
+/// Applicant-provided information. Authentication and approval are server concerns.
 class SchoolOnboardingDraft {
   const SchoolOnboardingDraft({
     required this.schoolName,
@@ -69,6 +83,14 @@ class SchoolOnboardingDraft {
     required this.planCode,
     required this.studentEstimate,
     required this.campusEstimate,
+    this.legalName,
+    this.registrationNumber,
+    this.contactPhone,
+    this.schoolType = 'private',
+    this.educationBoard,
+    this.curriculumSummary,
+    this.preferredTimezone = 'UTC',
+    this.preferredCurrency = 'USD',
   });
 
   final String schoolName;
@@ -79,4 +101,12 @@ class SchoolOnboardingDraft {
   final String planCode;
   final int studentEstimate;
   final int campusEstimate;
+  final String? legalName;
+  final String? registrationNumber;
+  final String? contactPhone;
+  final String schoolType;
+  final String? educationBoard;
+  final String? curriculumSummary;
+  final String preferredTimezone;
+  final String preferredCurrency;
 }
