@@ -98,7 +98,7 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
                     constraints: const BoxConstraints(maxWidth: 1320),
                     child: Container(
                       key: const Key('onboarding-desktop-layout'),
-                      constraints: const BoxConstraints(minHeight: 680),
+                      height: 800,
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(34),
