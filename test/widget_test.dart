@@ -10,6 +10,16 @@ void main() {
     expect(find.text('Sample Learning Academy'), findsOneWidget);
     expect(find.text('MOCK'), findsOneWidget);
     expect(find.text('Provisioned schools'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName ==
+                'assets/app_logo/app_icon.jpeg',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('school request demo validates required fields', (tester) async {
