@@ -6,6 +6,12 @@
 >
 > This file is an **architectural contract draft**, not an executable migration. Table names, constraints, policies and code samples require design approval, local execution, security tests and CI before they become authoritative.
 
+## Table-catalog approval and design sequence (2026-11-10)
+
+The **[383-table candidate catalog](table_catalog.md)** is the single owner-review inventory of proposed table names across 30 domains. It is **not yet approved**. This schema document remains an earlier architecture sketch, so illustrative names here may differ from final catalog names until the owner approves the catalog and the integrator reconciles both documents.
+
+Parallel development is permitted in two separated tracks: Flutter can design mock-backed models and screens now; the database track proposes core table columns/types after approval. The first actual SQL batch must stay inaccessible to public clients, with immutable `school_id` on tenant rows from creation. The full relationships, RLS, RBAC, functions and error taxonomy are later gates **before** exposing any real school data or letting Flutter write to shared Supabase. See [current sprint](../tracking/current_sprint.md).
+
 ## 1. Architectural decision and scope
 
 **Previous EduSync model:** one Supabase project (including Auth and school data) per school. School identity was implicit in the deployment. The existing Foundation migrations therefore cannot be transplanted unchanged.
