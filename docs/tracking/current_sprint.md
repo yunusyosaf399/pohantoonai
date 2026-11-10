@@ -2,7 +2,7 @@
 
 > **Sprint:** S01 (2026-11-10) · **Status:** [In Progress]  
 > **Approved delivery method:** Commit portable SQL in `supabase/`, deploy changes to **one** dedicated Supabase development project as we proceed, and develop Flutter concurrently. The database must be isolated/private until authenticated RLS/ACL contracts are verified.
-> **Project creation blocker:** user must choose connected Supabase organization: `YouPro School` or `SchoolAgent`. Neither currently has a project named `pohantoonai`.
+> **Development project verified:** `pohantoonai` (`umlzqlbakfwzgadafhyy`), `YouPro School` organization, Tokyo `ap-northeast-2`, PostgreSQL 17, `ACTIVE_HEALTHY`. Module 01 SQL deployed and synthetic seed inserted on 2026-11-10.
 
 ## Scope and source
 
@@ -21,10 +21,10 @@
 | S01-04 | Synthetic demo seed and SQL verification | [Completed — source only] | No real users, billing or payments |
 | S01-05 | Flutter organization panel mock shell | [Completed — source only] | Overview, plans, school requests, form, mobile/desktop navigation |
 | S01-06 | Flutter widget tests and CI job | [In Progress] | Source tests committed; [GitHub run #1](https://github.com/yunusyosaf399/pohantoonai/actions/runs/42839541478) failed with no job steps/log; code not yet validated |
-| S01-07 | Select Supabase organization | [Blocked — Owner Input] | Choose `YouPro School` or `SchoolAgent` |
-| S01-08 | Create **one** development project `pohantoonai` | [Blocked — S01-07] | Project region recommended `ap-south-1` for test use, subject to preference and cost handling |
-| S01-09 | Deploy Module 01 DDL and fake seed | [Blocked — S01-08] | Verify 12 tables and 3 test plans |
-| S01-10 | Run SQL checks and security advisors | [Blocked — S01-09] | Validate no anonymous access and cross-organization references |
+| S01-07 | Select Supabase organization | [Completed] | User created `pohantoonai` in `YouPro School` |
+| S01-08 | Create **one** development project `pohantoonai` | [Completed] | Existing user-created project `umlzqlbakfwzgadafhyy`, Tokyo, active healthy |
+| S01-09 | Deploy Module 01 DDL and fake seed | [Completed] | `apply_migration(platform_onboarding_foundation)` succeeded; synthetic seed executed; 12 tables, 3 plans |
+| S01-10 | Run SQL checks and security advisors | [Completed — initial checks] | RLS 12/12; anon/auth readable 0, writable 0; hardened `public.rls_auto_enable()`; security linter INFO 12 intentionally policy-free |
 | S01-11 | Operator authentication and reviewed onboarding API | [Not Started] | Never publish raw `platform` tables |
 | S01-12 | Wire Flutter to **verified** live organization API | [Blocked — S01-11] | No service/secret key in client |
 | S01-13 | Module 02: verified school provisioning and school profile | [Not Started] | Begins after subscription/trial authorization and protected provisioning contract |
@@ -43,23 +43,23 @@ SaaS Control Panel
 
 ## Parallel work allocation
 
-- **DB stream:** Module 01 SQL is in the repo; once Supabase organization is selected, deploy to one test project, seed demo rows, run checks, add protected server endpoints.
+- **DB stream:** Module 01 schema and synthetic seed are deployed to one user-created test project; continue with operator identity and protected API functions, and preserve every SQL change in `supabase/`.
 - **Flutter stream:** Can improve forms, responsive layouts, state tests and organization UI using the in-memory repository while backend work proceeds. Never expose unguarded private tables merely to make the UI work.
 - **Integrator:** Sole owner for shared `lib/main.dart`, workflow/build graph, official migrations, deployment state and test evidence. Merge other feature modules only when paths are disjoint.
 
 ## Testing and acceptance
 
-- **Schema deployment:** [Not Started]; no live Supabase project selected.
-- **Seed execution:** [Not Started]; demo SQL prepared.
-- **RLS/ACL live verification:** [Not Started]; protective DDL written only.
+- **Schema deployment:** [Completed for Module 01] in `umlzqlbakfwzgadafhyy` using tracked `platform_onboarding_foundation` migration.
+- **Seed execution:** [Completed for Module 01] 1 organization, 3 demo plans, 3 zero-dollar plan prices, 9 demo features, 1 school application, 1 subscription request.
+- **RLS/ACL live verification:** [Passed for deny-all private baseline] 12/12 RLS enabled, 0 public client table read/write grants. Security linter shows 12 INFO notices for intentionally absent policies; privileged pre-existing `public.rls_auto_enable()` function was hardened with `supabase/schema/02_secure_existing_rls_trigger.sql` (verified client execution revoked). Future API policy tests still required.
 - **Flutter unit/widget test:** [Unverified]; local Flutter SDK unavailable in execution environment. GitHub Actions run #1 failed before steps; failure cause unconfirmed.
 - **Production:** not authorized; never seed sample records into production.
 
 ## Decisions requested
 
-- [ ] **ORG-01** Select the development Supabase organization: `YouPro School` or `SchoolAgent`.
-- [ ] **ORG-02** Accept automatic project region `ap-south-1` for testing, or select a different supported region.
+- [x] **ORG-01** Development Supabase organization: `YouPro School` (user-created project confirmed).
+- [x] **ORG-02** Project region is `ap-northeast-2` (Tokyo), as created by user.
 - [ ] **ARCH-01** Confirm catalog table naming changes and Module 01 onboarding information.
 - [ ] **ARCH-02** Confirm future provider for real billing; current flows are simulation only.
 
-**Last tracking update:** 2026-11-10 after committing Module 01 Flutter, private schema, seed and test sources; deployment/test acceptance remains open.
+**Last tracking update:** 2026-11-10 after live deployment, synthetic seeding, RLS/ACL verification and unrelated exposed event-trigger function privilege hardening. Flutter CI and live application APIs remain open.
