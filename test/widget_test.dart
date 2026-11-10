@@ -86,7 +86,9 @@ Future<void> pumpAppAt(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  await tester.pumpWidget(PohantoonAiApp(repository: repository));
+  await tester.pumpWidget(
+    PohantoonAiApp(repository: repository, showOrganizationPreview: true),
+  );
   await tester.pumpAndSettle();
 }
 
