@@ -22,17 +22,17 @@ class _OrganizationControlPanelState extends State<OrganizationControlPanel> {
   }
 
   Future<void> _newSchool() async {
-    await showDialog<void>(
+    final saved = await showDialog<bool>(
       context: context,
       builder: (context) => _NewSchoolDialog(
         plans: _repository.plans,
         onSubmit: (draft) {
           _repository.submit(draft);
-          Navigator.of(context).pop();
+          Navigator.of(context).pop(true);
         },
       ),
     );
-    if (!mounted) return;
+    if (!mounted || saved != true) return;
     setState(() => _tab = 2);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
