@@ -232,4 +232,37 @@
 
 **Safe now, provided each session edits only its named output file:** M00.04 (`edusync_feature_inventory.md`), M01.03, M01.05, M01.06, M01.10, M01.11 and M01.12. Sessions may read any source, but must not edit `master_roadmap.md`, `database_schema.md`, shared SQL, `pubspec.yaml` or another session's paths.
 
-**Gated:** all `[I-GATED]` entries require their stated completed dependency and a pinned schema/API/permission contract. After gate approval, separate worktrees/branches and exclusive `lib/features/<feature>/`, service or draft-migration subdirectories may be developed independently. An assigned integrator alone edits ordered `supabase/migrations
+**Gated:** all `[I-GATED]` entries require their stated completed dependency and a pinned schema/API/permission contract. After gate approval, separate worktrees/branches and exclusive `lib/features/<feature>/`, service or draft-migration subdirectories may be developed independently. An assigned integrator alone edits ordered `supabase/migrations/*.sql`, central routing/DI, shared enums, permissions, tests manifest and trackers.
+
+**Never independently parallelize:** school bootstrap, core tenancy/RLS, Auth-identity mapping, migration numbering, shared permission catalog, billing integrity, final merge, data cutover or production release. Two independent sessions must not run migrations against the same mutable database.
+
+**Session handoff contract:** record task ID; base commit SHA; prerequisite contract/version; exact allowed paths; prohibited paths; test commands; expected acceptance artifacts; commit/PR link; newly discovered risks. Mark `[Blocked]` when a dependency or boundary changes. Merge only after contract compatibility checks. The lead/integrator, not a worker session, updates these canonical trackers.
+
+## 5. Immediate execution queue
+
+1. **M01.13–M01.14 [SERIAL]:** create the sprint queue and independent-session registry using this roadmap.
+2. **M00.04–M00.07:** complete feature-to-file inventory and classify legacy migrations against immutable `school_id`.
+3. **M02.01–M02.05:** review and freeze tenant, identity, RBAC, API exposure and school-bootstrap decisions.
+4. **M03.01–M03.06:** implement a disposable local foundation, *then* write the first tested migration.
+5. **M04.01–M04.09:** prove multi-school isolation before domain data or real student records are imported.
+
+## 6. Risk and decision register
+
+| Risk / open question | Required decision or evidence | Blocking |
+|---|---|---|
+| Legacy SQL relies on school-wide DB isolation | Rewrite tenant keys, FKs, functions, RLS and all hard-coded singleton assumptions | M03–M18 |
+| Cross-school user and shared-family credentials | Identity model, ownership and verified child access | M02, M07, M17 |
+| Platform operator as implicit RLS superuser | Server-only operator capability, approvals and audited support access | M04–M05 |
+| Mutable/JWT-derived permissions | Database-live, revocable permission and scope resolver | M04 |
+| Source `sql.draft` implies readiness | New target migration tests and acceptance evidence | M03 onward |
+| Auth account collision across old Supabase projects | Deterministic mapping and safe re-enrollment | M17 |
+| Shared project backup/capacity blast radius | Whole-project recovery + tenant-specific export and limits | M18 |
+| Storage provider and sensitive document handling | Private metadata, tokenized access, per-purpose entitlement | M14 |
+| Supabase SDK/CLI breaking changes | Pin versions; verify current CLI v3 / Flutter SDK v3 migration notes | M02–M03 |
+| 2026 API grant default changed | Explicit GRANTs + RLS for all intended Data API objects | M03–M04 |
+
+## 7. Maintenance protocol
+
+After **every** accepted task: (1) change its checkbox; (2) set milestone status in section 2; (3) recalculate progress in section 1; (4) update current sprint / independent assignment ownership; (5) link commit, CI, test and relevant ADR evidence; (6) note new blockers and next unblocked action. Do not derive completion from percentage alone or from historical EduSync status.
+
+**References:** [source requirements](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/requirements/FEATURE_CATALOG_AND_STATUS.md) · [source identity model](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/security/01_identity_auth_model.md) · [source RLS matrix](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/security/03_foundation_rls_matrix.md) · [proposed new schema](../architecture/database_schema.md).
