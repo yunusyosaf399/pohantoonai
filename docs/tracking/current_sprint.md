@@ -41,6 +41,14 @@ SaaS Control Panel
   └─ Provision a real school tenant (Module 02; not implemented)
 ```
 
+## Branding task — launcher and header (2026-11-10)
+
+- [x] Register the three existing Pohantoon AI logo JPEGs under Flutter `assets:` in `pubspec.yaml`.
+- [x] Replace the generic school icon in the Organization Control Panel header with the existing `app_icon.jpeg`.
+- [x] Add `flutter_launcher_icons.yaml` for Windows, Android, iOS, Web and macOS, using the existing logo rather than inventing new branding.
+- [x] Add a header logo widget assertion and setup instructions.
+- [ ] **Pending on a Flutter-enabled machine:** `flutter pub get`, `dart run flutter_launcher_icons`, commit generated native icon resources plus updated `pubspec.lock`, and verify `flutter run -d windows`. The tracked Windows `.ico` has **not** been regenerated in GitHub yet.
+
 ## Parallel work allocation
 
 - **DB stream:** Module 01 schema and synthetic seed are deployed to one user-created test project; continue with operator identity and protected API functions, and preserve every SQL change in `supabase/`.
