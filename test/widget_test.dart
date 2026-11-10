@@ -63,7 +63,7 @@ const demoPlan = SubscriptionPlan(
   trialDays: 14,
 );
 
-const sampleRequest = SchoolOnboardingRequest(
+final sampleRequest = SchoolOnboardingRequest(
   id: 'SAMPLE01',
   schoolName: 'Sample Learning Academy',
   ownerName: 'Sample School Owner',
@@ -156,8 +156,8 @@ void main() {
   testWidgets('failed data loading provides a retry path',
       (tester) async {
     final repository = ScenarioRepository(
-      snapshot: const OrganizationSnapshot(
-        plans: [demoPlan],
+      snapshot: OrganizationSnapshot(
+        plans: const [demoPlan],
         requests: [sampleRequest],
       ),
       failFirstLoad: true,
@@ -231,8 +231,8 @@ void main() {
   testWidgets('save error retains inputs for correction and retry',
       (tester) async {
     final repository = ScenarioRepository(
-      snapshot: const OrganizationSnapshot(
-        plans: [demoPlan],
+      snapshot: OrganizationSnapshot(
+        plans: const [demoPlan],
         requests: [sampleRequest],
       ),
       failFirstSubmit: true,
@@ -248,10 +248,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('form-submit-error')), findsOneWidget);
     expect(repository.submitCalls, 1);
-    expect(
-      find.text('Pilot School', findRichText: true),
-      findsWidgets,
+    final field = tester.widget<TextFormField>(
+      find.byKey(const Key('school-name-field')),
     );
+    expect(field.controller?.text, 'Pilot School');
     await tester.tap(find.byKey(const Key('submit-school-request')));
     await tester.pumpAndSettle();
     expect(repository.submitCalls, 2);
