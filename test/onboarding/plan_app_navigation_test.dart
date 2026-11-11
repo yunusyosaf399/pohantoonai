@@ -6,6 +6,7 @@ import 'package:pohantoonai/features/onboarding/data/onboarding_plan_repository.
 import 'package:pohantoonai/features/onboarding/domain/onboarding_plan_offer.dart';
 import 'package:pohantoonai/features/onboarding/domain/school_setup_draft.dart';
 import 'package:pohantoonai/features/onboarding/data/school_setup_repository.dart';
+import 'package:pohantoonai/features/onboarding/data/review_confirmation_repository.dart';
 import 'package:pohantoonai/main.dart';
 
 class TestAccount implements AccountAuthGateway {
@@ -59,6 +60,20 @@ class TestSchoolDrafts implements SchoolSetupRepository {
   }
 }
 
+class TestReviewConfirmation implements ReviewConfirmationRepository {
+  int saveCount = 0;
+  @override
+  Future<void> confirm({
+    required SchoolSetupDraft draft,
+    required OnboardingPlanOffer plan,
+  }) async {
+    saveCount++;
+    if (!draft.readyForReview) {
+      throw StateError('Draft not ready for review');
+    }
+  }
+}
+
 void main() {
   testWidgets('signed-in applicant advances from plan to real Step 3 form',
       (tester) async {
@@ -68,11 +83,13 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final plans = TestPlans();
     final drafts = TestSchoolDrafts();
+    final reviews = TestReviewConfirmation();
 
     await tester.pumpWidget(PohantoonAiApp(
       authGateway: TestAccount(),
       planRepository: plans,
       schoolSetupRepository: drafts,
+      reviewConfirmationRepository: reviews,
       themeController: ThemeController(),
     ));
     await tester.pumpAndSettle();
@@ -132,11 +149,29 @@ void main() {
     expect(drafts.saved?.readyForReview,true);
     expect(drafts.saved?.schoolName,'Sample Academy');
     expect(find.byKey(const Key('school-review-preview-title')),findsOneWidget);
-    expect(find.textContaining('no school was created'),findsOneWidget);
+    expect(find.text('Review Your School Application'),findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('school-review-edit')));
+    // Must explicitly confirm the details before entering Step 5.
+    await tester.ensureVisible(
+      find.byKey(const Key('review-confirmation-checkbox')));
+    await tester.tap(find.byKey(const Key('review-confirmation-checkbox')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('review-go-to-payment')));
+    await tester.tap(find.byKey(const Key('review-go-to-payment')));
+    await tester.pumpAndSettle();
+    expect(reviews.saveCount, 1);
+    expect(find.byKey(const Key('payment-preview-title')),findsOneWidget);
+    expect(find.byKey(const Key('payment-not-configured-notice')),
+      findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('payment-back-to-review')));
+    await tester.pumpAndSettle();
+    expect(find.text('Review Your School Application'),findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('review-edit-academics')));
+    await tester.tap(find.byKey(const Key('review-edit-academics')));
     await tester.pumpAndSettle();
     expect(find.text('Tell us about your school'),findsOneWidget);
+    expect(find.byKey(const Key('school-field-students')),findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
