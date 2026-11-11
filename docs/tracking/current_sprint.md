@@ -190,3 +190,19 @@ SaaS Control Panel
 
 - [SQL](../../supabase/schema/07_school_setup_postal_code.sql) deployed to existing test Supabase project as migration `20261111120829`: nullable `postal_code` on school draft, at most 32 characters; existing draft values untouched.
 - [Step 3](../../lib/features/onboarding/presentation/school_setup_screen.dart), [draft model](../../lib/features/onboarding/domain/school_setup_draft.dart) and [Step 4 review](../../lib/features/onboarding/presentation/school_review_preview.dart) now contain the optional postal code.
+
+
+## Module 01.5 — Subscription Payment screen and Skip for Now (2026-11-11)
+
+| Task | State | Evidence |
+|---|---|---|
+| Mobile/tablet/desktop Light/Dark Flutter payment UI | **[Code committed]** | [Step 5 UI](../../lib/features/onboarding/presentation/school_payment_preview.dart) |
+| Method, cycle, billing fields / save preferences | **[Code committed]** | [Domain](../../lib/features/onboarding/domain/onboarding_payment_preferences.dart) and [RLS repository](../../lib/features/onboarding/data/onboarding_payment_preferences_repository.dart) |
+| Own-row billing preferences DB and test skip | **[DB deployed]** | [Portable SQL](../../supabase/schema/08_onboarding_payment_preferences.sql), migration 20261111122224 |
+| Negative RLS and input-state tests | **[DB tests passed]** | [Rollback-only test](../../supabase/tests/08_payment_preferences_security.sql) |
+| Skip for Now navigation to Step 6 | **[Code committed]** | [Main routing](../../lib/main.dart) and [non-provisioned Step 6 preview](../../lib/features/onboarding/presentation/school_dashboard_setup_preview.dart) |
+| Flutter UI/widget/integration tests | **[Written, not run]** | [Step 5 widgets](../../test/onboarding/school_payment_screen_test.dart) and [6-step navigation](../../test/onboarding/plan_app_navigation_test.dart) |
+| Real payments, prices, taxes, coupons, processor | **[Not implemented]** | Pay Now disabled; no PAN/CVV collection or misleading sample SAR charges |
+| Dashboard permissions / school provisioning | **[Not implemented]** | Test skip does NOT approve, bill, provision or enable school operations |
+
+**Next gate:** Test the Flutter code on Windows/mobile/Web, then define real school-approval and payment order, secure provider checkout/webhooks/idempotency and authorized school provisioning before allowing any paid activation.
