@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/settings/appearance_settings_button.dart';
 import '../../auth/presentation/school_campus_illustration.dart';
 import '../data/school_setup_repository.dart';
+import '../data/school_logo_repository.dart';
+import 'school_logo_picker.dart';
 import '../domain/onboarding_plan_offer.dart';
 import '../domain/school_setup_draft.dart';
 
@@ -19,6 +21,7 @@ class SchoolSetupScreen extends StatefulWidget {
     required this.onContinue,
     this.accountEmail,
     this.initialSection,
+    this.logoRepository,
   });
   final OnboardingPlanOffer plan;
   final SchoolSetupRepository repository;
@@ -29,6 +32,7 @@ class SchoolSetupScreen extends StatefulWidget {
   final String? accountEmail;
   /// Opens the matching card when an Edit action is chosen in Step 4.
   final String? initialSection;
+  final SchoolLogoRepository? logoRepository;
 
   @override
   State<SchoolSetupScreen> createState() => _SchoolSetupScreenState();
@@ -42,6 +46,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     'board','curriculum','otherCountry','otherZone','otherCurrency',
     'otherLowest','otherHighest',
   ];
+  String? logoPath;
   final Map<String, GlobalKey> sectionKeys = {
     'identity': GlobalKey(),
     'contact': GlobalKey(),
@@ -185,6 +190,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
   }
 
   void _restore(SchoolSetupDraft d) {
+    logoPath = d.logoStoragePath;
     void put(String k,Object? v) => controller(k).text = v?.toString() ?? '';
     put('schoolName',d.schoolName); put('legalName',d.legalSchoolName);
     put('registration',d.registrationLicenseNumber);
@@ -219,6 +225,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     schoolName:value('schoolName'), legalSchoolName:value('legalName'),
     schoolType:schoolType, registrationLicenseNumber:value('registration'),
     establishedYear:number('year'), websiteUrl:value('website'),
+    logoStoragePath:logoPath,
     contactName:value('contactName'),contactPosition:value('contactPosition'),
     contactEmail:value('contactEmail'),contactPhone:value('contactPhone'),
     countryCode:finalCountry,region:value('region'),city:value('city'),
@@ -565,6 +572,15 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
   Widget _formCards() {
     final cards=<Widget>[
       _card('School Identity',Icons.apartment_outlined,[
+        SchoolLogoPicker(
+          key: const Key('school-setup-logo'),
+          path: logoPath,
+          repository: widget.logoRepository,
+          onChanged: (path) => setState(() {
+            logoPath = path;
+            dirty = true;
+          })),
+
         _text('School name','schoolName',
           hint:'Enter school name',mandatory:true),
         _text('Legal school name','legalName',
