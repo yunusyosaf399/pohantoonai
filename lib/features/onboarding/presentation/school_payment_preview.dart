@@ -555,6 +555,14 @@ class _SchoolPaymentPreviewState extends State<SchoolPaymentPreview> {
       icon: const Icon(Icons.arrow_back),
       onPressed: saving ? null : widget.onBack,
       label: const Text('Back'));
+    // Keep the requested call-to-action visible but provably inactive.
+    // Only a verified payment provider may enable real checkout.
+    final pay = FilledButton.icon(
+      key: const Key('payment-pay-disabled'),
+      icon: const Icon(Icons.lock_outline),
+      onPressed: null,
+      label: const Text('Pay Now & Activate'),
+    );
     final skip = FilledButton.icon(
       key: const Key('payment-skip-for-now'),
       iconAlignment: IconAlignment.end,
@@ -572,23 +580,23 @@ class _SchoolPaymentPreviewState extends State<SchoolPaymentPreview> {
           children: [
             skip,
             const SizedBox(height: 11),
+            pay,
+            const SizedBox(height: 11),
             Row(children: [
               Expanded(child: back),
               const SizedBox(width: 10),
               Expanded(child: save),
             ]),
-            const SizedBox(height: 12),
-            const Text('Pay Now & Activate — Coming Soon',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12)),
           ],
         );
       }
       return Row(children: [
         back,
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         save,
         const Spacer(),
+        pay,
+        const SizedBox(width: 10),
         skip,
       ]);
     });
