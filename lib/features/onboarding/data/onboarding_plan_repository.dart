@@ -23,7 +23,9 @@ class SupabaseOnboardingPlanRepository implements OnboardingPlanRepository {
 
   @override
   Future<List<OnboardingPlanOffer>> loadActivePlans() async {
-    _userId;
+    if (_client.auth.currentUser == null) {
+      throw const AuthException('Sign in to choose a plan.');
+    }
     final rows = await _client
         .from('onboarding_plan_offers')
         .select('id,code,name,summary,student_limit,campus_limit,'
