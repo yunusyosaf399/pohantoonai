@@ -151,6 +151,28 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('skip works even when optional billing email is invalid',
+      (tester) async {
+    final repo = FakeBilling();
+    int nextCalls = 0;
+    await mount(tester, const Size(390, 844), repo,
+      skip: () => nextCalls++);
+    await tester.ensureVisible(
+      find.byKey(const Key('payment-billing-billingEmail')));
+    await tester.enterText(
+      find.byKey(const Key('payment-billing-billingEmail')),
+      'invalid email');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('payment-skip-for-now')));
+    await tester.tap(find.byKey(const Key('payment-skip-for-now')));
+    await tester.pumpAndSettle();
+    expect(nextCalls, 1);
+    expect(repo.loaded?.skippedForTesting, isTrue);
+    expect(repo.loaded?.billingEmail, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('failed database write blocks test skip',
       (tester) async {
     final repo = FakeBilling(failSave: true);
