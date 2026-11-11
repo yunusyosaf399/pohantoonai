@@ -6,6 +6,8 @@ This folder is the **portable database source of truth**. It is intended to be r
 
 | Path | Role |
 |---|---|
+| `schema/06_onboarding_review_confirmation.sql` | **Deployed Module 01.4** own-account review acknowledgement with draft revision/plan concurrency checks |
+| `tests/06_review_confirmation_security.sql` | Executed rollback-only tests: stale revision, forged user, plan mismatch rejected |
 | `schema/05_school_setup_drafts.sql` | **Deployed Module 01.3** owner-scoped school draft fields, required-field/capacity constraints and reset-on-plan-change logic |
 | `tests/05_school_setup_security.sql` | Executed transactionally: partial draft, readiness checks, ID spoofing rejection, plan limit checks and plan-change reset |
 | `schema/04_onboarding_plan_selection.sql` | **Deployed Module 01.2** secure published offer snapshots, owner-only draft choices, source synchronization |
@@ -78,3 +80,11 @@ A school onboarding request is **not yet a school**. The request captures instit
 - Owner-only `SELECT/INSERT/UPDATE` RLS; no anonymous access or client DELETE.
 - No payment, operator review or school provisioned. [Transactional security test](tests/05_school_setup_security.sql) passed and rolled back.
 - [Step 3 UX and schema mapping](../docs/database/module_01_school_setup.md). Test on actual Flutter devices before production use.
+
+## Module 01.4 — Step 4 Review + Go to Payment (2026-11-11)
+
+- [Schema](schema/06_onboarding_review_confirmation.sql) deployed as migration `20261111115622` (`secure_review_confirmation_for_payment_handoff`). No second Supabase project was created.
+- `public.onboarding_review_confirmations` records the applicant's acknowledgement of the **exact current Step 3 revision** and current selected plan. RLS: own-account SELECT/INSERT/UPDATE only; no anon grants.
+- [Transactional negative tests](tests/06_review_confirmation_security.sql) verified own confirmation, rejection of stale/mismatched plan/user; zero test confirmations persisted.
+- **No application is submitted or approved and no payment is performed** by recording this acknowledgement. Future payment backend must perform its own authoritative verification.
+- See [Step 4 UI and schema contract](../docs/database/module_01_application_review.md).
