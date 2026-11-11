@@ -165,3 +165,9 @@ This branch added pinned file_selector 1.1.0 to pubspec.yaml for cross-platform 
 
 
 **Owner profile:** The dashboard settings sheet now edits the signed-in owner's display name, phone, job title and Auth password, separate from editable school contact and identity details. The associated [owner-profile migration](supabase/schema/13_owner_profile_contact_details.sql) is deployed; [SQL negative tests](supabase/tests/13_owner_profile_security.sql) passed. The Auth sign-in email stays locked.
+
+### Authentication acceptance status (2026-11-11)
+
+Authentication now tracks the stable Supabase Auth user ID across Google and email/password sign-ins and clears previous dashboard state when accounts change. The [cross-provider and OTP workflow widget test](test/auth/auth_return_to_dashboard_flow_test.dart) is committed; [RLS test SQL 15](supabase/tests/15_auth_provider_same_account_rls.sql) passed in a rollback-only database transaction using real account/provider relationships. This confirms account-owned access, not an actual browser login or delivered email.
+
+[Hosted email/SMTP checklist](https://github.com/yunusyosaf399/pohantoonai/issues/1) and [Flutter SDK/CI execution checklist](https://github.com/yunusyosaf399/pohantoonai/issues/2) track the remaining external steps. [Full acceptance runbook](docs/testing/auth_return_to_dashboard_acceptance.md).
