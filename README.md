@@ -32,6 +32,16 @@ flutter run --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-d
 
 **Important:** The package lockfile must be regenerated and committed by running `flutter pub get` with a working Flutter SDK (not available in this execution environment). Current GitHub Actions runs fail before job steps; build/test success is not yet verified.
 
+## Android APK for mobile testers
+
+An automated GitHub Actions workflow now builds a **debug test APK** from `main` and, on success, uploads it as an Actions artifact and attempts a prerelease for direct installation.
+
+**Current blocker:** [first APK build](https://github.com/yunusyosaf399/pohantoonai/actions/runs/42956828072) failed **before any steps ran**, leaving **no APK**. Previous Flutter CI runs showed the same runner-start problem. Check GitHub Actions / repository permissions / account billing and budget (exact root cause has not been confirmed).
+
+- [Build Android Test APK workflow](.github/workflows/android-apk.yml)
+- [Mobile download and installation instructions](docs/flutter/android_apk_build.md)
+- [Latest test releases](https://github.com/yunusyosaf399/pohantoonai/releases) (only after a successful build)
+
 ## Authentication provider setup
 
 Flutter uses Supabase-managed Google OAuth and passwordless email magic links. Google provider credentials, email sender/SMTP and callback URL allowlists **must** be configured in the project's Supabase dashboard before end-to-end login will work. See [exact provider and redirect setup](docs/database/module_01_account_auth.md).
