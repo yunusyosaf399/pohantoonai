@@ -133,3 +133,8 @@ Executed [transactional SQL security test](tests/08_payment_preferences_security
 ### Owner profile extension (migration 13)
 
 [13_owner_profile_contact_details.sql](schema/13_owner_profile_contact_details.sql): deployed account-owned phone and position fields with length constraints; never store any password or OTP. Existing user_profiles own-row RLS remains enabled. [Rollback-only negative tests](tests/13_owner_profile_security.sql) passed.
+
+
+### Required school completion validation (migration 14)
+
+[14_dev_workspace_required_fields.sql](schema/14_dev_workspace_required_fields.sql): deployed additional workspace INSERT policy and trigger checks for school name, contact name/email, school type, location, student/campus estimates and plan limits, independent of Flutter UI. [Security test](tests/14_dev_workspace_required_fields_security.sql) passed with rollback.
