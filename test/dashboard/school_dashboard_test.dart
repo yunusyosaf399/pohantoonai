@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pohantoonai/core/ui/app_theme.dart';
@@ -120,6 +122,35 @@ void main() {
     expect(find.textContaining('Illustrative chart only'),findsOneWidget);
     await tester.tap(find.byKey(const Key('close-fullscreen-trend')));
     await tester.pumpAndSettle();
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('analytics hover pauses 10-second automatic rotation',
+      (tester) async {
+    await mountDashboard(tester,const Size(1500,1000));
+    final panel=find.byKey(const Key('dashboard-analytics-panel'));
+    await tester.ensureVisible(panel);
+    final mouse=await tester.createGesture(
+      kind:PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(
+      location:tester.getCenter(panel));
+    await tester.pump();
+    await tester.pump(const Duration(seconds:11));
+    expect(find.text('Student enrollment'),findsOneWidget);
+    await mouse.moveTo(const Offset(3,3));
+    await tester.pump();
+    await tester.pump(const Duration(seconds:11));
+    expect(find.text('Attendance trend'),findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('recent approvals and admissions rotate demo pages',
+      (tester) async {
+    await mountDashboard(tester,const Size(1500,1000));
+    await tester.pump(const Duration(seconds:11));
+    expect(find.text('Omar Ehsan'),findsOneWidget);
+    expect(find.text('Aisha Rahimi'),findsWidgets);
     expect(tester.takeException(),isNull);
   });
 
