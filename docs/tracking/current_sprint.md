@@ -185,3 +185,8 @@ SaaS Control Panel
 | Real Windows/Android/iOS/Web UI testing | **[Pending]** | GitHub Actions runner blocked by account billing; no compilation claim |
 
 **Note:** User requested Go to Payment rather than Submit Application. This is implemented as a safe stage handoff only, not authorization to charge before school/operator approval. Clarify production approval/checkout order before implementing Step 5.
+
+### Step 4 reference completeness — optional postal code
+
+- [SQL](../../supabase/schema/07_school_setup_postal_code.sql) deployed to existing test Supabase project as migration `20261111120829`: nullable `postal_code` on school draft, at most 32 characters; existing draft values untouched.
+- [Step 3](../../lib/features/onboarding/presentation/school_setup_screen.dart), [draft model](../../lib/features/onboarding/domain/school_setup_draft.dart) and [Step 4 review](../../lib/features/onboarding/presentation/school_review_preview.dart) now contain the optional postal code.
