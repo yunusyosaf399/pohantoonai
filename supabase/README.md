@@ -6,6 +6,8 @@ This folder is the **portable database source of truth**. It is intended to be r
 
 | Path | Role |
 |---|---|
+| schema/08_onboarding_payment_preferences.sql | **Deployed Module 01.5** own-account billing preferences and unpaid test-only skip state, no card data |
+| tests/08_payment_preferences_security.sql | **Executed** transactional ownership, invalid status/format/method, server-generated skip time checks |
 | `schema/07_school_setup_postal_code.sql` | **Deployed** optional postal/ZIP code support for the School Setup and Application Review cards |
 | `schema/06_onboarding_review_confirmation.sql` | **Deployed Module 01.4** own-account review acknowledgement with draft revision/plan concurrency checks |
 | `tests/06_review_confirmation_security.sql` | Executed rollback-only tests: stale revision, forged user, plan mismatch rejected |
@@ -93,3 +95,10 @@ A school onboarding request is **not yet a school**. The request captures instit
 ### Optional postal code extension (2026-11-11)
 
 [Migration `20261111120829`](schema/07_school_setup_postal_code.sql) added nullable `school_setup_drafts.postal_code` with a length check. Verified via live `information_schema.columns`. It is compatible with previously saved school drafts and requires no new school tenant.
+
+
+## Module 01.5 — Payment preview with unpaid skip
+
+On 2026-11-11, deployed migration 20261111122224 (secure_payment_preferences_and_test_skip) to the same one-project development database, source: [schema/08_onboarding_payment_preferences.sql](schema/08_onboarding_payment_preferences.sql). The newly created public.onboarding_payment_preferences table has authenticated owner-only SELECT/INSERT/UPDATE RLS, no anon grant and no DELETE. A non-privileged trigger ensures the current Step 3 details and Step 4 confirmation have not gone stale. The only state values are preferences_only and skipped_for_testing; no paid/active/charge fields exist.
+
+Executed [transactional SQL security test](tests/08_payment_preferences_security.sql) successfully, leaving zero test billing records. Flutter UI design and safety contract: [module_01_subscription_payment.md](../docs/database/module_01_subscription_payment.md).
