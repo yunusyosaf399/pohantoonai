@@ -207,6 +207,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _signedIn = _auth!.signedIn;
       _authListener = _auth!.sessionChanges.listen((signedIn) {
         if (!mounted) return;
+        final wasSignedIn=_signedIn;
         setState(() {
           _signedIn = signedIn;
           if (signedIn) _authError = null;
@@ -220,7 +221,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _dashboardTestPreview = false;
           }
         });
-        if (signedIn) {
+        if (signedIn && !wasSignedIn) {
           _loadAccountPreferences();
           _restoreWorkspace();
         }
@@ -423,6 +424,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                                         Supabase.instance.client),
                                 initialSection: _editSection,
                                 logoRepository: widget.logoRepository,
+                                directDashboard: _workspaces != null,
                                 accountEmail: _auth?.signedInEmail,
                                 themeMode: _theme.value,
                                 onThemeChanged: _changeTheme,
