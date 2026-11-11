@@ -260,6 +260,13 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - **Build validation blocked:** Current GitHub Actions job reports failure without job steps or downloadable runner logs; Flutter SDK unavailable in this execution environment. Pin versions in `pubspec.yaml` and commit a resolved lockfile when the toolchain runs. Do not check implementation tasks as complete until verification passes.
 - **Existing `platform` tables:** 12 private tables intentionally keep zero policies; no general authenticated access to organizational records.
 
+## Module 01.3 execution evidence — 2026-11-11
+
+- [Step 3 module design](../database/module_01_school_setup.md) documents database and responsive Flutter UI; live schema `20261111064830` applied to the single `pohantoonai` development project.
+- `public.school_setup_drafts` is **applicant-owned** and dependent on their saved Step 2 plan. RLS, constraints and server-side plan capacity checks were executed in rollback-only tests. No fake school created.
+- Flutter Step 3 form and Step 4 **read-only review preview** committed and wired to `lib/main.dart`; live app compilation and device testing remain blocked by GitHub Actions billing/runner issue.
+- No money, school provisioning or organization admin access occurs on draft save or review readiness.
+
 ## Module 01.2 execution evidence — 2026-11-11
 
 - [Step 2 module design and tests](../database/module_01_plan_selection.md): two new live public tables, four RLS policies and protected catalog sync against the existing private three-plan source. Migration `20261111050513` applied to the single `pohantoonai` Supabase project.
