@@ -6,6 +6,8 @@ This folder is the **portable database source of truth**. It is intended to be r
 
 | Path | Role |
 |---|---|
+| `schema/05_school_setup_drafts.sql` | **Deployed Module 01.3** owner-scoped school draft fields, required-field/capacity constraints and reset-on-plan-change logic |
+| `tests/05_school_setup_security.sql` | Executed transactionally: partial draft, readiness checks, ID spoofing rejection, plan limit checks and plan-change reset |
 | `schema/04_onboarding_plan_selection.sql` | **Deployed Module 01.2** secure published offer snapshots, owner-only draft choices, source synchronization |
 | `seed/02_demo_plan_descriptions.sql` | Development-only descriptions matching Step 2 references, verified synchronized |
 | `tests/04_onboarding_plan_security.sql` | Executed RLS negative test inside ROLLBACK transactions |
@@ -15,7 +17,7 @@ This folder is the **portable database source of truth**. It is intended to be r
 | `tests/01_platform_smoke.sql` | Read-only smoke checks after deployment |
 | `migrations/` | Official timestamped migrations created with `supabase migration new ...` once Supabase CLI is available |
 
-**Never store keys, passwords, connection strings, privileged tokens or real student data in Git.** `platform` is intentionally not a client-exposed schema. All its tables have RLS enabled and no `anon`/`authenticated` table grants; Flutter currently uses a mock repository.
+**Never store keys, passwords, connection strings, privileged tokens or real student data in Git.** `platform` is intentionally not a client-exposed schema. All its tables have RLS enabled and no `anon`/`authenticated` table grants; Flutter's applicant-facing Steps 2 and 3 use authenticated, RLS-protected repositories; the operator dashboard remains in a separate preview path.
 
 ## Deployment workflow
 
@@ -67,3 +69,12 @@ A school onboarding request is **not yet a school**. The request captures instit
 - [Security tests](tests/04_onboarding_plan_security.sql) executed and rolled back; confirmed zero persisted test selections after rollback.
 - Security advisor found an independent Auth setting: **leaked password protection disabled**; see https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . Other 12 private `platform` tables still emit intentional INFO policy-free notices.
 - For another Supabase organization, apply source schemas in dependency order and maintain the recorded migration history. Keep test seeds separate from real school data.
+
+## Module 01.3 — Step 3 School Setup (2026-11-11)
+
+- [Schema](schema/05_school_setup_drafts.sql) deployed in migration `20261111064830` (`secure_school_setup_drafts_and_plan_capacity`) to the existing `pohantoonai` project.
+- `public.school_setup_drafts`: one draft per signed-in applicant; plan selection user ID foreign key; no new tenant created.
+- Both partial `draft` and validated `ready_for_review` statuses exist; neither is an approved application.
+- Owner-only `SELECT/INSERT/UPDATE` RLS; no anonymous access or client DELETE.
+- No payment, operator review or school provisioned. [Transactional security test](tests/05_school_setup_security.sql) passed and rolled back.
+- [Step 3 UX and schema mapping](../docs/database/module_01_school_setup.md). Test on actual Flutter devices before production use.
