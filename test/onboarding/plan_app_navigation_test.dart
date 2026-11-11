@@ -189,6 +189,8 @@ void main() {
       findsOneWidget);
     expect(find.byKey(const Key('dashboard-not-provisioned-warning')),
       findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const Key('dashboard-back-to-payment')));
     await tester.tap(find.byKey(const Key('dashboard-back-to-payment')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('payment-preview-title')),findsOneWidget);
