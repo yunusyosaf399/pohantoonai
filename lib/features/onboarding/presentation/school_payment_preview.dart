@@ -485,3 +485,330 @@ class _SchoolPaymentPreviewState extends State<SchoolPaymentPreview> {
     );
   }
 
+  Widget _notice() {
+    final colors = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      key: const Key('payment-not-configured-notice'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF153E4E)
+          : const Color(0xFFE4F2FF),
+        borderRadius: BorderRadius.circular(13)),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.info_outline, color: colors.primary),
+        const SizedBox(width: 12),
+        const Expanded(child: Text(
+          'Payment processing is not configured. You can save billing '
+          'preferences or skip this step for testing. No charge will '
+          'be made and no school subscription will be activated.',
+          style: TextStyle(fontSize: 12.5, height: 1.45))),
+      ]),
+    );
+  }
+
+  Widget _feedback() {
+    final colors = Theme.of(context).colorScheme;
+    final isError = error != null;
+    return Container(
+      key: Key(isError ? 'payment-error' : 'payment-saved'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isError ? colors.errorContainer : colors.primaryContainer,
+        borderRadius: BorderRadius.circular(12)),
+      child: Text(isError ? error! : info!,
+        style: TextStyle(color: isError ? colors.onErrorContainer
+          : colors.onPrimaryContainer)),
+    );
+  }
+
+  Widget _legalNotice() {
+    final colors = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(13),
+        color: dark ? const Color(0xFF123A38)
+          : const Color(0xFFE3F7EE)),
+      child: const Row(children: [
+        Icon(Icons.shield_outlined),
+        SizedBox(width: 11),
+        Expanded(child: Text(
+          'Recurring billing terms and payment authorization will '
+          'be presented when real checkout becomes available. '
+          'Skipping does not accept these terms.',
+          style: TextStyle(fontSize: 12, height: 1.45))),
+      ]),
+    );
+  }
+
+  Widget _footer() {
+    final save = OutlinedButton.icon(
+      key: const Key('payment-save-preferences'),
+      icon: const Icon(Icons.save_outlined),
+      onPressed: loading || !loaded || saving
+        ? null : () => _persist(skip: false),
+      label: const Text('Save Details'));
+    final back = OutlinedButton.icon(
+      key: const Key('payment-back-to-review'),
+      icon: const Icon(Icons.arrow_back),
+      onPressed: saving ? null : widget.onBack,
+      label: const Text('Back'));
+    final skip = FilledButton.icon(
+      key: const Key('payment-skip-for-now'),
+      iconAlignment: IconAlignment.end,
+      icon: saving
+        ? const SizedBox(width: 16,height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2))
+        : const Icon(Icons.arrow_forward),
+      onPressed: loading || !loaded || saving
+        ? null : () => _persist(skip: true),
+      label: const Text('Skip for Now'));
+    return LayoutBuilder(builder: (context, limits) {
+      if (limits.maxWidth < 540) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            skip,
+            const SizedBox(height: 11),
+            Row(children: [
+              Expanded(child: back),
+              const SizedBox(width: 10),
+              Expanded(child: save),
+            ]),
+            const SizedBox(height: 12),
+            const Text('Pay Now & Activate — Coming Soon',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12)),
+          ],
+        );
+      }
+      return Row(children: [
+        back,
+        const SizedBox(width: 12),
+        save,
+        const Spacer(),
+        skip,
+      ]);
+    });
+  }
+
+  Widget _paymentLayout() => LayoutBuilder(builder: (context, constraints) {
+    if (constraints.maxWidth >= 1050) {
+      // Wide Windows/Linux/Web: details on the left, order on the right.
+      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(flex: 6, child: Column(children: [
+          _paymentMethod(),
+          const SizedBox(height: 15),
+          _billingDetails(),
+        ])),
+        const SizedBox(width: 18),
+        Expanded(flex: 4, child: _summary()),
+      ]);
+    }
+    if (constraints.maxWidth >= 760) {
+      // Tablet layout follows references: payment, billing, then summary.
+      return Column(children: [
+        _paymentMethod(),
+        const SizedBox(height: 15),
+        _billingDetails(),
+        const SizedBox(height: 15),
+        _summary(),
+      ]);
+    }
+    // Mobile portrait: order first so users understand their selected plan.
+    return Column(children: [
+      _summary(),
+      const SizedBox(height: 15),
+      _paymentMethod(),
+      const SizedBox(height: 15),
+      _billingDetails(),
+    ]);
+  });
+
+  Widget _topBar(bool desktop) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(children: [
+      IconButton(
+        key: const Key('payment-back-top'),
+        onPressed: saving ? null : widget.onBack,
+        icon: const Icon(Icons.arrow_back),
+        tooltip: 'Back to Application Review'),
+      if (!desktop) ...[
+        const SizedBox(width: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(9),
+          child: Image.asset('assets/app_logo/app_icon.jpeg',
+            width: 37, height: 37, fit: BoxFit.cover)),
+        const SizedBox(width: 9),
+        const Expanded(child: Text('Pohantoon AI',
+          style: TextStyle(
+            fontSize: 19, fontWeight: FontWeight.w800),
+          overflow: TextOverflow.ellipsis)),
+      ] else const Spacer(),
+      AppearanceSettingsButton(
+        mode: widget.themeMode,
+        onChanged: widget.onThemeChanged),
+      const SizedBox(width: 9),
+      Tooltip(
+        message: widget.accountEmail ?? 'Signed-in applicant',
+        child: CircleAvatar(
+          backgroundColor: colors.primaryContainer,
+          child: Icon(Icons.person_outline, color: colors.primary))),
+    ]);
+  }
+
+  Widget _sidebar() {
+    final colors = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF073D39)
+          : const Color(0xFFE5F7F2),
+        border: Border(right: BorderSide(color: colors.outlineVariant))),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(22, 29, 22, 30),
+        children: [
+          Row(children: [
+            Image.asset('assets/app_logo/app_icon.jpeg',
+              width: 48, height: 48),
+            const SizedBox(width: 9),
+            const Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Pohantoon AI', style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w800)),
+                Text('Smarter School Management,\nPowered by AI',
+                  style: TextStyle(fontSize: 10)),
+              ])),
+          ]),
+          const SizedBox(height: 44),
+          Text('School Registration',
+            style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 17),
+          for (final step in const [
+            ('Account Connected',1),
+            ('Choose Your Plan',2),
+            ('School Information',3),
+            ('Application Review',4),
+            ('Subscription Payment',5),
+            ('School Dashboard',6),
+          ])
+            Container(
+              margin: const EdgeInsets.only(bottom: 9),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10, vertical: 11),
+              decoration: BoxDecoration(
+                color: step.$2 == 5
+                  ? colors.primary.withValues(alpha: .18)
+                  : Colors.transparent,
+                borderRadius: BorderRadius.circular(13)),
+              child: Row(children: [
+                CircleAvatar(
+                  radius: 17,
+                  backgroundColor: step.$2 < 5
+                    ? colors.primary
+                    : step.$2 == 5 ? colors.primaryContainer
+                      : colors.surface,
+                  child: step.$2 < 5
+                    ? Icon(Icons.check,
+                      size: 17, color: colors.onPrimary)
+                    : Text(step.$2.toString(), style: TextStyle(
+                        color: colors.primary,
+                        fontWeight: FontWeight.w800)),
+                ),
+                const SizedBox(width: 11),
+                Expanded(child: Text(step.$1,
+                  style: TextStyle(fontSize: 12.5,
+                    fontWeight: step.$2 == 5
+                      ? FontWeight.w800 : FontWeight.w500))),
+              ]),
+            ),
+          const SizedBox(height: 35),
+          const SchoolCampusIllustration(),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      backgroundColor: dark ? const Color(0xFF0A2029)
+        : const Color(0xFFF5F9FD),
+      body: SafeArea(child: LayoutBuilder(
+        builder: (context, outer) {
+          final desktop = outer.maxWidth >= 1024;
+          return Row(children: [
+            if (desktop)
+              SizedBox(width: outer.maxWidth >= 1400 ? 280 : 244,
+                child: _sidebar()),
+            Expanded(child: SingleChildScrollView(
+              controller: scroll,
+              key: Key(desktop ? 'payment-desktop-layout'
+                : 'payment-mobile-layout'),
+              padding: EdgeInsets.fromLTRB(
+                desktop ? 26 : 18, 18,
+                desktop ? 26 : 18, 40),
+              child: Center(child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1340),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _topBar(desktop),
+                    const SizedBox(height: 13),
+                    const Text('STEP 5 OF 6 — SUBSCRIPTION PAYMENT',
+                      key: Key('payment-progress-label'),
+                      style: TextStyle(
+                        fontSize: 12, letterSpacing: .8,
+                        fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 12),
+                    ClipRRect(borderRadius: BorderRadius.circular(20),
+                      child: const LinearProgressIndicator(
+                        value: 5 / 6, minHeight: 8)),
+                    const SizedBox(height: 22),
+                    Text('Complete Your Subscription Payment',
+                      key: const Key('payment-preview-title'),
+                      style: Theme.of(context).textTheme.headlineMedium
+                        ?.copyWith(
+                          fontSize: desktop ? 33 : 27,
+                          height: 1.12, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 8),
+                    const Text('Review your selected subscription, '
+                      'payment method and billing information.',
+                      style: TextStyle(height: 1.4)),
+                    const SizedBox(height: 17),
+                    _notice(),
+                    if (error != null || info != null) ...[
+                      const SizedBox(height: 13), _feedback(),
+                    ],
+                    const SizedBox(height: 18),
+                    if (loading)
+                      const Padding(
+                        padding: EdgeInsets.all(54),
+                        child: Center(child: CircularProgressIndicator()))
+                    else if (!loaded)
+                      OutlinedButton.icon(
+                        key: const Key('payment-retry-load'),
+                        onPressed: _load,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry loading billing details'))
+                    else ...[
+                      _paymentLayout(),
+                      const SizedBox(height: 16),
+                      _legalNotice(),
+                      const SizedBox(height: 19),
+                      _footer(),
+                    ],
+                  ],
+                ),
+              )),
+            )),
+          ]);
+        },
+      )),
+    );
+  }
+}
