@@ -64,17 +64,9 @@ CREATE TRIGGER dev_workspace_guard_before_insert
 BEFORE INSERT ON public.onboarding_dev_workspaces
 FOR EACH ROW EXECUTE FUNCTION public.onboarding_dev_workspace_guard();
 
--- For earlier users who already chose the test skip, migrate only
--- their owner-specific, complete, selected and active DEMO plan.
-INSERT INTO public.onboarding_dev_workspaces(user_id,selected_plan_id)
-SELECT d.user_id,s.selected_plan_id
-FROM public.school_setup_drafts d
-JOIN public.onboarding_plan_selections s ON s.user_id=d.user_id
-JOIN public.onboarding_plan_offers o ON o.id=s.selected_plan_id
-JOIN public.onboarding_payment_preferences p ON p.user_id=d.user_id
-WHERE d.draft_status='ready_for_review' AND o.is_active AND o.is_demo
-  AND p.test_flow_state='skipped_for_testing'
-ON CONFLICT (user_id) DO NOTHING;
+-- Earlier test-skip applicants are upgraded lazily by the authenticated
+-- Flutter client after it revalidates their plan and school draft.
+-- No privileged migration impersonation or raw SQL auth bypass is used.
 
 -- Dashboard customization no longer requires a payment-preferences row:
 -- a dev workspace is now the correct (unpaid) parent record.
