@@ -9,6 +9,7 @@ import 'core/settings/theme_controller.dart';
 import 'core/ui/app_theme.dart';
 import 'features/auth/data/account_auth_gateway.dart';
 import 'features/auth/presentation/account_welcome_screen.dart';
+import 'features/auth/presentation/password_recovery_dialog.dart';
 import 'features/organization/data/organization_repository.dart';
 import 'features/onboarding/data/onboarding_plan_repository.dart';
 import 'features/onboarding/domain/onboarding_plan_offer.dart';
@@ -83,6 +84,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   late final bool _ownsTheme;
   AccountAuthGateway? _auth;
   StreamSubscription<bool>? _authListener;
+  StreamSubscription<void>? _recoveryListener;
+  final GlobalKey<NavigatorState> _navigatorKey=GlobalKey<NavigatorState>();
   bool _signedIn = false;
   String? _authError;
   OnboardingPlanOffer? _schoolSetupPlan;
@@ -205,6 +208,19 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           SupabaseAccountAuthGateway(client!);
       _theme = widget.themeController ?? ThemeController(client: client);
       _signedIn = _auth!.signedIn;
+      if(_auth is AccountEmailCredentials){
+        final credentials=_auth as AccountEmailCredentials;
+        _recoveryListener=credentials.passwordRecoveryEvents.listen((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final navContext=_navigatorKey.currentContext;
+            if(!mounted||navContext==null)return;
+            await showDialog<bool>(
+              context:navContext,
+              barrierDismissible:false,
+              builder:(_)=>PasswordRecoveryDialog(auth:credentials));
+          });
+        },onError:(Object _,StackTrace __){});
+      }
       _authListener = _auth!.sessionChanges.listen((signedIn) {
         if (!mounted) return;
         final wasSignedIn=_signedIn;
@@ -284,6 +300,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   @override
   void dispose() {
     _authListener?.cancel();
+    _recoveryListener?.cancel();
     _theme.removeListener(_refreshTheme);
     if (_ownsTheme) _theme.dispose();
     super.dispose();
@@ -315,6 +332,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
+        navigatorKey:_navigatorKey,
         title: 'Pohantoon AI',
         theme: PohantoonTheme.light,
         darkTheme: PohantoonTheme.dark,
