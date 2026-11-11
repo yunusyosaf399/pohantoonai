@@ -6,6 +6,10 @@ import 'package:flutter/services.dart';
 import '../../../core/settings/appearance_settings_button.dart';
 import '../../auth/presentation/school_campus_illustration.dart';
 import '../../dashboard/data/demo_dashboard_preferences_repository.dart';
+import '../../dashboard/data/dashboard_owner_profile_repository.dart';
+import '../../dashboard/presentation/dashboard_profile_settings.dart';
+import '../../auth/data/account_auth_gateway.dart';
+import '../data/school_setup_repository.dart';
 import '../../dashboard/domain/dashboard_demo_data.dart';
 import '../../dashboard/presentation/rotating_dashboard_panels.dart';
 import '../data/school_logo_repository.dart';
@@ -26,6 +30,11 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
     required this.onThemeChanged,
     required this.onBack,
     this.onEditDetails,
+    this.schoolRepository,
+    this.ownerRepository,
+    this.credentials,
+    this.onDraftSaved,
+    this.onSignOut,
     this.preferencesRepository,
     this.logoRepository,
   });
@@ -36,6 +45,11 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
   final Future<void> Function(ThemeMode) onThemeChanged;
   final VoidCallback onBack;
   final ValueChanged<String>? onEditDetails;
+  final SchoolSetupRepository? schoolRepository;
+  final DashboardOwnerProfileRepository? ownerRepository;
+  final AccountEmailCredentials? credentials;
+  final ValueChanged<SchoolSetupDraft>? onDraftSaved;
+  final VoidCallback? onSignOut;
   final DemoDashboardPreferencesRepository? preferencesRepository;
   final SchoolLogoRepository? logoRepository;
 
@@ -46,6 +60,7 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
 
 class _SchoolDashboardSetupPreviewState
     extends State<SchoolDashboardSetupPreview> {
+  late SchoolSetupDraft currentDraft;
   DemoDashboardPreferences settings = const DemoDashboardPreferences();
   String? schoolLogoUrl;
   bool settingsLoaded = false;
@@ -63,6 +78,7 @@ class _SchoolDashboardSetupPreviewState
   @override
   void initState() {
     super.initState();
+    currentDraft=widget.draft;
     _loadSettings();
     _loadLogo();
   }
@@ -89,7 +105,7 @@ class _SchoolDashboardSetupPreviewState
   }
 
   Future<void> _loadLogo() async {
-    final path = widget.draft.logoStoragePath;
+    final path = currentDraft.logoStoragePath;
     if (path == null || widget.logoRepository == null) return;
     try {
       final url = await widget.logoRepository!.signedUrl(path);
@@ -130,17 +146,43 @@ class _SchoolDashboardSetupPreviewState
         'It will open after school provisioning and permissions are implemented.')));
   }
 
+  Future<void> _editProfile(int tab) async {
+    final school=widget.schoolRepository;
+    final owner=widget.ownerRepository;
+    if(school==null||owner==null) {
+      widget.onEditDetails?.call(tab==1?'owner':'identity');
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context:context,isScrollControlled:true,
+      showDragHandle:true,useSafeArea:true,
+      builder:(sheetContext)=>FractionallySizedBox(
+        heightFactor:.9,
+        child:DashboardProfileSettings(
+          draft:currentDraft,
+          schoolRepository:school,
+          ownerRepository:owner,
+          logoRepository:widget.logoRepository,
+          credentials:widget.credentials,
+          initialTab:tab,
+          onDraftSaved:(saved){
+            if(mounted)setState((){
+              currentDraft=saved;
+              schoolLogoUrl=null;
+            });
+            _loadLogo();
+            widget.onDraftSaved?.call(saved);
+          },
+        ),
+      ),
+    );
+  }
+
   void _handleProfileAction(String value) {
-    if (value == 'back') {
-      widget.onBack();
-    } else if (value == 'school' || value == 'logo') {
-      widget.onEditDetails?.call('identity');
-    } else if (value == 'contact') {
-      widget.onEditDetails?.call('contact');
-    } else if (value == 'location') {
-      widget.onEditDetails?.call('location');
-    } else if (value == 'academic') {
-      widget.onEditDetails?.call('academics');
+    if(value=='signout'){
+      widget.onSignOut?.call();
+    }else{
+      _editProfile(value=='owner'?1:0);
     }
   }
 
@@ -150,24 +192,15 @@ class _SchoolDashboardSetupPreviewState
     onSelected: _handleProfileAction,
     itemBuilder: (_) => const [
       PopupMenuItem(value:'school',child:ListTile(
-        leading:Icon(Icons.edit_outlined),
-        title:Text('Edit school details'))),
-      PopupMenuItem(value:'logo',child:ListTile(
-        leading:Icon(Icons.image_outlined),
-        title:Text('Change school logo'))),
-      PopupMenuItem(value:'contact',child:ListTile(
-        leading:Icon(Icons.contact_mail_outlined),
-        title:Text('Edit school contact'))),
-      PopupMenuItem(value:'location',child:ListTile(
-        leading:Icon(Icons.location_on_outlined),
-        title:Text('Edit location'))),
-      PopupMenuItem(value:'academic',child:ListTile(
-        leading:Icon(Icons.school_outlined),
-        title:Text('Edit academics'))),
+        leading:Icon(Icons.apartment_outlined),
+        title:Text('School profile & logo'))),
+      PopupMenuItem(value:'owner',child:ListTile(
+        leading:Icon(Icons.person_outline),
+        title:Text('Owner & security settings'))),
       PopupMenuDivider(),
-      PopupMenuItem(value:'back',child:ListTile(
-        leading:Icon(Icons.arrow_back),
-        title:Text('Back to payment'))),
+      PopupMenuItem(value:'signout',child:ListTile(
+        leading:Icon(Icons.logout),
+        title:Text('Sign out'))),
     ],
     child: CircleAvatar(
       radius:19,
@@ -883,9 +916,9 @@ class _SchoolDashboardSetupPreviewState
                 style:TextStyle(fontSize:11,
                   color:colors.onSurfaceVariant))),
               TextButton(
-                key:const Key('dashboard-back-to-payment'),
-                onPressed:widget.onBack,
-                child:const Text('Back to payment')),
+                key:const Key('dashboard-sign-out'),
+                onPressed:widget.onSignOut,
+                child:const Text('Sign out')),
             ]),
           ],
         ),
