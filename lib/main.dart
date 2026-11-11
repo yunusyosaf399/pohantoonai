@@ -83,7 +83,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   late final ThemeController _theme;
   late final bool _ownsTheme;
   AccountAuthGateway? _auth;
-  StreamSubscription<bool>? _authListener;
+  StreamSubscription<String?>? _authListener;
+  String? _activeAuthUserId;
   StreamSubscription<void>? _recoveryListener;
   final GlobalKey<NavigatorState> _navigatorKey=GlobalKey<NavigatorState>();
   final GlobalKey<ScaffoldMessengerState> _messengerKey=
@@ -224,6 +225,11 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           SupabaseAccountAuthGateway(client!);
       _theme = widget.themeController ?? ThemeController(client: client);
       _signedIn = _auth!.signedIn;
+      _activeAuthUserId = _signedIn
+          ? (_auth is AccountSessionIdentity
+              ? (_auth as AccountSessionIdentity).currentAuthUserId
+              : 'legacy-auth-session')
+          : null;
       if(_auth is AccountEmailCredentials){
         final credentials=_auth as AccountEmailCredentials;
         _recoveryListener=credentials.passwordRecoveryEvents.listen((_) {
@@ -237,23 +243,34 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           });
         },onError:(Object _,StackTrace __){});
       }
-      _authListener = _auth!.sessionChanges.listen((signedIn) {
+      // The production Auth gateway emits the actual stable auth.users.id.
+      // An account switch invalidates A's rendered data even if there is
+      // no intermediate signed-out event. Legacy widget fakes are supported.
+      final Stream<String?> identityStream =
+          _auth is AccountSessionIdentity
+              ? (_auth as AccountSessionIdentity).sessionIdentityChanges
+              : _auth!.sessionChanges.map((signedIn) =>
+                  signedIn ? 'legacy-auth-session' : null);
+      _authListener = identityStream.listen((userId) {
         if (!mounted) return;
         final wasSignedIn=_signedIn;
+        final changedUser=_activeAuthUserId != userId;
+        final signedIn=userId != null;
         setState(() {
-          _signedIn = signedIn;
-          if (signedIn) _authError = null;
-          if (!signedIn) {
+          _activeAuthUserId=userId;
+          _signedIn=signedIn;
+          if (signedIn) _authError=null;
+          if (!signedIn || (wasSignedIn && changedUser)) {
             ++_authGeneration;
-            _restoringWorkspace = false;
-            _schoolSetupPlan = null;
-            _reviewDraft = null;
-            _editSection = null;
-            _paymentStep = false;
-            _dashboardTestPreview = false;
+            _restoringWorkspace=false;
+            _schoolSetupPlan=null;
+            _reviewDraft=null;
+            _editSection=null;
+            _paymentStep=false;
+            _dashboardTestPreview=false;
           }
         });
-        if (signedIn && !wasSignedIn) {
+        if (signedIn && (!wasSignedIn || changedUser)) {
           _loadAccountPreferences();
           _restoreWorkspace();
         }
@@ -304,6 +321,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       ++_authGeneration;
       _restoringWorkspace=false;
       _signedIn = false;
+      _activeAuthUserId = null;
       _authError = null;
       _schoolSetupPlan = null;
       _reviewDraft = null;
