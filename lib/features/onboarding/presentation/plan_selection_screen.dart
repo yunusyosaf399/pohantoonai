@@ -259,7 +259,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           const SchoolCampusIllustration(),
           const SizedBox(height: 64),
           for (final step in const [
-            ('Google Account', 1),
+            ('Account connected', 1),
             ('Choose Your Plan', 2),
             ('School Information', 3),
             ('Application Review', 4),
