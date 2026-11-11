@@ -38,7 +38,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
   static const fieldNames = [
     'schoolName','legalName','registration','year','website',
     'contactName','contactPosition','contactEmail','contactPhone',
-    'region','city','address','students','campuses','teachers','staff',
+    'region','city','address','postalCode','students','campuses','teachers','staff',
     'board','curriculum','otherCountry','otherZone','otherCurrency',
     'otherLowest','otherHighest',
   ];
@@ -192,7 +192,8 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     put('contactName',d.contactName); put('contactPosition',d.contactPosition);
     put('contactEmail',d.contactEmail); put('contactPhone',d.contactPhone);
     put('region',d.region); put('city',d.city);
-    put('address',d.streetAddress); put('students',d.estimatedStudents);
+    put('address',d.streetAddress); put('postalCode',d.postalCode);
+    put('students',d.estimatedStudents);
     put('campuses',d.campusCount); put('teachers',d.estimatedTeachers);
     put('staff',d.estimatedNonTeachingStaff);
     put('board',d.educationBoard); put('curriculum',d.curriculum);
@@ -221,7 +222,8 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     contactName:value('contactName'),contactPosition:value('contactPosition'),
     contactEmail:value('contactEmail'),contactPhone:value('contactPhone'),
     countryCode:finalCountry,region:value('region'),city:value('city'),
-    streetAddress:value('address'),timezone:finalZone,
+    streetAddress:value('address'),postalCode:value('postalCode'),
+    timezone:finalZone,
     currencyCode:finalCurrency,estimatedStudents:number('students'),
     campusCount:number('campuses'),estimatedTeachers:number('teachers'),
     estimatedNonTeachingStaff:number('staff'),
@@ -599,6 +601,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
           hint:'Enter state or province'),
         _text('City','city',hint:'Enter city',mandatory:true),
         _text('Address','address',hint:'Enter school address'),
+        _text('Postal code','postalCode',hint:'Optional postal or ZIP code'),
         _choice('Time zone',timezone,zones,
           (v)=>setState(() { timezone=v??'UTC';dirty=true; })),
         if (timezone=='OTHER')
@@ -733,7 +736,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     textInputAction:TextInputAction.next,
     maxLength:switch(field) {
       'schoolName'=>180,'legalName'=>220,'website'=>500,
-      'address'=>500,'contactEmail'=>254,_=>120,
+      'address'=>500,'contactEmail'=>254,'postalCode'=>32,_=>120,
     },
     decoration:InputDecoration(
       hintText:hint,counterText:'',isDense:true,
