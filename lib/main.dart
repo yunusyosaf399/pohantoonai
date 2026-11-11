@@ -16,6 +16,8 @@ import 'features/onboarding/domain/school_setup_draft.dart';
 import 'features/onboarding/data/school_setup_repository.dart';
 import 'features/onboarding/data/review_confirmation_repository.dart';
 import 'features/onboarding/presentation/school_payment_preview.dart';
+import 'features/onboarding/presentation/school_dashboard_setup_preview.dart';
+import 'features/onboarding/data/onboarding_payment_preferences_repository.dart';
 import 'features/onboarding/presentation/school_setup_screen.dart';
 import 'features/onboarding/presentation/school_review_preview.dart';
 import 'features/onboarding/presentation/plan_selection_screen.dart';
@@ -40,6 +42,7 @@ class PohantoonAiApp extends StatefulWidget {
     this.planRepository,
     this.schoolSetupRepository,
     this.reviewConfirmationRepository,
+    this.paymentPreferencesRepository,
     this.showOrganizationPreview = false,
     this.authGateway,
     this.themeController,
@@ -54,6 +57,8 @@ class PohantoonAiApp extends StatefulWidget {
   final SchoolSetupRepository? schoolSetupRepository;
   /// Injectable review persistence for widget tests; live app uses RLS.
   final ReviewConfirmationRepository? reviewConfirmationRepository;
+  /// Mockable Step 5; real implementation uses applicant-owned RLS.
+  final OnboardingPaymentPreferencesRepository? paymentPreferencesRepository;
   final AccountAuthGateway? authGateway;
   final ThemeController? themeController;
 
@@ -72,6 +77,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   SchoolSetupDraft? _reviewDraft;
   String? _editSection;
   bool _paymentStep = false;
+  bool _dashboardTestPreview = false;
 
   @override
   void initState() {
@@ -97,6 +103,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _reviewDraft = null;
             _editSection = null;
             _paymentStep = false;
+            _dashboardTestPreview = false;
           }
         });
         if (signedIn) _loadAccountPreferences();
@@ -144,6 +151,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _reviewDraft = null;
       _editSection = null;
       _paymentStep = false;
+      _dashboardTestPreview = false;
     });
   }
 
@@ -196,14 +204,31 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                     onThemeChanged: _changeTheme,
                   )
                 : _schoolSetupPlan != null
-                    ? _paymentStep
-                        ? SchoolPaymentPreview(
+                    ? _dashboardTestPreview
+                        ? SchoolDashboardSetupPreview(
                             plan: _schoolSetupPlan!,
+                            draft: _reviewDraft!,
                             themeMode: _theme.value,
                             onThemeChanged: _changeTheme,
-                            onBack: () => setState(() => _paymentStep = false),
+                            onBack: () =>
+                                setState(() => _dashboardTestPreview = false),
                           )
-                        : _reviewDraft != null
+                        : _paymentStep
+                            ? SchoolPaymentPreview(
+                                plan: _schoolSetupPlan!,
+                                draft: _reviewDraft!,
+                                repository: widget.paymentPreferencesRepository ??
+                                    SupabaseOnboardingPaymentPreferencesRepository(
+                                      Supabase.instance.client),
+                                accountEmail: _auth?.signedInEmail,
+                                themeMode: _theme.value,
+                                onThemeChanged: _changeTheme,
+                                onBack: () =>
+                                    setState(() => _paymentStep = false),
+                                onSkip: () =>
+                                    setState(() => _dashboardTestPreview = true),
+                              )
+                            : _reviewDraft != null
                             ? SchoolReviewPreview(
                                 draft: _reviewDraft!,
                                 plan: _schoolSetupPlan!,
