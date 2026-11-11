@@ -250,3 +250,10 @@ SaaS Control Panel
 | Actual payment transactions, real school membership or provision | NOT implemented | Development_preview is never a paid subscription |
 
 [Full Module 02.2 contract](../database/module_02_2_dashboard_auth_profiles.md). No extra Supabase project or custom OTP Edge Function is needed.
+
+
+### Owner profile contact follow-up — 2026-11-11
+
+- [13_owner_profile_contact_details.sql](../../supabase/schema/13_owner_profile_contact_details.sql): **deployed**, adding nullable account-owned phone/title; existing user_profiles RLS unchanged.
+- [Owner contact security tests](../../supabase/tests/13_owner_profile_security.sql): **passed** with ROLLBACK, including wrong-user and field-length rejection.
+- [Profile settings tests](../../test/dashboard/dashboard_profile_settings_test.dart): **committed, not executed**; checks owner contact updates and adding an Auth password.
