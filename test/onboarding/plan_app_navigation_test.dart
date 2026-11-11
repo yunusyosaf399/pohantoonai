@@ -7,6 +7,8 @@ import 'package:pohantoonai/features/onboarding/domain/onboarding_plan_offer.dar
 import 'package:pohantoonai/features/onboarding/domain/school_setup_draft.dart';
 import 'package:pohantoonai/features/onboarding/data/school_setup_repository.dart';
 import 'package:pohantoonai/features/onboarding/data/review_confirmation_repository.dart';
+import 'package:pohantoonai/features/onboarding/data/onboarding_payment_preferences_repository.dart';
+import 'package:pohantoonai/features/onboarding/domain/onboarding_payment_preferences.dart';
 import 'package:pohantoonai/main.dart';
 
 class TestAccount implements AccountAuthGateway {
@@ -74,6 +76,18 @@ class TestReviewConfirmation implements ReviewConfirmationRepository {
   }
 }
 
+class TestPaymentPreferences implements OnboardingPaymentPreferencesRepository {
+  OnboardingPaymentPreferences? settings;
+  @override
+  Future<OnboardingPaymentPreferences?> load() async => settings;
+  @override
+  Future<OnboardingPaymentPreferences> save(
+      OnboardingPaymentPreferences preferences) async {
+    settings = preferences;
+    return preferences;
+  }
+}
+
 void main() {
   testWidgets('signed-in applicant advances from plan to real Step 3 form',
       (tester) async {
@@ -84,12 +98,14 @@ void main() {
     final plans = TestPlans();
     final drafts = TestSchoolDrafts();
     final reviews = TestReviewConfirmation();
+    final payments = TestPaymentPreferences();
 
     await tester.pumpWidget(PohantoonAiApp(
       authGateway: TestAccount(),
       planRepository: plans,
       schoolSetupRepository: drafts,
       reviewConfirmationRepository: reviews,
+      paymentPreferencesRepository: payments,
       themeController: ThemeController(),
     ));
     await tester.pumpAndSettle();
@@ -163,6 +179,19 @@ void main() {
     expect(find.byKey(const Key('payment-preview-title')),findsOneWidget);
     expect(find.byKey(const Key('payment-not-configured-notice')),
       findsOneWidget);
+    // Skip records only unpaid test progress and opens an explicitly
+    // non-provisioned Step 6 preview.
+    await tester.ensureVisible(find.byKey(const Key('payment-skip-for-now')));
+    await tester.tap(find.byKey(const Key('payment-skip-for-now')));
+    await tester.pumpAndSettle();
+    expect(payments.settings?.skippedForTesting, isTrue);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsOneWidget);
+    expect(find.byKey(const Key('dashboard-not-provisioned-warning')),
+      findsOneWidget);
+    await tester.tap(find.byKey(const Key('dashboard-back-to-payment')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('payment-preview-title')),findsOneWidget);
 
     await tester.tap(find.byKey(const Key('payment-back-to-review')));
     await tester.pumpAndSettle();
