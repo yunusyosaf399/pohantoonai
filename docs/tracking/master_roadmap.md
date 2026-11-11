@@ -260,6 +260,15 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - **Build validation blocked:** Current GitHub Actions job reports failure without job steps or downloadable runner logs; Flutter SDK unavailable in this execution environment. Pin versions in `pubspec.yaml` and commit a resolved lockfile when the toolchain runs. Do not check implementation tasks as complete until verification passes.
 - **Existing `platform` tables:** 12 private tables intentionally keep zero policies; no general authenticated access to organizational records.
 
+## Module 01.2 execution evidence — 2026-11-11
+
+- [Step 2 module design and tests](../database/module_01_plan_selection.md): two new live public tables, four RLS policies and protected catalog sync against the existing private three-plan source. Migration `20261111050513` applied to the single `pohantoonai` Supabase project.
+- **DB gate passed:** executed own-row/anon/private-table denial test, rolled back, and verified zero test selections. Live source and published descriptions match.
+- **Flutter code created:** responsive desktop/tablet/mobile light/dark plan cards, selected summary, authenticated app routing to Step 2, save-before-Step 3 and explicit no-payment placeholder.
+- **Flutter runtime gate remains open:** Github-hosted Actions runners are blocked by account billing/spending limit before starting; widget tests are only committed, not proven passing.
+- **Security advisor item:** leaked password protection disabled at Auth level; the 12 `platform` INFO no-policy notices reflect intentional private schemas. Review provider password security without altering the current plan flow.
+- **No school or subscription has been provisioned.** Advance to Step 3 school information only after the corresponding draft schema and client ownership rules are designed.
+
 ## 5. Immediate execution queue
 
 **Latest execution evidence (2026-11-10):** Module 01 applied successfully to the one user-created Supabase development project `pohantoonai` (ref `umlzqlbakfwzgadafhyy`, YouPro School). The [12 private onboarding tables](../../supabase/schema/01_platform_onboarding.sql) and [fake seed](../../supabase/seed/01_demo_platform.sql) are deployed; 12/12 have RLS enabled, and 0 have anon/authenticated table read/write access. A previously existing `public.rls_auto_enable()` function had exposed SECURITY DEFINER execution grants; these were revoked via [second SQL patch](../../supabase/schema/02_secure_existing_rls_trigger.sql) and verified. The 12 policy-free private tables produce expected informational linter notices, but no exposed definer warnings remain. [Flutter mock console](../../lib/features/organization/presentation/organization_control_panel.dart) committed; its CI runs have not yet passed. **Live Flutter API/auth and real school provisioning are NOT implemented.**
