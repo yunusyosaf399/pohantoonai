@@ -477,7 +477,10 @@ class _SchoolDashboardSetupPreviewState
       _metric('Total staff','86','↑ +1.2% vs last month',
         Icons.group_add_outlined,growth:true),
       _metric('Classes','24','6 grade levels',Icons.school_outlined),
-      _metric('Campuses','3','5 available on selected plan',
+      _metric('Campuses','3',
+        widget.plan.campusLimit == null
+          ? 'Unlimited campuses on selected plan'
+          : widget.plan.campusLimit.toString() + ' available on selected plan',
         Icons.apartment_outlined),
     ];
     return GridView.builder(
@@ -567,7 +570,7 @@ class _SchoolDashboardSetupPreviewState
             color:colors.primary),
         ]),
         const SizedBox(height:5),
-        Text('Demo billing overview · AFN',
+        Text('Demo billing overview · ' + widget.draft.currencyCode,
           style:TextStyle(fontSize:11,
             color:colors.onSurfaceVariant)),
         const SizedBox(height:24),
@@ -576,13 +579,13 @@ class _SchoolDashboardSetupPreviewState
             crossAxisAlignment:CrossAxisAlignment.start,children:[
               const Text('Collected',style:TextStyle(fontSize:11)),
               const SizedBox(height:5),
-              const Text('AFN 842K',style:TextStyle(
+              Text(widget.draft.currencyCode + ' 842K',style:const TextStyle(
                 fontSize:19,fontWeight:FontWeight.w800)),
           ])),
           Column(crossAxisAlignment:CrossAxisAlignment.end,children:[
             const Text('Outstanding',style:TextStyle(fontSize:11)),
             const SizedBox(height:5),
-            const Text('AFN 186K',style:TextStyle(
+            Text(widget.draft.currencyCode + ' 186K',style:const TextStyle(
               fontSize:19,fontWeight:FontWeight.w800)),
           ]),
         ]),
