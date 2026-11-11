@@ -83,6 +83,12 @@ These settings **cannot be deployed with the current connected Supabase manageme
 - [ ] Run `flutter test test/auth/oauth_redirect_test.dart` and full widget tests on a Flutter runner (no SDK available in this tool environment).
 - [ ] Implement and verify Windows native protocol callback if Windows sign-in is a release target.
 
+## Cross-platform callback remediation (2026-11-11)
+
+[Complete implementation, Supabase allowlist and per-platform test guide](../../supabase/auth/OAUTH_CALLBACK_PLATFORMS.md). Windows now registers `pohantoonai://` under current-user registry and forwards incoming callbacks to the existing app; Android/iOS/macOS disable the competing Flutter router, while the Supabase app_links handler owns the OAuth code exchange. Flutter Web preserves the active hosting path/port without reusing query/fragment secrets. Google uses the native system browser. Auth errors are handled and shown without logging callbacks or credentials.
+
+**Source changes verified in GitHub; runtime authentication still not verified.** The Supabase hosted Auth Redirect URL allowlist remains a dashboard setting and cannot be changed through the available database/Edge Function connector. No SQL/Edge Function changes are needed for this callback-only fix.
+
 ## Verification status
 
 - [x] Migration applied to development database.
