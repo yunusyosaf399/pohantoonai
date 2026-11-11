@@ -15,6 +15,7 @@ class SchoolSetupDraft {
     this.region,
     this.city,
     this.streetAddress,
+    this.postalCode,
     this.timezone = 'UTC',
     this.currencyCode = 'USD',
     this.estimatedStudents,
@@ -34,7 +35,7 @@ class SchoolSetupDraft {
   final String? registrationLicenseNumber, websiteUrl;
   final int? establishedYear;
   final String? contactName, contactPosition, contactEmail, contactPhone;
-  final String? countryCode, region, city, streetAddress;
+  final String? countryCode, region, city, streetAddress, postalCode;
   final String timezone, currencyCode;
   final int? estimatedStudents, campusCount;
   final int? estimatedTeachers, estimatedNonTeachingStaff;
@@ -61,6 +62,7 @@ class SchoolSetupDraft {
         region: json['region'] as String?,
         city: json['city'] as String?,
         streetAddress: json['street_address'] as String?,
+        postalCode: json['postal_code'] as String?,
         timezone: (json['timezone'] as String?) ?? 'UTC',
         currencyCode: (json['currency_code'] as String?) ?? 'USD',
         estimatedStudents: (json['estimated_students'] as num?)?.toInt(),
@@ -94,6 +96,7 @@ class SchoolSetupDraft {
     'region': region,
     'city': city,
     'street_address': streetAddress,
+    'postal_code': postalCode,
     'timezone': timezone,
     'currency_code': currencyCode,
     'estimated_students': estimatedStudents,
