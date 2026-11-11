@@ -2,27 +2,52 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pohantoonai/features/auth/data/account_auth_gateway.dart';
 
 void main() {
-  test('OAuth callback for Flutter Web uses current dev origin and port', () {
+  test('Web callback preserves localhost port and root path', () {
     expect(
       oauthRedirectForApp(
         isWeb: true,
         currentUri: Uri.parse('http://localhost:53719/#/welcome'),
       ),
-      'http://localhost:53719',
+      'http://localhost:53719/',
     );
   });
 
-  test('OAuth callback for hosted Web strips routes and tokens', () {
+  test('Web callback keeps non-root hosting path and removes tokens', () {
     expect(
       oauthRedirectForApp(
         isWeb: true,
-        currentUri: Uri.parse('https://app.example.org/schools?tab=all#secret'),
+        currentUri: Uri.parse(
+          'https://app.example.org/pohantoonai/?code=temporary'
+          '#access_token=do-not-keep',
+        ),
       ),
-      'https://app.example.org',
+      'https://app.example.org/pohantoonai/',
     );
   });
 
-  test('OAuth callback for native uses registered app deep link', () {
+  test('Web callback removes OAuth query and fragment from routed URL', () {
+    expect(
+      oauthRedirectForApp(
+        isWeb: true,
+        currentUri: Uri.parse(
+          'https://app.example.org/schools?tab=all#access_token=secret',
+        ),
+      ),
+      'https://app.example.org/schools',
+    );
+  });
+
+  test('Web callback rejects non-HTTP schemes', () {
+    expect(
+      () => oauthRedirectForApp(
+        isWeb: true,
+        currentUri: Uri.parse('file:///index.html'),
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('Android, iOS, macOS and Windows share a registered callback', () {
     expect(
       oauthRedirectForApp(
         isWeb: false,
