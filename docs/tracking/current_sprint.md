@@ -126,9 +126,26 @@ SaaS Control Panel
 | Negative security / validation testing | **[Passed in test transaction]** | [SQL](../../supabase/tests/04_onboarding_plan_security.sql): own selection allowed, impersonation + invalid plans denied, private SaaS rows denied; 0 rows after rollback |
 | Published catalog sync | **[Verified]** | Private demo descriptions updated; published descriptions matched for all 3 plans |
 | Desktop, tablet, mobile Flutter Step 2 | **[Code committed]** | [UI](../../lib/features/onboarding/presentation/plan_selection_screen.dart) + app sign-in flow wiring |
-| Light/Dark/System and navigation | **[Source complete; unverified on device]** | Existing theme; saved selection advances to honest Step 3 preview |
+| Light/Dark/System and navigation | **[Source complete; unverified on device]** | Existing theme; saved selection advances to owner-scoped Step 3 form |
 | Flutter widget + integration tests | **[Written, not executed]** | [Screen tests](../../test/onboarding/plan_selection_test.dart) + [app tests](../../test/onboarding/plan_app_navigation_test.dart); GitHub runner blocked by billing |
 | School creation or payment | **[Not implemented]** | Requires Step 3 application, review, secure billing and provisioning |
 | Auth hardening | **[Outstanding warning]** | Supabase advisor: leaked password protection disabled; remediation in DB module document |
 
-**Next:** Fix account Actions/billing to run Flutter analyzer/widget tests; test real Android/Web login and plan save; then implement Step 3 school-information schema and UI with RLS.
+**Next:** Fix account Actions/billing to run Flutter analyzer/widget tests; test real Android/Web login and plan save; then implement Step 4 formal application submission and review; Step 3 is now deployed.
+
+## Module 01.3 — School Information (2026-11-11)
+
+| Work item | Status | Evidence |
+|---|---|---|
+| Draft schema and selected-plan relationship | **[Deployed]** | [SQL](../../supabase/schema/05_school_setup_drafts.sql), live migration `20261111064830` |
+| Applicant-only RLS / strict status constraints | **[Verified]** | 3 policies, authenticated `SELECT/INSERT/UPDATE`, no anon grants; no client direct functions |
+| Partial Save Draft and Continue validation | **[DB test passed]** | [SQL test](../../supabase/tests/05_school_setup_security.sql): incomplete save allowed, required/plan-capacity checks enforced |
+| Forged-user prevention and plan-change reset | **[DB test passed]** | Test transaction rolled back; draft ownership and review-marker reset verified |
+| Step 3 responsive Flutter screen | **[Source committed]** | [Form UI](../../lib/features/onboarding/presentation/school_setup_screen.dart): four cards, desktop rail, mobile single-column, Light/Dark, validated fields |
+| Step 3 own-draft load/save | **[Source committed]** | [Model](../../lib/features/onboarding/domain/school_setup_draft.dart) + [Supabase repository](../../lib/features/onboarding/data/school_setup_repository.dart) |
+| Step 4 read-only handoff | **[Preview only]** | [Review UI](../../lib/features/onboarding/presentation/school_review_preview.dart), no school or subscription activated |
+| Flutter widget navigation and form tests | **[Written, not run]** | [Step 3 tests](../../test/onboarding/school_setup_test.dart) + [flow test](../../test/onboarding/plan_app_navigation_test.dart). GitHub Actions blocked by owner billing/spending restriction |
+| True Step 4 submission and approval | **[Not started]** | Requires own-row submission, signed terms, protected operator approvals and audit |
+| Security advisor remaining warning | **[Outside Step 3]** | Leaked password protection disabled; see [Supabase guide](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) |
+
+**Next sequence:** unblock Flutter test runner on laptop, validate layout and OAuth return, complete Step 4 Application Review + submission APIs; then defer payment until approval.
