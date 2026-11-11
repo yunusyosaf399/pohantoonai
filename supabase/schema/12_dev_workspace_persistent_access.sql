@@ -68,14 +68,15 @@ FOR EACH ROW EXECUTE FUNCTION public.onboarding_dev_workspace_guard();
 -- Flutter client after it revalidates their plan and school draft.
 -- No privileged migration impersonation or raw SQL auth bypass is used.
 
--- Dashboard customization no longer requires a payment-preferences row:
--- a dev workspace is now the correct (unpaid) parent record.
+-- Preserve existing testers with valid payment-skip preferences.
+-- The draft is the stable parent; a new account can now customize with a
+-- development workspace, without any payment-preferences record.
 ALTER TABLE public.onboarding_demo_dashboard_preferences
   DROP CONSTRAINT onboarding_demo_dashboard_preferences_user_id_fkey;
 ALTER TABLE public.onboarding_demo_dashboard_preferences
   ADD CONSTRAINT onboarding_demo_dashboard_preferences_user_id_fkey
   FOREIGN KEY (user_id)
-  REFERENCES public.onboarding_dev_workspaces(user_id) ON DELETE CASCADE;
+  REFERENCES public.school_setup_drafts(user_id) ON DELETE CASCADE;
 
 CREATE OR REPLACE FUNCTION public.onboarding_demo_dashboard_validate()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
@@ -84,15 +85,24 @@ BEGIN
   IF (SELECT auth.uid()) IS NULL
      OR NEW.user_id IS DISTINCT FROM (SELECT auth.uid())
      OR NOT EXISTS (
-       SELECT 1 FROM public.onboarding_dev_workspaces w
-       JOIN public.school_setup_drafts d ON d.user_id=w.user_id
-       JOIN public.onboarding_plan_selections s ON s.user_id=w.user_id
+       SELECT 1 FROM public.school_setup_drafts d
+       JOIN public.onboarding_plan_selections s ON s.user_id=d.user_id
        JOIN public.onboarding_plan_offers o ON o.id=s.selected_plan_id
-       WHERE w.user_id=NEW.user_id
-         AND w.access_kind='development_preview'
-         AND w.selected_plan_id=s.selected_plan_id
+       WHERE d.user_id=NEW.user_id
          AND d.draft_status='ready_for_review'
          AND o.is_active AND o.is_demo
+         AND (
+           EXISTS (
+             SELECT 1 FROM public.onboarding_dev_workspaces w
+             WHERE w.user_id=d.user_id AND
+               w.selected_plan_id=s.selected_plan_id
+           )
+           OR EXISTS (
+             SELECT 1 FROM public.onboarding_payment_preferences p
+             WHERE p.user_id=d.user_id
+               AND p.test_flow_state='skipped_for_testing'
+           )
+         )
      ) THEN
     RAISE EXCEPTION USING ERRCODE='42501',
       MESSAGE='Dashboard customization requires your completed demo school.';
