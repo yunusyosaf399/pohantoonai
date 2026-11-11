@@ -66,6 +66,20 @@ Following Step 3's secure Save Draft, users now see a real responsive review scr
 
 **Payment is not active:** no charge, card collection, school provisioning or subscription activation. Before production, the payment provider, billing server, verified webhooks and operator-approval sequencing need implementation. Database tests passed; Flutter compilation/device tests are still pending due the GitHub Actions runner billing restriction.
 
+## Step 5 — Subscription Payment Screen / Skip for Now
+
+The real responsive Step 5 Flutter screen has been added for desktop, tablet and mobile in System/Light/Dark themes. It shows the actual Step 2 plan, monthly/annual choices, Card/Bank Transfer/Wallet preferences, billing details and placeholder pricing/discounts. **Pay Now & Activate remains disabled** because no trusted pricing or provider is configured. The active **Skip for Now** action persists an unpaid TEST flag and opens a clearly labelled Step 6 dashboard preview; it does not provision a school or grant school-owner permissions.
+
+- [Step 5 Flutter](lib/features/onboarding/presentation/school_payment_preview.dart)
+- [Step 6 non-provisioned preview](lib/features/onboarding/presentation/school_dashboard_setup_preview.dart)
+- [Billing preferences model](lib/features/onboarding/domain/onboarding_payment_preferences.dart)
+- [Owner-only Supabase repository](lib/features/onboarding/data/onboarding_payment_preferences_repository.dart)
+- [Deployed portable SQL](supabase/schema/08_onboarding_payment_preferences.sql)
+- [Executed RLS/negative tests](supabase/tests/08_payment_preferences_security.sql)
+- [Complete Step 5 implementation/security contract](docs/database/module_01_subscription_payment.md)
+
+The screenshots' illustrative payment amounts and card numbers are NOT copied to the live Flutter form: no real prices are published, and card details require provider-hosted collection. Database tests passed; real Flutter compile, device visual tests and accessibility checks remain pending.
+
 ## Run Flutter
 
 ```bash
