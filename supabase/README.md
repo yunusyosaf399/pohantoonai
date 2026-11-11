@@ -6,6 +6,9 @@ This folder is the **portable database source of truth**. It is intended to be r
 
 | Path | Role |
 |---|---|
+| `schema/04_onboarding_plan_selection.sql` | **Deployed Module 01.2** secure published offer snapshots, owner-only draft choices, source synchronization |
+| `seed/02_demo_plan_descriptions.sql` | Development-only descriptions matching Step 2 references, verified synchronized |
+| `tests/04_onboarding_plan_security.sql` | Executed RLS negative test inside ROLLBACK transactions |
 | `schema/01_platform_onboarding.sql` | Deployed Module 01 private SaaS organization, plans, school onboarding, subscription request and review records |
 | `schema/02_secure_existing_rls_trigger.sql` | Deployed hardening of an existing public event-trigger function's execute privileges |
 | `seed/01_demo_platform.sql` | Idempotent **fake/demo-only** seed with plans and a sample application |
@@ -54,3 +57,13 @@ A school onboarding request is **not yet a school**. The request captures instit
 - [Provider configuration](../docs/database/module_01_account_auth.md) requires Google OAuth client ID/secret, email delivery settings and callback allowlist via Dashboard; cannot be performed by currently available Supabase connector calls.
 - `supabase_flutter: 2.18.3` and `shared_preferences: 2.5.5` pinned in pubspec; **lockfile regeneration and Flutter CI are outstanding**. Do not claim successful auth end-to-end without provider configuration.
 - When moving to another Supabase organization, replay the reviewed schema scripts in recorded dependency order and create matching official timestamped CLI migrations; reconcile existing live migration history. **Do not blindly replay the same SQL under new migration names in the existing test project.**
+
+## Module 01.2 — Step 2 (2026-11-11)
+
+- [Schema](schema/04_onboarding_plan_selection.sql) deployed as migration `20261111050513` (`secure_onboarding_plan_offers_and_user_selections`). No new Supabase project created.
+- `public.onboarding_plan_offers`: three active/read-only demo plan records. Not a client-editable pricing table.
+- `public.onboarding_plan_selections`: one account-owned draft row, own-row `SELECT/INSERT/UPDATE` policies, no anonymous access.
+- Private plan/feature updates refresh only safe public catalog fields; `platform` remains unexposed.
+- [Security tests](tests/04_onboarding_plan_security.sql) executed and rolled back; confirmed zero persisted test selections after rollback.
+- Security advisor found an independent Auth setting: **leaked password protection disabled**; see https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . Other 12 private `platform` tables still emit intentional INFO policy-free notices.
+- For another Supabase organization, apply source schemas in dependency order and maintain the recorded migration history. Keep test seeds separate from real school data.
