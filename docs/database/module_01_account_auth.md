@@ -54,6 +54,35 @@ These settings **cannot be deployed with the current connected Supabase manageme
 - [Theme controller](../../lib/core/settings/theme_controller.dart): local and authenticated preference syncing.
 - [Widget tests](../../test/auth/account_welcome_test.dart): responsive layout, validation, Google/email callbacks and theme selector.
 
+## OAuth redirect investigation — 2026-11-11
+
+**Observed on live development project** `umlzqlbakfwzgadafhyy` (no personal emails or tokens recorded):
+
+- Google provider redirect logged around **2026-11-11 03:06:51 UTC**.
+- Supabase logged a **`user_signedup` + HTTP 302** response around **03:07:00 UTC**, and an aggregate check confirmed one recently created Auth user. This establishes that the OAuth handshake created an account; it **does not** establish that Flutter accepted the callback or persisted a session.
+- An earlier attempt at **03:04:07 UTC** logged `400: OAuth state parameter missing`. Do not bookmark or retry the raw `/auth/v1/callback` URL; initiate a fresh sign-in from the app.
+- User-provided screenshot displayed the normal Google consent screen with a visible Continue button and the Supabase project domain. Domain branding is expected until Google branding/custom domain is configured; it is not by itself an authentication failure.
+
+**Source fix committed:** `lib/features/auth/data/account_auth_gateway.dart` now sends `redirectTo = Uri.base.origin` on Flutter Web for both Google OAuth and email magic-link requests instead of leaving the return URL unspecified. The native callback remains `pohantoonai://auth-callback`. The accompanying `test/auth/oauth_redirect_test.dart` verifies origin/port and native URL decisions.
+
+### Test Web callback deterministically
+
+1. Start Flutter Web on a **fixed port**, e.g. `flutter run -d chrome --web-port 3000`. Use the same port on every test, or update the allowlist for each port.
+2. In [Supabase Auth URL Configuration](https://supabase.com/dashboard/project/umlzqlbakfwzgadafhyy/auth/url-configuration), add `http://localhost:3000/**` to **Additional Redirect URLs** and ensure the Site URL is a controlled app origin. For a hosted app, allow that exact production HTTPS origin too.
+3. Leave **Google Cloud Authorized Redirect URI** at `https://umlzqlbakfwzgadafhyy.supabase.co/auth/v1/callback`; the Flutter origin is a *Supabase* redirect, not a Google callback.
+4. Open `http://localhost:3000`, click **Continue with Google**, choose account and press **Continue** on Google's consent screen. The browser should return to Flutter, store a Supabase session, run `account-bootstrap`, and show the Step 1 success view.
+5. If it still fails, capture the **final page hostname and any error code**, but **never share the complete callback URL** (it might contain access tokens or one-time authorization codes). Check Auth logs and local app logs.
+
+**Native notes:** Android has a matching manifest intent filter and iOS has a registered URI scheme. Windows desktop currently lacks a protocol registration in the installed app, so browser OAuth completion is not an accepted Windows success test until this is implemented. The recommended first end-to-end path is Flutter Web on port 3000, then Android. A GitHub code commit is not a build/test pass.
+
+### Remaining acceptance
+
+- [ ] Confirm Google Client ID/secret provider settings and Supabase redirect URL allowlist, without sharing secrets.
+- [ ] Verify browser returns to `http://localhost:3000` and app receives Auth session.
+- [ ] Verify `account-bootstrap` with that session and own-row RLS.
+- [ ] Run `flutter test test/auth/oauth_redirect_test.dart` and full widget tests on a Flutter runner (no SDK available in this tool environment).
+- [ ] Implement and verify Windows native protocol callback if Windows sign-in is a release target.
+
 ## Verification status
 
 - [x] Migration applied to development database.
