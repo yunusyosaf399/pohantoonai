@@ -72,3 +72,10 @@ No OTP emails were sent during this implementation. Deliverability and real phon
 Deployed [13_owner_profile_contact_details.sql](../../supabase/schema/13_owner_profile_contact_details.sql) to the same Supabase development project. Adds nullable phone (max 32 characters) and position (max 120 characters) to the existing public.user_profiles table; display_name remains separate, and email/password continue to live exclusively in Supabase Auth. No RLS grants or policies were weakened; existing own-account SELECT/INSERT/UPDATE policies apply to new fields.
 
 The dashboard Owner & Security form now supports editing display name, phone and position and refreshes the greeting. [Owner contact security SQL tests](../../supabase/tests/13_owner_profile_security.sql) passed in a rolled-back transaction: own profile works, overlong fields and forged user_id are rejected. [Widget test source](../../test/dashboard/dashboard_profile_settings_test.dart) covers these changes and password addition, but Flutter test execution remains pending.
+
+
+## Required school fields enforcement (migration 14)
+
+Deployed [14_dev_workspace_required_fields.sql](../../supabase/schema/14_dev_workspace_required_fields.sql) to the existing development project. It independently validates the school name, contact name/email, type, country/city, positive enrollment/campus estimates, and current selected demo plan capacity inside the development workspace INSERT policy **and** its SECURITY INVOKER trigger. The client cannot bypass these checks by forging draft status.
+
+The existing school draft table independently checks required fields when status is ready. The [negative test](../../supabase/tests/14_dev_workspace_required_fields_security.sql) passed in a rolled-back transaction: a blank/invalid ready draft fails at the draft table itself; a deliberately incomplete draft cannot obtain development-workspace access. No test data were retained.
