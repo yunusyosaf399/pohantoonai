@@ -676,3 +676,209 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     );
   }
 
+  Widget _text(String label,String field,{
+    String? hint,bool numeric=false,bool mandatory=false,
+  }) => _labelled(label,mandatory:mandatory,child:TextField(
+    key:Key('school-field-'+field),
+    controller:controller(field),
+    enabled:!saving,
+    keyboardType:numeric?TextInputType.number
+      :field=='contactEmail'?TextInputType.emailAddress
+      :field=='website'?TextInputType.url:TextInputType.text,
+    textInputAction:TextInputAction.next,
+    maxLength:switch(field) {
+      'schoolName'=>180,'legalName'=>220,'website'=>500,
+      'address'=>500,'contactEmail'=>254,_=>120,
+    },
+    decoration:InputDecoration(
+      hintText:hint,counterText:'',isDense:true,
+      contentPadding:const EdgeInsets.symmetric(
+        horizontal:12,vertical:13)),
+  ));
+
+  Widget _choice(String label,String? selected,
+      Map<String,String> options,ValueChanged<String?> changed,
+      {bool mandatory=false}) =>
+    _labelled(label,mandatory:mandatory,
+      child:DropdownButtonFormField<String>(
+        key:Key('school-select-'+label.toLowerCase().replaceAll(' ','-')),
+        value:selected,
+        isExpanded:true,
+        hint:Text('Select '+label.toLowerCase(),
+          overflow:TextOverflow.ellipsis,
+          style:const TextStyle(fontSize:12)),
+        decoration:const InputDecoration(
+          isDense:true,
+          contentPadding:EdgeInsets.symmetric(
+            horizontal:12,vertical:12)),
+        items:[
+          for(final entry in options.entries)
+            DropdownMenuItem<String>(
+              value:entry.key,
+              child:Text(entry.value,
+                overflow:TextOverflow.ellipsis,
+                style:const TextStyle(fontSize:12))),
+        ],
+        onChanged:saving?null:changed,
+      ));
+
+  Widget _labelled(String label,{
+    required Widget child,bool mandatory=false,
+  }) => Column(
+    crossAxisAlignment:CrossAxisAlignment.stretch,
+    children:[
+      Text.rich(TextSpan(children:[
+        TextSpan(text:label,style:const TextStyle(
+          fontSize:12.5,fontWeight:FontWeight.w700)),
+        TextSpan(
+          text:mandatory?' *':' (optional)',
+          style:TextStyle(
+            color:mandatory?Theme.of(context).colorScheme.error
+              :Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize:11)),
+      ])),
+      const SizedBox(height:6),
+      child,
+    ],
+  );
+
+  Future<void> _editLanguages() async {
+    final picked=<String>{...languages};
+    final custom=TextEditingController();
+    final changed=await showDialog<Set<String>>(
+      context:context,
+      builder:(ctx)=>StatefulBuilder(
+        builder:(ctx,refresh)=>AlertDialog(
+          title:const Text('Teaching languages'),
+          content:SizedBox(
+            width:350,
+            child:SingleChildScrollView(
+              child:Column(
+                mainAxisSize:MainAxisSize.min,
+                children:[
+                  for (final name in suggestedLanguages)
+                    CheckboxListTile(
+                      dense:true,title:Text(name),
+                      value:picked.contains(name),
+                      onChanged:(checked)=>refresh(() {
+                        if(checked==true) {
+                          picked.add(name);
+                        } else {
+                          picked.remove(name);
+                        }
+                      })),
+                  TextField(
+                    controller:custom,
+                    decoration:const InputDecoration(
+                      labelText:'Other language',
+                      hintText:'Enter another teaching language')),
+                ],
+              ),
+            ),
+          ),
+          actions:[
+            TextButton(
+              onPressed:()=>Navigator.pop(ctx),
+              child:const Text('Cancel')),
+            FilledButton(
+              onPressed:() {
+                final extra=custom.text.trim();
+                if(extra.isNotEmpty) picked.add(extra);
+                if(picked.length<=15) Navigator.pop(ctx,picked);
+              },
+              child:const Text('Apply')),
+          ],
+        ),
+      ),
+    );
+    custom.dispose();
+    if(changed==null||!mounted)return;
+    setState(() {
+      languages..clear()..addAll(changed);
+      dirty=true;
+    });
+  }
+
+  Widget _languageSelector()=>_labelled('Teaching languages',
+    child:InkWell(
+      key:const Key('school-teaching-languages'),
+      onTap:saving?null:_editLanguages,
+      child:Container(
+        constraints:const BoxConstraints(minHeight:46),
+        padding:const EdgeInsets.all(8),
+        decoration:BoxDecoration(
+          borderRadius:BorderRadius.circular(10),
+          border:Border.all(
+            color:Theme.of(context).colorScheme.outlineVariant)),
+        child:Wrap(
+          spacing:5,runSpacing:3,
+          crossAxisAlignment:WrapCrossAlignment.center,
+          children:[
+            if(languages.isEmpty)
+              const Padding(
+                padding:EdgeInsets.all(4),
+                child:Text('Select languages',
+                  style:TextStyle(fontSize:12))),
+            for(final language in languages)
+              Chip(
+                label:Text(language,
+                  style:const TextStyle(fontSize:11)),
+                visualDensity:VisualDensity.compact),
+            const Icon(Icons.arrow_drop_down,size:21),
+          ],
+        ),
+      ),
+    ));
+
+  Widget _footer() {
+    final busy=saving || loading;
+    final save=OutlinedButton.icon(
+      key:const Key('school-save-draft'),
+      onPressed:busy?null:()=>_save(false),
+      icon:const Icon(Icons.save_outlined),
+      label:const Text('Save Draft'));
+    final back=OutlinedButton.icon(
+      key:const Key('school-setup-back-bottom'),
+      onPressed:busy?null:_back,
+      icon:const Icon(Icons.arrow_back),
+      label:const Text('Back'));
+    final next=FilledButton.icon(
+      key:const Key('school-continue-review'),
+      onPressed:busy?null:()=>_save(true),
+      iconAlignment:IconAlignment.end,
+      icon:busy
+        ? const SizedBox(width:16,height:16,
+            child:CircularProgressIndicator(strokeWidth:2))
+        : const Icon(Icons.arrow_forward),
+      label:const Text('Continue to Review'));
+    return LayoutBuilder(builder:(context,size) {
+      if(size.maxWidth<650) {
+        return Column(
+          crossAxisAlignment:CrossAxisAlignment.stretch,
+          children:[
+            next,
+            const SizedBox(height:12),
+            Row(children:[
+              Expanded(child:save),
+              const SizedBox(width:10),
+              Expanded(child:back),
+            ]),
+            const SizedBox(height:12),
+            Text('Save a draft and continue later.',
+              textAlign:TextAlign.center,
+              style:TextStyle(fontSize:12,
+                color:Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+        );
+      }
+      return Row(children:[
+        save,const SizedBox(width:12),back,
+        const Spacer(),
+        Text('Save a draft and continue later.',
+          style:TextStyle(fontSize:12,
+            color:Theme.of(context).colorScheme.onSurfaceVariant)),
+        const SizedBox(width:14),next,
+      ]);
+    });
+  }
+}
