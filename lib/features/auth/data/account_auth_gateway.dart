@@ -3,14 +3,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/supabase_configuration.dart';
 
-/// Returns to the actual Flutter Web origin (including its dev server port).
-/// For installed apps the scheme/host must be registered with the OS and
-/// allowlisted in Supabase Auth → URL Configuration.
+/// Returns to the *running Flutter application*, not the Supabase project.
+/// Web: preserve the origin, port AND hosting base path; drop OAuth query/
+/// fragment secrets. Native: use the OS-registered callback protocol.
+///
+/// The URL must be allowlisted in Supabase Auth → URL Configuration.
+/// Google Cloud's callback is a *different* URL ending /auth/v1/callback.
 String oauthRedirectForApp({
   required bool isWeb,
   required Uri currentUri,
 }) {
-  return isWeb ? currentUri.origin : SupabaseConfiguration.mobileRedirect;
+  if (!isWeb) return SupabaseConfiguration.mobileRedirect;
+  if (currentUri.scheme != 'https' && currentUri.scheme != 'http') {
+    throw const FormatException('Flutter Web must run over HTTP or HTTPS.');
+  }
+  final path = currentUri.path.isEmpty ? '/' : currentUri.path;
+  return currentUri.origin + path;
 }
 
 abstract class AccountAuthGateway {
@@ -45,6 +53,10 @@ class SupabaseAccountAuthGateway implements AccountAuthGateway {
     final opened = await _client.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: oauthRedirectForApp(isWeb: kIsWeb, currentUri: Uri.base),
+      // Google sign-in must run in a standard browser, not an embedded
+      // webview (Google may reject embedded OAuth user agents).
+      authScreenLaunchMode:
+          kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
     );
     if (!opened) {
       throw const AuthException('Could not open Google sign-in. Try again.');
