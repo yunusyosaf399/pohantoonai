@@ -263,3 +263,16 @@ SaaS Control Panel
 
 - [SQL 14](../../supabase/schema/14_dev_workspace_required_fields.sql): **deployed**; repeated required school name, contact, region and plan capacity checks in workspace RLS INSERT policy plus trigger; no client-only trust.
 - [SQL negative test 14](../../supabase/tests/14_dev_workspace_required_fields_security.sql): **passed** with rollback; invalid ready drafts rejected, incomplete drafts cannot create development workspace.
+
+### 2026-11-11 — Auth acceptance follow-up
+
+| Small task | Status | Evidence / dependency |
+|---|---|---|
+| Switch on stable Auth user ID, invalidate previous dashboard on account switch | Code committed | [main.dart](../../lib/main.dart), [Auth gateway](../../lib/features/auth/data/account_auth_gateway.dart) |
+| Use current email OTP verification type | Code committed | [Auth gateway](../../lib/features/auth/data/account_auth_gateway.dart) |
+| Google→password→same dashboard plus email signup→OTP→setup widget tests | Tests committed; Flutter execution blocked | [Widget test](../../test/auth/auth_return_to_dashboard_flow_test.dart) |
+| Verified real Google+password+dev-workspace RLS owner access and cross-account denial | PASSED SQL | [Rollback-only RLS test](../../supabase/tests/15_auth_provider_same_account_rls.sql) |
+| Hosted template, SMTP and external mailbox validation | BLOCKED: hosted Auth credentials/config not exposed to connectors | [GitHub issue #1](https://github.com/yunusyosaf399/pohantoonai/issues/1) |
+| Flutter analyze/test and Windows/Web/mobile end-to-end | BLOCKED: GitHub Actions jobs cannot start; Flutter SDK absent here | [GitHub issue #2](https://github.com/yunusyosaf399/pohantoonai/issues/2) |
+
+[Full acceptance runbook](../testing/auth_return_to_dashboard_acceptance.md) distinguishes mock tests, SQL tests, and pending real email/device testing. **Do not claim hosted Auth end-to-end complete.**
