@@ -12,8 +12,11 @@ import 'features/auth/presentation/account_welcome_screen.dart';
 import 'features/organization/data/organization_repository.dart';
 import 'features/onboarding/data/onboarding_plan_repository.dart';
 import 'features/onboarding/domain/onboarding_plan_offer.dart';
+import 'features/onboarding/domain/school_setup_draft.dart';
+import 'features/onboarding/data/school_setup_repository.dart';
+import 'features/onboarding/presentation/school_setup_screen.dart';
+import 'features/onboarding/presentation/school_review_preview.dart';
 import 'features/onboarding/presentation/plan_selection_screen.dart';
-import 'features/onboarding/presentation/school_setup_preview.dart';
 import 'features/organization/presentation/organization_control_panel.dart';
 
 Future<void> main() async {
@@ -33,6 +36,7 @@ class PohantoonAiApp extends StatefulWidget {
     super.key,
     this.repository,
     this.planRepository,
+    this.schoolSetupRepository,
     this.showOrganizationPreview = false,
     this.authGateway,
     this.themeController,
@@ -43,6 +47,8 @@ class PohantoonAiApp extends StatefulWidget {
   final OrganizationRepository? repository;
   /// Injectable for widget tests; otherwise live RLS-backed Supabase.
   final OnboardingPlanRepository? planRepository;
+  /// Optional mock repository for Step 3 widget tests.
+  final SchoolSetupRepository? schoolSetupRepository;
   final AccountAuthGateway? authGateway;
   final ThemeController? themeController;
 
@@ -57,6 +63,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   StreamSubscription<bool>? _authListener;
   bool _signedIn = false;
   OnboardingPlanOffer? _schoolSetupPlan;
+  SchoolSetupDraft? _reviewDraft;
 
   @override
   void initState() {
@@ -76,7 +83,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         if (!mounted) return;
         setState(() {
           _signedIn = signedIn;
-          if (!signedIn) _schoolSetupPlan = null;
+          if (!signedIn) {
+            _schoolSetupPlan = null;
+            _reviewDraft = null;
+          }
         });
         if (signedIn) _loadAccountPreferences();
       });
@@ -105,7 +115,11 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
 
   Future<void> _signOut() async {
     await _auth!.signOut();
-    if (mounted) setState(() => _signedIn = false);
+    if (mounted) setState(() {
+      _signedIn = false;
+      _schoolSetupPlan = null;
+      _reviewDraft = null;
+    });
   }
 
   @override
@@ -155,12 +169,27 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                     onThemeChanged: _changeTheme,
                   )
                 : _schoolSetupPlan != null
-                    ? SchoolSetupPreview(
-                        selectedPlan: _schoolSetupPlan!,
-                        themeMode: _theme.value,
-                        onThemeChanged: _changeTheme,
-                        onBack: () => setState(() => _schoolSetupPlan = null),
-                      )
+                    ? _reviewDraft != null
+                        ? SchoolReviewPreview(
+                            draft: _reviewDraft!,
+                            plan: _schoolSetupPlan!,
+                            themeMode: _theme.value,
+                            onThemeChanged: _changeTheme,
+                            onBack: () => setState(() => _reviewDraft = null),
+                          )
+                        : SchoolSetupScreen(
+                            plan: _schoolSetupPlan!,
+                            repository: widget.schoolSetupRepository ??
+                                SupabaseSchoolSetupRepository(
+                                    Supabase.instance.client),
+                            accountEmail: _auth?.signedInEmail,
+                            themeMode: _theme.value,
+                            onThemeChanged: _changeTheme,
+                            onBack: () =>
+                                setState(() => _schoolSetupPlan = null),
+                            onContinue: (draft) =>
+                                setState(() => _reviewDraft = draft),
+                          )
                     : PlanSelectionScreen(
                         repository: widget.planRepository ??
                             SupabaseOnboardingPlanRepository(
