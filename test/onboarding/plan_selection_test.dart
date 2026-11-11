@@ -79,7 +79,8 @@ void main() {
     await mountPlan(tester, const Size(1536, 960), FakePlanRepository());
     expect(find.byKey(const Key('plan-desktop-layout')), findsOneWidget);
     expect(find.text('Starter Demo'), findsOneWidget);
-    expect(find.text('Growth Demo'), findsWidgets);
+    expect(find.text('Growth Demo'), findsOneWidget);
+    expect(find.text('Selected Plan: Growth Demo'), findsOneWidget);
     expect(find.text('Enterprise Demo'), findsOneWidget);
     expect(find.textContaining('No payment during registration'), findsOneWidget);
     final indicator = tester.widget<LinearProgressIndicator>(
@@ -117,6 +118,15 @@ void main() {
     await tester.ensureVisible(find.byKey(
       const Key('continue-to-school-setup')));
     await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tablet adjusts its plan grid without overflow',
+    (tester) async {
+    await mountPlan(tester, const Size(820, 1024), FakePlanRepository());
+    expect(find.byKey(const Key('plan-mobile-layout')), findsOneWidget);
+    expect(find.text('Starter Demo'), findsOneWidget);
+    expect(find.text('Growth Demo'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
