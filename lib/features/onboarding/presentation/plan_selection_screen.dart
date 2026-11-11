@@ -397,8 +397,10 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           onTap: _saving ? null : () => _select(plan),
           borderRadius: BorderRadius.circular(18),
           child: Container(
-            height: fixedHeight ? 360 : null,
-            padding: const EdgeInsets.all(20),
+            // Compact on both desktop and mobile; avoid large dead space.
+            constraints: const BoxConstraints(minHeight: 0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 17,vertical: 16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: border, width: selected ? 2 : 1)),
@@ -439,7 +441,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                     : Icons.radio_button_unchecked,
                     color: selected ? colors.primary : colors.outline),
                 ]),
-                const SizedBox(height: 21),
+                const SizedBox(height: 13),
                 _benefit(Icons.groups_outlined,
                   plan.capacity(plan.studentLimit, 'students')),
                 _benefit(Icons.apartment_outlined,
@@ -448,8 +450,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                   plan.capacity(plan.staffLimit, 'staff')),
                 _benefit(Icons.calendar_month_outlined,
                   plan.trialDays.toString() + '-day demo trial configuration'),
-                if (fixedHeight) const Spacer()
-                else const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(selected ? 'Selected plan ✓' : 'Select plan',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: colors.primary,
@@ -465,7 +466,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   Widget _benefit(IconData icon, String text) {
     final colors = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(icon, size: 18, color: colors.primary),
         const SizedBox(width: 8),
