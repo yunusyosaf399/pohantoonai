@@ -6,6 +6,7 @@ This folder is the **portable database source of truth**. It is intended to be r
 
 | Path | Role |
 |---|---|
+| `schema/07_school_setup_postal_code.sql` | **Deployed** optional postal/ZIP code support for the School Setup and Application Review cards |
 | `schema/06_onboarding_review_confirmation.sql` | **Deployed Module 01.4** own-account review acknowledgement with draft revision/plan concurrency checks |
 | `tests/06_review_confirmation_security.sql` | Executed rollback-only tests: stale revision, forged user, plan mismatch rejected |
 | `schema/05_school_setup_drafts.sql` | **Deployed Module 01.3** owner-scoped school draft fields, required-field/capacity constraints and reset-on-plan-change logic |
@@ -88,3 +89,7 @@ A school onboarding request is **not yet a school**. The request captures instit
 - [Transactional negative tests](tests/06_review_confirmation_security.sql) verified own confirmation, rejection of stale/mismatched plan/user; zero test confirmations persisted.
 - **No application is submitted or approved and no payment is performed** by recording this acknowledgement. Future payment backend must perform its own authoritative verification.
 - See [Step 4 UI and schema contract](../docs/database/module_01_application_review.md).
+
+### Optional postal code extension (2026-11-11)
+
+[Migration `20261111120829`](schema/07_school_setup_postal_code.sql) added nullable `school_setup_drafts.postal_code` with a length check. Verified via live `information_schema.columns`. It is compatible with previously saved school drafts and requires no new school tenant.
