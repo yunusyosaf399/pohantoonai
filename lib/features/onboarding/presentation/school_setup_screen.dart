@@ -22,6 +22,7 @@ class SchoolSetupScreen extends StatefulWidget {
     this.accountEmail,
     this.initialSection,
     this.logoRepository,
+    this.directDashboard = false,
   });
   final OnboardingPlanOffer plan;
   final SchoolSetupRepository repository;
@@ -33,6 +34,7 @@ class SchoolSetupScreen extends StatefulWidget {
   /// Opens the matching card when an Edit action is chosen in Step 4.
   final String? initialSection;
   final SchoolLogoRepository? logoRepository;
+  final bool directDashboard;
 
   @override
   State<SchoolSetupScreen> createState() => _SchoolSetupScreenState();
@@ -914,7 +916,8 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
         ? const SizedBox(width:16,height:16,
             child:CircularProgressIndicator(strokeWidth:2))
         : const Icon(Icons.arrow_forward),
-      label:const Text('Continue to Review'));
+      label:Text(widget.directDashboard
+        ? 'Open Demo Dashboard' : 'Continue to Review'));
     return LayoutBuilder(builder:(context,size) {
       if(size.maxWidth<650) {
         return Column(
