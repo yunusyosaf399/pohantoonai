@@ -100,6 +100,16 @@ Step 3 now supports optional school-logo upload/replacement/removal: 2 MiB maxim
 
 **Flutter build remains unverified.** Run flutter pub get after pulling the newly pinned file_selector 1.1.0, commit the regenerated pubspec.lock, flutter analyze and flutter test. The GitHub Actions account billing issue still blocks remote jobs.
 
+## Module 02.2 — Returning User Dashboard, School Profile & Email/Password
+
+A completed demo school now has a secure **development_preview** record. After the current applicant completes Step 3, the Flutter app opens the Step 6 demo dashboard directly; Step 4 review and Step 5 payment screens are bypassed for this temporary test workflow. When the same Supabase Auth account signs in again, their verified plan, school draft and RLS-controlled preview record are restored and the dashboard opens directly. This **does not represent paid status or a real school membership**.
+
+The avatar menu opens in-dashboard School Details and Owner & Security settings. Editable school fields and logos persist through the existing School Setup RLS repository; registration/license, legal name, school type, selected plan and account email are locked. The owner can update their own display name and set a strong Auth password without creating a second account.
+
+Step 1 supports Google sign-in or email/password creation/sign-in with Supabase built-in email OTP verification. The confirmation code delivery requires installing the checked-in Auth templates in the live project's Auth Email Templates settings, plus reliable SMTP. See [full details](docs/database/module_02_2_dashboard_auth_profiles.md). Passwords and OTPs are never written to project database tables, and no custom email Edge Function is required.
+
+Step 2 plan cards have been made much shorter, removing the 360-pixel fixed height and Spacer.
+
 ## Run Flutter
 
 ```bash
