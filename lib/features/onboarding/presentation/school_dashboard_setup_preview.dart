@@ -425,7 +425,7 @@ class _SchoolDashboardSetupPreviewState
         const SizedBox(height:12),
         Expanded(child:ListView(children:[
           for(final item in navigation)
-            Padding(padding:const EdgeInsets.symmetric(
+            Padding(padding:EdgeInsets.symmetric(
               horizontal:compact ? 8 : 13,vertical:3),
               child:Tooltip(message:item.$1,
                 child:ListTile(
