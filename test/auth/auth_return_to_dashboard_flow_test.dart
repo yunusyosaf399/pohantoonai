@@ -42,9 +42,9 @@ class SimulatedAuth
   Stream<bool> get sessionChanges=>changes.stream.map((v)=>v!=null);
   void enter(String? next){uid=next;changes.add(next);}
   @override
-  Future<void> signInWithGoogle()async=>enter('owner-id');
+  Future<void> signInWithGoogle() async { enter('owner-id'); }
   @override
-  Future<void> signOut()async=>enter(null);
+  Future<void> signOut() async { enter(null); }
   @override
   Future<void> sendEmailLink(String email)async{}
   @override
@@ -226,7 +226,7 @@ void main(){
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('dashboard-profile-menu')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign out'));
+    await tester.tap(find.text('Sign out').last);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('dashboard-test-preview-title')),
       findsNothing);
