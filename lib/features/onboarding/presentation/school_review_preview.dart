@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/settings/appearance_settings_button.dart';
 import '../../auth/presentation/school_campus_illustration.dart';
 import '../data/review_confirmation_repository.dart';
+import '../data/school_logo_repository.dart';
 import '../domain/onboarding_plan_offer.dart';
 import '../domain/school_setup_draft.dart';
 
@@ -20,6 +21,7 @@ class SchoolReviewPreview extends StatefulWidget {
     required this.onEditSection,
     required this.onGoToPayment,
     this.accountEmail,
+    this.logoRepository,
   });
 
   final SchoolSetupDraft draft;
@@ -31,6 +33,7 @@ class SchoolReviewPreview extends StatefulWidget {
   final ValueChanged<String> onEditSection;
   final VoidCallback onGoToPayment;
   final String? accountEmail;
+  final SchoolLogoRepository? logoRepository;
 
   @override
   State<SchoolReviewPreview> createState() => _SchoolReviewPreviewState();
@@ -419,6 +422,34 @@ class _SchoolReviewPreviewState extends State<SchoolReviewPreview> {
                 : () => widget.onEditSection(section)),
           ]),
           const SizedBox(height: 15),
+          if (section == 'identity' && widget.draft.logoStoragePath != null &&
+              widget.logoRepository != null) ...[
+            FutureBuilder<String>(
+              future: widget.logoRepository!.signedUrl(
+                widget.draft.logoStoragePath!),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Text('School logo preview loading…',
+                    style: TextStyle(fontSize: 11));
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(9),
+                      child: Image.network(snapshot.data!,
+                        width: 54, height: 54, fit: BoxFit.cover,
+                        errorBuilder: (_,__,___) =>
+                          const Icon(Icons.school_outlined)),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('School logo uploaded privately',
+                      style: TextStyle(fontSize: 12))),
+                  ]),
+                );
+              },
+            ),
+          ],
           for (final field in fields)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
