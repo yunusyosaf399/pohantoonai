@@ -116,3 +116,19 @@ SaaS Control Panel
 **Do not mark APK built or Flutter compilation verified until an artifact exists and checks succeed.** Debug-signed APK is development-only. Repo remains private and release assets require GitHub access.
 
 **Retry verification (2026-11-11):** GitHub Actions APK workflow run `42956828072` was retried once (`run_attempt=2`) using GitHub Actions API. It again concluded `failure` without any executed steps or artifacts. Do not automatically retry indefinitely; account runner admission / billing / policy must be inspected by repository owner.
+
+## Module 01.2 — Choose Subscription Plan (2026-11-11)
+
+| Work item | Status | Evidence |
+|---|---|---|
+| Plan catalog + own draft selection schema | **[Deployed]** | [SQL](../../supabase/schema/04_onboarding_plan_selection.sql), live migration `20261111050513` |
+| Security policies and grants | **[Verified]** | 2 RLS-enabled tables; 1 active-plan policy + 3 account-owned policies; zero anonymous privileges |
+| Negative security / validation testing | **[Passed in test transaction]** | [SQL](../../supabase/tests/04_onboarding_plan_security.sql): own selection allowed, impersonation + invalid plans denied, private SaaS rows denied; 0 rows after rollback |
+| Published catalog sync | **[Verified]** | Private demo descriptions updated; published descriptions matched for all 3 plans |
+| Desktop, tablet, mobile Flutter Step 2 | **[Code committed]** | [UI](../../lib/features/onboarding/presentation/plan_selection_screen.dart) + app sign-in flow wiring |
+| Light/Dark/System and navigation | **[Source complete; unverified on device]** | Existing theme; saved selection advances to honest Step 3 preview |
+| Flutter widget + integration tests | **[Written, not executed]** | [Screen tests](../../test/onboarding/plan_selection_test.dart) + [app tests](../../test/onboarding/plan_app_navigation_test.dart); GitHub runner blocked by billing |
+| School creation or payment | **[Not implemented]** | Requires Step 3 application, review, secure billing and provisioning |
+| Auth hardening | **[Outstanding warning]** | Supabase advisor: leaked password protection disabled; remediation in DB module document |
+
+**Next:** Fix account Actions/billing to run Flutter analyzer/widget tests; test real Android/Web login and plan save; then implement Step 3 school-information schema and UI with RLS.
