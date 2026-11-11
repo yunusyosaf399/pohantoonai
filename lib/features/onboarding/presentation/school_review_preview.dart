@@ -360,6 +360,7 @@ class _SchoolReviewPreviewState extends State<SchoolReviewPreview> {
         ('Province / State',d.region),
         ('City',d.city),
         ('Address',d.streetAddress),
+        ('Postal Code',d.postalCode),
         ('Time Zone',d.timezone),
         ('Currency',currency),
       ]),
