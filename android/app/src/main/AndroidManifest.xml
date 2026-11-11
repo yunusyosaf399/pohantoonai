@@ -25,6 +25,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Flutter's built-in deep link router must not intercept auth links;
+                 supabase_flutter uses app_links to exchange the OAuth code. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="false" />
             <!-- Supabase Auth Google OAuth and email magic-link return callback. -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
