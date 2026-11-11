@@ -149,3 +149,18 @@ SaaS Control Panel
 | Security advisor remaining warning | **[Outside Step 3]** | Leaked password protection disabled; see [Supabase guide](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) |
 
 **Next sequence:** unblock Flutter test runner on laptop, validate layout and OAuth return, complete Step 4 Application Review + submission APIs; then defer payment until approval.
+
+## Cross-platform auth callback repair — 2026-11-11
+
+| Item | Status | Evidence |
+|---|---|---|
+| Web OAuth redirect path/port and cleanup | **[Code committed]** | [Auth gateway](../../lib/features/auth/data/account_auth_gateway.dart); [unit tests](../../test/auth/oauth_redirect_test.dart) |
+| Android deep-link handler | **[Code committed]** | Flutter router disabled so Supabase app_links handles `pohantoonai://auth-callback` |
+| iOS/macOS deep-link handling | **[Code committed]** | Registered URI scheme and disabled competing Flutter router in Info.plist |
+| Windows desktop custom URI protocol | **[Code committed]** | [Windows runner](../../windows/runner/main.cpp) registers current-user scheme and forwards to running app via `SendAppLinkToInstance` |
+| Auth error handling and native browser launch | **[Code committed]** | Auth stream errors captured and shown; Google OAuth launches system browser |
+| Supabase Auth allowlist | **[Blocked — owner dashboard config]** | Must allow `pohantoonai://auth-callback` plus exact Web URL(s); no Auth configuration writer currently connected |
+| Flutter compiled and real device tested | **[Blocked — runner billing / local verification]** | GitHub Actions account billing/spending restriction prevents job startup; no confirmed Windows or mobile callback login |
+| Documentation | **[Completed]** | [Cross-platform callback guide](../../supabase/auth/OAUTH_CALLBACK_PLATFORMS.md) + static platform tests |
+
+**Follow-up:** Confirm redirect allowlist in hosted Supabase Auth UI, run `flutter pub get`, `flutter analyze`, `flutter test`, then verify real sign-in in Chrome on fixed port, Android, Windows (unpackaged runner) and iOS/macOS. Never share one-time login codes or tokens.
