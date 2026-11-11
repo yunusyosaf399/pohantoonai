@@ -80,6 +80,26 @@ The real responsive Step 5 Flutter screen has been added for desktop, tablet and
 
 The screenshots' illustrative payment amounts and card numbers are NOT copied to the live Flutter form: no real prices are published, and card details require provider-hosted collection. Database tests passed; real Flutter compile, device visual tests and accessibility checks remain pending.
 
+## Step 6 — School Dashboard UI, demo analytics and private school branding
+
+The Step 6 dashboard is now a real responsive Flutter UI using the supplied mobile/tablet/desktop light/dark references. It has school-branding/logo, sidebar and mobile navigation, demo global search, school KPI cards, a **six-series rotating analytics panel (10 seconds, pause on hover, full-screen view)**, recent admissions and approval feeds (also rotating with View all), quick-action customization, attendance donut and illustrative fee overview.
+
+**Test mode guardrail:** Skipping Step 5 grants access only to an explicitly labeled DEMO workspace, not a real school or live school records. Current KPI/admissions/approval data is hardcoded **illustrative fixture data** and labelled as such; real school dashboard tables have strict per-school RLS and are empty until approved provisioning.
+
+Step 3 now supports optional school-logo upload/replacement/removal: 2 MiB maximum image, owner-only Supabase Storage private bucket, with reference stored on the applicant's saved draft. A profile-menu action on the Step 6 screen reopens editable sections of Step 3; edits require re-review and re-skip before returning to the demo dashboard.
+
+- [Step 6 Dashboard Flutter](lib/features/onboarding/presentation/school_dashboard_setup_preview.dart)
+- [Rotating/full-screen analytics + recent activity](lib/features/dashboard/presentation/rotating_dashboard_panels.dart)
+- [School logo picker](lib/features/onboarding/presentation/school_logo_picker.dart)
+- [Private logo upload service](lib/features/onboarding/data/school_logo_repository.dart)
+- [Demo data isolated from real school data](lib/features/dashboard/domain/dashboard_demo_data.dart)
+- [Deployed Storage bucket and owner-only policies](supabase/schema/09_school_logo_storage.sql)
+- [Deployed demo preferences and test skip verification](supabase/schema/10_demo_dashboard_preferences.sql)
+- [Deployed real-school read-only tenant dashboard foundation](supabase/schema/11_school_dashboard_foundation.sql)
+- [Full design/schema/security and pending gate](docs/database/module_02_school_dashboard.md)
+
+**Flutter build remains unverified.** Run flutter pub get after pulling the newly pinned file_selector 1.1.0, commit the regenerated pubspec.lock, flutter analyze and flutter test. The GitHub Actions account billing issue still blocks remote jobs.
+
 ## Run Flutter
 
 ```bash
