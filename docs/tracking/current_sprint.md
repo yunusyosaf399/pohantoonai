@@ -170,3 +170,18 @@ SaaS Control Panel
 - User reported: `SendAppLinkToInstance` missing in compiled Windows runner; feature was introduced in app_links 7.2.0 and was not supported by installed headers.
 - [Windows runner](../../windows/runner/main.cpp) now defines and invokes a local `ForwardAuthLinkToExistingWindow` helper using `SendAppLink(HWND)` and Windows `FindWindowW`. [Native callback test](../../test/auth/native_callback_contract_test.dart) updated accordingly.
 - **Status:** code committed; Windows build/test and real OAuth return still awaiting user's laptop verification. No Supabase schema changes required.
+
+## Module 01.4 — Application Review and Go to Payment (2026-11-11)
+
+| Task | Status | Evidence |
+|---|---|---|
+| Replace Step 4 preview with supplied responsive designs | **[Source committed]** | [Flutter review UI](../../lib/features/onboarding/presentation/school_review_preview.dart), mobile/tablet/desktop, light/dark/system |
+| Four working Edit actions into Step 3 | **[Source committed]** | Section target keys and scroll-to-section in [Step 3](../../lib/features/onboarding/presentation/school_setup_screen.dart) |
+| Accuracy acknowledgement and changed-draft protection | **[Deployed and DB-tested]** | [SQL](../../supabase/schema/06_onboarding_review_confirmation.sql), migration `20261111115622`, applicant-only RLS |
+| Button label Go to Payment and Step 5 navigation | **[Source committed]** | [Main routing](../../lib/main.dart) and [safe payment preview](../../lib/features/onboarding/presentation/school_payment_preview.dart) |
+| Database negative security tests | **[Passed]** | [Rollback-only test](../../supabase/tests/06_review_confirmation_security.sql); no test records retained |
+| Flutter widget and app navigation tests | **[Written, not run]** | [Review tests](../../test/onboarding/school_review_test.dart) and [full flow tests](../../test/onboarding/plan_app_navigation_test.dart) |
+| Payment processing and application approval | **[Not implemented]** | Requires provider, private server-side payment intent, verified webhook and operator sequencing |
+| Real Windows/Android/iOS/Web UI testing | **[Pending]** | GitHub Actions runner blocked by account billing; no compilation claim |
+
+**Note:** User requested Go to Payment rather than Submit Application. This is implemented as a safe stage handoff only, not authorization to charge before school/operator approval. Clarify production approval/checkout order before implementing Step 5.
