@@ -12,12 +12,13 @@ import '../data/dashboard_owner_profile_repository.dart';
 class DashboardProfileSettings extends StatefulWidget {
   const DashboardProfileSettings({super.key,required this.draft,
     required this.schoolRepository,required this.ownerRepository,
-    required this.onDraftSaved,this.credentials,this.logoRepository,
+    required this.onDraftSaved,this.onOwnerSaved,this.credentials,this.logoRepository,
     this.initialTab=0});
   final SchoolSetupDraft draft;
   final SchoolSetupRepository schoolRepository;
   final DashboardOwnerProfileRepository ownerRepository;
   final ValueChanged<SchoolSetupDraft> onDraftSaved;
+  final ValueChanged<String>? onOwnerSaved;
   final AccountEmailCredentials? credentials;
   final SchoolLogoRepository? logoRepository;
   final int initialTab;
@@ -108,7 +109,10 @@ class _DashboardProfileSettingsState extends State<DashboardProfileSettings>
     setState((){busy=true;error=null;success=null;});
     try{
       await widget.ownerRepository.saveDisplayName(owner.text);
-      if(mounted)setState(()=>success='Owner name updated.');
+      if(mounted){
+        widget.onOwnerSaved?.call(owner.text.trim());
+        setState(()=>success='Owner name updated.');
+      }
     }catch(_){
       if(mounted)setState(()=>error='Owner name could not be updated.');
     }finally{
