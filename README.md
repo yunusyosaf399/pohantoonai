@@ -147,3 +147,8 @@ Project planning: [table catalog](docs/architecture/table_catalog.md), [roadmap]
 Account creation → choose subscription plan → collect legal and operational school details → personal review and Go to Payment UI → **future verified checkout/approval workflow** → protected school provisioning → student admissions → fees, teachers, attendance and later modules.
 
 **Do not use real student data until the corresponding school-scoped RLS, workflows and cross-tenant denial tests have been implemented.**
+
+
+### New Flutter dependency note (dashboard logo)
+
+This branch added pinned file_selector 1.1.0 to pubspec.yaml for cross-platform school-logo selection. The generated pubspec.lock has not yet been updated by a Flutter SDK in the remote environment. Run flutter pub get on your machine, commit the resulting pubspec.lock, and then run flutter analyze and flutter test. Mac desktop entitlements for sandboxed file selection are already committed. The main app retains the test-only/unpaid dashboard access boundary.
