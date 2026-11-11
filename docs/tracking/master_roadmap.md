@@ -361,3 +361,7 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 After **every** accepted task: (1) change its checkbox; (2) set milestone status in section 2; (3) recalculate progress in section 1; (4) update current sprint / independent assignment ownership; (5) link commit, CI, test and relevant ADR evidence; (6) note new blockers and next unblocked action. Do not derive completion from percentage alone or from historical EduSync status.
 
 **References:** [source requirements](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/requirements/FEATURE_CATALOG_AND_STATUS.md) · [source identity model](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/security/01_identity_auth_model.md) · [source RLS matrix](https://github.com/yunusyosaf399/edusync_saas_school_app/blob/main/docs/security/03_foundation_rls_matrix.md) · [proposed new schema](../architecture/database_schema.md).
+
+
+- Additional [SQL 14 server-validation migration](../../supabase/schema/14_dev_workspace_required_fields.sql) deployed after end-to-end SQL tests identified the draft table already has some required field checks. Workspace RLS and trigger now validate all essential school identity/contact/capacity fields independently; [negative test 14](../../supabase/tests/14_dev_workspace_required_fields_security.sql) passed with ROLLBACK.
+
