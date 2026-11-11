@@ -20,6 +20,8 @@ import 'features/onboarding/presentation/school_dashboard_setup_preview.dart';
 import 'features/onboarding/data/onboarding_payment_preferences_repository.dart';
 import 'features/onboarding/data/school_logo_repository.dart';
 import 'features/dashboard/data/demo_dashboard_preferences_repository.dart';
+import 'features/dashboard/data/dashboard_owner_profile_repository.dart';
+import 'features/onboarding/data/development_workspace_repository.dart';
 import 'features/onboarding/presentation/school_setup_screen.dart';
 import 'features/onboarding/presentation/school_review_preview.dart';
 import 'features/onboarding/presentation/plan_selection_screen.dart';
@@ -47,6 +49,8 @@ class PohantoonAiApp extends StatefulWidget {
     this.paymentPreferencesRepository,
     this.logoRepository,
     this.demoDashboardPreferencesRepository,
+    this.developmentWorkspaceRepository,
+    this.ownerProfileRepository,
     this.showOrganizationPreview = false,
     this.authGateway,
     this.themeController,
@@ -65,6 +69,8 @@ class PohantoonAiApp extends StatefulWidget {
   final OnboardingPaymentPreferencesRepository? paymentPreferencesRepository;
   final SchoolLogoRepository? logoRepository;
   final DemoDashboardPreferencesRepository? demoDashboardPreferencesRepository;
+  final DevelopmentWorkspaceRepository? developmentWorkspaceRepository;
+  final DashboardOwnerProfileRepository? ownerProfileRepository;
   final AccountAuthGateway? authGateway;
   final ThemeController? themeController;
 
@@ -84,6 +90,106 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   String? _editSection;
   bool _paymentStep = false;
   bool _dashboardTestPreview = false;
+  bool _restoringWorkspace=false;
+  String? _workspaceError;
+  int _authGeneration=0;
+
+  DevelopmentWorkspaceRepository? get _workspaces =>
+    widget.developmentWorkspaceRepository ??
+      (widget.authGateway == null
+        ? SupabaseDevelopmentWorkspaceRepository(Supabase.instance.client)
+        : null);
+
+  OnboardingPlanRepository get _plans =>
+    widget.planRepository ??
+      SupabaseOnboardingPlanRepository(Supabase.instance.client);
+
+  SchoolSetupRepository get _schoolDrafts =>
+    widget.schoolSetupRepository ??
+      SupabaseSchoolSetupRepository(Supabase.instance.client);
+
+  Future<void> _restoreWorkspace() async {
+    final repository=_workspaces;
+    if(repository==null||!_signedIn)return;
+    final generation=++_authGeneration;
+    setState((){
+      _restoringWorkspace=true;
+      _workspaceError=null;
+    });
+    try {
+      final planId=await _plans.loadSelectedPlanId();
+      if(planId!=null) {
+        final offers=await _plans.loadActivePlans();
+        final matching=offers.where((p)=>p.id==planId).firstOrNull;
+        final draft=await _schoolDrafts.load();
+        if(matching!=null&&matching.isDemo&&draft!=null&&
+            draft.readyForReview) {
+          var active=await repository.hasAccess(planId);
+          if(!active) {
+            // Legacy users who previously skipped payment migrate through
+            // their own authenticated session, not a privileged backfill.
+            final previous=await (widget.paymentPreferencesRepository ??
+              SupabaseOnboardingPaymentPreferencesRepository(
+                Supabase.instance.client)).load();
+            if(previous?.skippedForTesting==true){
+              await repository.enable(planId);
+              active=await repository.hasAccess(planId);
+            }
+          }
+          if(active && mounted && generation==_authGeneration &&
+              _signedIn) {
+            setState((){
+              _schoolSetupPlan=matching;
+              _reviewDraft=draft;
+              _paymentStep=false;
+              _dashboardTestPreview=true;
+            });
+          }
+        }
+      }
+    }catch(_){
+      if(mounted&&generation==_authGeneration){
+        setState(()=>_workspaceError=
+          'Could not check your saved school dashboard. '
+          'Check the connection and retry.');
+      }
+    }finally{
+      if(mounted&&generation==_authGeneration) {
+        setState(()=>_restoringWorkspace=false);
+      }
+    }
+  }
+
+  Future<void> _finishSchoolSetup(SchoolSetupDraft draft) async {
+    final repo=_workspaces;
+    if(repo==null) {
+      // Injected legacy widget tests can still exercise Steps 4/5.
+      setState(()=>_reviewDraft=draft);
+      return;
+    }
+    final plan=_schoolSetupPlan;
+    if(plan==null)return;
+    setState((){
+      _restoringWorkspace=true;
+      _workspaceError=null;
+    });
+    try {
+      await repo.enable(plan.id);
+      if(!mounted)return;
+      setState((){
+        _reviewDraft=draft;
+        _dashboardTestPreview=true;
+        _paymentStep=false;
+      });
+    }catch(_){
+      if(mounted)setState(()=>_workspaceError=
+        'School details were saved, but demo access could not be enabled. '
+        'Retry opening the dashboard.');
+    }finally{
+      if(mounted)setState(()=>_restoringWorkspace=false);
+    }
+  }
+
 
   @override
   void initState() {
@@ -105,6 +211,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           _signedIn = signedIn;
           if (signedIn) _authError = null;
           if (!signedIn) {
+            ++_authGeneration;
+            _restoringWorkspace = false;
             _schoolSetupPlan = null;
             _reviewDraft = null;
             _editSection = null;
@@ -112,7 +220,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _dashboardTestPreview = false;
           }
         });
-        if (signedIn) _loadAccountPreferences();
+        if (signedIn) {
+          _loadAccountPreferences();
+          _restoreWorkspace();
+        }
       }, onError: (Object error, StackTrace stack) {
         // Supabase emits OAuth code-exchange failures and network failures
         // on the auth stream. Without onError they become uncaught errors.
@@ -128,7 +239,13 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       // The storage plugin may not be available in isolated widget tests;
       // the app remains usable with system theme in that case.
       _theme.loadLocal().catchError((Object _) {});
-      if (_signedIn) _loadAccountPreferences();
+      if (_signedIn) {
+        _loadAccountPreferences();
+        // Delay until initState returns to avoid setState-during-build.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if(mounted)_restoreWorkspace();
+        });
+      }
     }
     _theme.addListener(_refreshTheme);
   }
@@ -151,6 +268,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   Future<void> _signOut() async {
     await _auth!.signOut();
     if (mounted) setState(() {
+      ++_authGeneration;
+      _restoringWorkspace=false;
       _signedIn = false;
       _authError = null;
       _schoolSetupPlan = null;
@@ -209,6 +328,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                     themeMode: _theme.value,
                     onThemeChanged: _changeTheme,
                   )
+                : _restoringWorkspace
+                    ? const Scaffold(
+                        body: Center(child: CircularProgressIndicator(
+                          key: Key('restoring-school-workspace'))))
                 : _schoolSetupPlan != null
                     ? _dashboardTestPreview
                         ? SchoolDashboardSetupPreview(
@@ -226,6 +349,22 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                                   ? SupabaseSchoolLogoRepository(
                                       Supabase.instance.client)
                                   : null),
+                            schoolRepository: widget.schoolSetupRepository ??
+                                (widget.authGateway == null
+                                  ? SupabaseSchoolSetupRepository(
+                                      Supabase.instance.client)
+                                  : null),
+                            ownerRepository: widget.ownerProfileRepository ??
+                                (widget.authGateway == null
+                                  ? SupabaseDashboardOwnerProfileRepository(
+                                      Supabase.instance.client)
+                                  : null),
+                            credentials: _auth is AccountEmailCredentials
+                                ? _auth as AccountEmailCredentials : null,
+                            onDraftSaved: (saved) => setState(() {
+                              _reviewDraft=saved;
+                            }),
+                            onSignOut: () => _signOut(),
                             onEditDetails: (section) => setState(() {
                               _dashboardTestPreview = false;
                               _paymentStep = false;
@@ -273,8 +412,9 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                                   _reviewDraft = null;
                                   _editSection = section;
                                 }),
-                                onGoToPayment: () =>
-                                    setState(() => _paymentStep = true),
+                                onGoToPayment: () => _workspaces == null
+                                  ? setState(() => _paymentStep = true)
+                                  : _finishSchoolSetup(_reviewDraft!),
                               )
                             : SchoolSetupScreen(
                                 plan: _schoolSetupPlan!,
@@ -290,10 +430,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                                   _schoolSetupPlan = null;
                                   _editSection = null;
                                 }),
-                                onContinue: (draft) => setState(() {
-                                  _reviewDraft = draft;
+                                onContinue: (draft) {
                                   _editSection = null;
-                                }),
+                                  _finishSchoolSetup(draft);
+                                },
                               )
                     : PlanSelectionScreen(
                         repository: widget.planRepository ??
