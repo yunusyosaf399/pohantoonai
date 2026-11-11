@@ -96,6 +96,16 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
   bool saving = false;
   bool dirty = false;
   bool loaded = false;
+  final ScrollController scroll = ScrollController();
+  void showTopError() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && scroll.hasClients) {
+        scroll.animateTo(0,
+          duration:const Duration(milliseconds:300),
+          curve:Curves.easeOut);
+      }
+    });
+  }
   String? error;
   String? schoolType;
   String? countryCode;
@@ -243,6 +253,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     ];
     if (issues.isNotEmpty) {
       setState(() => error = issues.toSet().join('\n'));
+      showTopError();
       return;
     }
     setState(() { saving = true; error = null; });
@@ -267,6 +278,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
                 ? 'Your session expired. Sign in again.'
                 : 'Could not save the draft. Check your input and '
                   'internet connection, then retry.');
+      showTopError();
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -292,6 +304,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
 
   @override
   void dispose() {
+    scroll.dispose();
     for (final c in fields.values) {
       c.removeListener(_changed);
       c.dispose();
@@ -312,6 +325,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
             if (desktop)
               SizedBox(width: 300, child: _sidebar()),
             Expanded(child: SingleChildScrollView(
+              controller:scroll,
               key: Key(desktop
                   ? 'school-setup-desktop-layout'
                   : 'school-setup-mobile-layout'),
@@ -652,11 +666,10 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
           ]),
           const SizedBox(height:17),
           if (account) ...[
-            _labelled('Signed-in account email',child:TextField(
+            _labelled('Signed-in account email',child:TextFormField(
               key:const Key('school-account-email'),
               enabled:false,
-              controller:TextEditingController(
-                text:widget.accountEmail??'Signed-in account'),
+              initialValue:widget.accountEmail??'Signed-in account',
               decoration:const InputDecoration(
                 prefixIcon:Icon(Icons.lock_outline),isDense:true,
                 contentPadding:EdgeInsets.symmetric(
