@@ -260,6 +260,14 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - **Build validation blocked:** Current GitHub Actions job reports failure without job steps or downloadable runner logs; Flutter SDK unavailable in this execution environment. Pin versions in `pubspec.yaml` and commit a resolved lockfile when the toolchain runs. Do not check implementation tasks as complete until verification passes.
 - **Existing `platform` tables:** 12 private tables intentionally keep zero policies; no general authenticated access to organizational records.
 
+## Module 01.4 execution evidence — 2026-11-11
+
+- [Responsive Step 4 Application Review](../../lib/features/onboarding/presentation/school_review_preview.dart) implemented with dynamic school information and selected plan, four Edit actions, required accuracy checkbox, **Go to Payment** button, and Step 5 safe preview.
+- [Review confirmation SQL](../../supabase/schema/06_onboarding_review_confirmation.sql) deployed to the one existing development project as migration `20261111115622`. Strict owner-row RLS and database-stamped review timestamp; rejects stale draft or plan changes.
+- [Transactional security checks](../../supabase/tests/06_review_confirmation_security.sql) passed and rolled back; existing school draft data unchanged.
+- Flutter compile and widget tests pending because GitHub Actions runner does not start due account billing/spending restriction. **No real payment or school creation enabled.**
+- Production business decision pending: earlier design placed operator approval before payment, while the latest UX explicitly navigates directly to a payment stage; secure checkout, approvals and payment failure/refund paths must be finalized before any live charge.
+
 ## Cross-platform Auth callback remediation — 2026-11-11
 
 - [Callback setup/acceptance guide](../../supabase/auth/OAUTH_CALLBACK_PLATFORMS.md): desktop Windows unpackaged current-user URI registration + app-links single-instance forwarding, Android/iOS competing Flutter-router disabled, macOS callback URI registered, Flutter Web redirect preserves origin/port/base path while dropping OAuth query/fragment parameters.
