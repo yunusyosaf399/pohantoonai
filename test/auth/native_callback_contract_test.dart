@@ -32,7 +32,11 @@ void main() {
 
   test('unpackaged Windows runner registers and forwards Auth links', () {
     final windows = File('windows/runner/main.cpp').readAsStringSync();
-    expect(windows, contains('SendAppLinkToInstance()'));
+    // Old app_links versions expose SendAppLink(HWND), not
+    // SendAppLinkToInstance() (introduced in app_links v7.2).
+    expect(windows, contains('ForwardAuthLinkToExistingWindow(command_line)'));
+    expect(windows, contains('SendAppLink(existing);'));
+    expect(windows, contains('FindWindowW('));
     expect(windows, contains('RegisterPohantoonAuthProtocol()'));
     expect(windows, contains('Software\\\\Classes\\\\pohantoonai'));
     expect(windows, contains('URL Protocol'));
