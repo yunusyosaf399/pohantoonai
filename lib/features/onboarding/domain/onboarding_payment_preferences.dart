@@ -70,12 +70,13 @@ class OnboardingPaymentPreferences {
         !RegExp(r'^[A-Z]{2}$').hasMatch(billingCountryCode!)) {
       errors.add('Country must be a two-letter ISO code.');
     }
-    final lengths = <String?,int>{
-      billingEmail:254,billingSchoolName:220,billingAddress:500,
-      billingCity:120,billingPostalCode:32,taxIdentifier:64,
-    };
-    for (final entry in lengths.entries) {
-      if (entry.key != null && entry.key!.length > entry.value) {
+    final lengths = <(String?,int)>[
+      (billingEmail,254), (billingSchoolName,220),
+      (billingAddress,500), (billingCity,120),
+      (billingPostalCode,32), (taxIdentifier,64),
+    ];
+    for (final field in lengths) {
+      if (field.$1 != null && field.$1!.length > field.$2) {
         errors.add('Billing details contain a field that is too long.');
         break;
       }
