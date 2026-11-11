@@ -164,3 +164,9 @@ SaaS Control Panel
 | Documentation | **[Completed]** | [Cross-platform callback guide](../../supabase/auth/OAUTH_CALLBACK_PLATFORMS.md) + static platform tests |
 
 **Follow-up:** Confirm redirect allowlist in hosted Supabase Auth UI, run `flutter pub get`, `flutter analyze`, `flutter test`, then verify real sign-in in Chrome on fixed port, Android, Windows (unpackaged runner) and iOS/macOS. Never share one-time login codes or tokens.
+
+### Windows OAuth C3861 compatibility repair — 2026-11-11
+
+- User reported: `SendAppLinkToInstance` missing in compiled Windows runner; feature was introduced in app_links 7.2.0 and was not supported by installed headers.
+- [Windows runner](../../windows/runner/main.cpp) now defines and invokes a local `ForwardAuthLinkToExistingWindow` helper using `SendAppLink(HWND)` and Windows `FindWindowW`. [Native callback test](../../test/auth/native_callback_contract_test.dart) updated accordingly.
+- **Status:** code committed; Windows build/test and real OAuth return still awaiting user's laptop verification. No Supabase schema changes required.
