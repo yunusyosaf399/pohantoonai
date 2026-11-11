@@ -206,3 +206,21 @@ SaaS Control Panel
 | Dashboard permissions / school provisioning | **[Not implemented]** | Test skip does NOT approve, bill, provision or enable school operations |
 
 **Next gate:** Test the Flutter code on Windows/mobile/Web, then define real school-approval and payment order, secure provider checkout/webhooks/idempotency and authorized school provisioning before allowing any paid activation.
+
+
+## Module 02 dashboard and branding foundation — 2026-11-11
+
+| Task | Status | Evidence |
+|---|---|---|
+| Reference-matched responsive desktop/tablet/mobile dashboard | **[Flutter code committed; build pending]** | [Dashboard UI](../../lib/features/onboarding/presentation/school_dashboard_setup_preview.dart) |
+| Six analytics series, 10-sec rotation, hover pause, full-screen chart | **[Flutter code committed; device test pending]** | [Rotating panels](../../lib/features/dashboard/presentation/rotating_dashboard_panels.dart) |
+| Admissions and approvals rotation + View all | **[Flutter code committed; device test pending]** | [Fixtures](../../lib/features/dashboard/domain/dashboard_demo_data.dart), [feed panels](../../lib/features/dashboard/presentation/rotating_dashboard_panels.dart) |
+| Global demo search, quick actions, KPIs, fees, navigation | **[Flutter code committed; no real fact data yet]** | [Dashboard UI](../../lib/features/onboarding/presentation/school_dashboard_setup_preview.dart) |
+| Profile icon edits school draft and logo | **[Flutter code committed]** | [App navigation](../../lib/main.dart), [logo picker](../../lib/features/onboarding/presentation/school_logo_picker.dart) |
+| Logo bucket, 2-MiB MIME and owner-only Storage policies | **[Deployed and SQL-verified]** | [SQL 09](../../supabase/schema/09_school_logo_storage.sql), migration 20261111125611 |
+| Applicant test preview dashboard preferences with RLS | **[Deployed and SQL-tested]** | [SQL 10](../../supabase/schema/10_demo_dashboard_preferences.sql), migration 20261111125713 |
+| Multi-tenant real school/dashboard read foundation with owner RLS | **[Deployed and SQL-tested]** | [SQL 11](../../supabase/schema/11_school_dashboard_foundation.sql), migration 20261111125810; 0 schools, memberships, dashboard snapshots |
+| Flutter tests/compile and pubspec.lock update | **[Pending local Flutter SDK]** | [Test source](../../test/dashboard/school_dashboard_test.dart), pinned file_selector 1.1.0, GitHub Actions billing blocker |
+| Real school approval, provision, live students/admissions/finance | **[NOT implemented]** | Server-side authorization and domain modules are explicit next gate |
+
+**Important:** real school dashboard metrics, memberships and activity are not created for anyone who skipped payment. Visible demo values are isolated Flutter fixtures only. Existing Supabase Security Advisor warning for leaked-password protection remains separate.
