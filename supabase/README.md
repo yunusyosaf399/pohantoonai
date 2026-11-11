@@ -8,6 +8,11 @@ This folder is the **portable database source of truth**. It is intended to be r
 |---|---|
 | schema/08_onboarding_payment_preferences.sql | **Deployed Module 01.5** own-account billing preferences and unpaid test-only skip state, no card data |
 | tests/08_payment_preferences_security.sql | **Executed** transactional ownership, invalid status/format/method, server-generated skip time checks |
+| schema/09_school_logo_storage.sql | **Deployed** optional applicant logo path, private 2-MiB school-logos bucket with owner-only Storage policies |
+| schema/10_demo_dashboard_preferences.sql | **Deployed** Step 6 applicant-owned preview preferences, requires unpaid test skip |
+| schema/11_school_dashboard_foundation.sql | **Deployed** six empty read-only school tenant/analytics tables with membership isolation |
+| tests/10_demo_dashboard_preferences_security.sql | **Passed** rolled-back owner + skip + status tests |
+| tests/11_dashboard_foundation_security.sql | **Passed** rolled-back RLS, unauthorized school read, private bucket tests |
 | `schema/07_school_setup_postal_code.sql` | **Deployed** optional postal/ZIP code support for the School Setup and Application Review cards |
 | `schema/06_onboarding_review_confirmation.sql` | **Deployed Module 01.4** own-account review acknowledgement with draft revision/plan concurrency checks |
 | `tests/06_review_confirmation_security.sql` | Executed rollback-only tests: stale revision, forged user, plan mismatch rejected |
@@ -102,3 +107,11 @@ A school onboarding request is **not yet a school**. The request captures instit
 On 2026-11-11, deployed migration 20261111122224 (secure_payment_preferences_and_test_skip) to the same one-project development database, source: [schema/08_onboarding_payment_preferences.sql](schema/08_onboarding_payment_preferences.sql). The newly created public.onboarding_payment_preferences table has authenticated owner-only SELECT/INSERT/UPDATE RLS, no anon grant and no DELETE. A non-privileged trigger ensures the current Step 3 details and Step 4 confirmation have not gone stale. The only state values are preferences_only and skipped_for_testing; no paid/active/charge fields exist.
 
 Executed [transactional SQL security test](tests/08_payment_preferences_security.sql) successfully, leaving zero test billing records. Flutter UI design and safety contract: [module_01_subscription_payment.md](../docs/database/module_01_subscription_payment.md).
+
+
+## Step 6 dashboard and school-logo changes (2026-11-11)
+
+- Private school logo with per-user folder policies and 2-MiB MIME limit: [schema/09_school_logo_storage.sql](schema/09_school_logo_storage.sql), migration 20261111125611.
+- RLS-protected, unpaid test-preview preferences: [schema/10_demo_dashboard_preferences.sql](schema/10_demo_dashboard_preferences.sql), migration 20261111125713; signed-in user must have an actual skipped_for_testing record.
+- Future real school and dashboard records: [schema/11_school_dashboard_foundation.sql](schema/11_school_dashboard_foundation.sql), migration 20261111125810. All six real tenant tables are **empty and read-only to clients**. School dashboard report SELECT policies require a real active owner/admin membership and an active school.
+- [All schema/UI/permission design decisions](../docs/database/module_02_school_dashboard.md).
