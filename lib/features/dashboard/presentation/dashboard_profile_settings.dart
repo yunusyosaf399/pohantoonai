@@ -32,6 +32,8 @@ class _DashboardProfileSettingsState extends State<DashboardProfileSettings>
   late TabController tabs;
   final fields=<String,TextEditingController>{};
   final owner=TextEditingController();
+  final ownerPhone=TextEditingController();
+  final ownerPosition=TextEditingController();
   final password=TextEditingController();
   final confirm=TextEditingController();
   String? logoPath,error,success;
@@ -59,8 +61,12 @@ class _DashboardProfileSettingsState extends State<DashboardProfileSettings>
 
   Future<void> _loadOwner() async {
     try {
-      final result=await widget.ownerRepository.loadDisplayName();
-      if(mounted)owner.text=result??widget.draft.contactName??'';
+      final result=await widget.ownerRepository.loadProfile();
+      if(mounted){
+        owner.text=result['display_name']??widget.draft.contactName??'';
+        ownerPhone.text=result['phone']??'';
+        ownerPosition.text=result['position']??'';
+      }
     } catch (_) {
       if(mounted)owner.text=widget.draft.contactName??'';
     }
@@ -70,7 +76,8 @@ class _DashboardProfileSettingsState extends State<DashboardProfileSettings>
   void dispose(){
     tabs.dispose();
     for(final c in fields.values)c.dispose();
-    owner.dispose();password.dispose();confirm.dispose();
+    owner.dispose();ownerPhone.dispose();ownerPosition.dispose();
+    password.dispose();confirm.dispose();
     super.dispose();
   }
 
@@ -108,7 +115,9 @@ class _DashboardProfileSettingsState extends State<DashboardProfileSettings>
     if(busy)return;
     setState((){busy=true;error=null;success=null;});
     try{
-      await widget.ownerRepository.saveDisplayName(owner.text);
+      await widget.ownerRepository.saveProfile(
+        displayName:owner.text,phone:ownerPhone.text,
+        position:ownerPosition.text);
       if(mounted){
         widget.onOwnerSaved?.call(owner.text.trim());
         setState(()=>success='Owner name updated.');
@@ -192,6 +201,17 @@ class _DashboardProfileSettingsState extends State<DashboardProfileSettings>
         key:const Key('profile-owner-name'),
         controller:owner,maxLength:120,
         decoration:const InputDecoration(labelText:'Owner display name')),
+      const SizedBox(height:10),
+      TextField(
+        key:const Key('profile-owner-phone'),
+        controller:ownerPhone,maxLength:32,
+        keyboardType:TextInputType.phone,
+        decoration:const InputDecoration(labelText:'Owner phone (optional)')),
+      const SizedBox(height:10),
+      TextField(
+        key:const Key('profile-owner-position'),
+        controller:ownerPosition,maxLength:120,
+        decoration:const InputDecoration(labelText:'Position / title (optional)')),
       FilledButton(
         key:const Key('profile-save-owner'),
         onPressed:busy?null:_saveOwner,
