@@ -114,3 +114,5 @@ SaaS Control Panel
 | Google sign-in mobile E2E | **[Blocked — APK]** | Then verify allowlisted `pohantoonai://auth-callback` and session callback |
 
 **Do not mark APK built or Flutter compilation verified until an artifact exists and checks succeed.** Debug-signed APK is development-only. Repo remains private and release assets require GitHub access.
+
+**Retry verification (2026-11-11):** GitHub Actions APK workflow run `42956828072` was retried once (`run_attempt=2`) using GitHub Actions API. It again concluded `failure` without any executed steps or artifacts. Do not automatically retry indefinitely; account runner admission / billing / policy must be inspected by repository owner.
