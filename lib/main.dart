@@ -14,6 +14,8 @@ import 'features/onboarding/data/onboarding_plan_repository.dart';
 import 'features/onboarding/domain/onboarding_plan_offer.dart';
 import 'features/onboarding/domain/school_setup_draft.dart';
 import 'features/onboarding/data/school_setup_repository.dart';
+import 'features/onboarding/data/review_confirmation_repository.dart';
+import 'features/onboarding/presentation/school_payment_preview.dart';
 import 'features/onboarding/presentation/school_setup_screen.dart';
 import 'features/onboarding/presentation/school_review_preview.dart';
 import 'features/onboarding/presentation/plan_selection_screen.dart';
@@ -37,6 +39,7 @@ class PohantoonAiApp extends StatefulWidget {
     this.repository,
     this.planRepository,
     this.schoolSetupRepository,
+    this.reviewConfirmationRepository,
     this.showOrganizationPreview = false,
     this.authGateway,
     this.themeController,
@@ -49,6 +52,8 @@ class PohantoonAiApp extends StatefulWidget {
   final OnboardingPlanRepository? planRepository;
   /// Optional mock repository for Step 3 widget tests.
   final SchoolSetupRepository? schoolSetupRepository;
+  /// Injectable review persistence for widget tests; live app uses RLS.
+  final ReviewConfirmationRepository? reviewConfirmationRepository;
   final AccountAuthGateway? authGateway;
   final ThemeController? themeController;
 
@@ -65,6 +70,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   String? _authError;
   OnboardingPlanOffer? _schoolSetupPlan;
   SchoolSetupDraft? _reviewDraft;
+  String? _editSection;
+  bool _paymentStep = false;
 
   @override
   void initState() {
@@ -88,6 +95,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           if (!signedIn) {
             _schoolSetupPlan = null;
             _reviewDraft = null;
+            _editSection = null;
+            _paymentStep = false;
           }
         });
         if (signedIn) _loadAccountPreferences();
@@ -133,6 +142,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _authError = null;
       _schoolSetupPlan = null;
       _reviewDraft = null;
+      _editSection = null;
+      _paymentStep = false;
     });
   }
 
@@ -185,27 +196,52 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                     onThemeChanged: _changeTheme,
                   )
                 : _schoolSetupPlan != null
-                    ? _reviewDraft != null
-                        ? SchoolReviewPreview(
-                            draft: _reviewDraft!,
+                    ? _paymentStep
+                        ? SchoolPaymentPreview(
                             plan: _schoolSetupPlan!,
                             themeMode: _theme.value,
                             onThemeChanged: _changeTheme,
-                            onBack: () => setState(() => _reviewDraft = null),
+                            onBack: () => setState(() => _paymentStep = false),
                           )
-                        : SchoolSetupScreen(
-                            plan: _schoolSetupPlan!,
-                            repository: widget.schoolSetupRepository ??
-                                SupabaseSchoolSetupRepository(
-                                    Supabase.instance.client),
-                            accountEmail: _auth?.signedInEmail,
-                            themeMode: _theme.value,
-                            onThemeChanged: _changeTheme,
-                            onBack: () =>
-                                setState(() => _schoolSetupPlan = null),
-                            onContinue: (draft) =>
-                                setState(() => _reviewDraft = draft),
-                          )
+                        : _reviewDraft != null
+                            ? SchoolReviewPreview(
+                                draft: _reviewDraft!,
+                                plan: _schoolSetupPlan!,
+                                repository: widget.reviewConfirmationRepository ??
+                                    SupabaseReviewConfirmationRepository(
+                                      Supabase.instance.client),
+                                accountEmail: _auth?.signedInEmail,
+                                themeMode: _theme.value,
+                                onThemeChanged: _changeTheme,
+                                onBack: () => setState(() {
+                                  _reviewDraft = null;
+                                  _editSection = null;
+                                }),
+                                onEditSection: (section) => setState(() {
+                                  _reviewDraft = null;
+                                  _editSection = section;
+                                }),
+                                onGoToPayment: () =>
+                                    setState(() => _paymentStep = true),
+                              )
+                            : SchoolSetupScreen(
+                                plan: _schoolSetupPlan!,
+                                repository: widget.schoolSetupRepository ??
+                                    SupabaseSchoolSetupRepository(
+                                        Supabase.instance.client),
+                                initialSection: _editSection,
+                                accountEmail: _auth?.signedInEmail,
+                                themeMode: _theme.value,
+                                onThemeChanged: _changeTheme,
+                                onBack: () => setState(() {
+                                  _schoolSetupPlan = null;
+                                  _editSection = null;
+                                }),
+                                onContinue: (draft) => setState(() {
+                                  _reviewDraft = draft;
+                                  _editSection = null;
+                                }),
+                              )
                     : PlanSelectionScreen(
                         repository: widget.planRepository ??
                             SupabaseOnboardingPlanRepository(
