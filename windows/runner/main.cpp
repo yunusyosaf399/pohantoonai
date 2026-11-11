@@ -17,6 +17,33 @@ namespace {
 // The callback is delivered as a single, quoted command-line argument.
 // MSIX deployments should additionally declare this protocol in the package
 // manifest; this registration targets the unpackaged Flutter Windows runner.
+// Compatible with app_links 6.x (and newer versions retaining SendAppLink).
+// The convenience SendAppLinkToInstance() API was only added in v7.2.0,
+// so it cannot be called with older plugin headers.
+bool ForwardAuthLinkToExistingWindow(const wchar_t* command_line) {
+  // Do not suppress ordinary launches or forward unrelated command lines.
+  if (command_line == nullptr ||
+      wcsstr(command_line, L"pohantoonai://auth-callback") == nullptr) {
+    return false;
+  }
+
+  // Flutter's default Win32 window class and our exact runner window title.
+  const HWND existing = FindWindowW(L"FLUTTER_RUNNER_WIN32_WINDOW",
+                                    L"pohantoonai");
+  if (existing == nullptr) {
+    return false;
+  }
+
+  // app_links' Windows C API sends the OAuth callback to the first instance.
+  // Never print the callback URI: it may contain a one-time auth code.
+  SendAppLink(existing);
+  if (IsIconic(existing)) {
+    ShowWindow(existing, SW_RESTORE);
+  }
+  SetForegroundWindow(existing);
+  return true;
+}
+
 void RegisterPohantoonAuthProtocol() {
   wchar_t exe_path[MAX_PATH] = {};
   DWORD len = GetModuleFileNameW(nullptr, exe_path, MAX_PATH);
@@ -68,7 +95,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // When the browser calls pohantoonai://auth-callback, Windows starts a
   // second executable. Forward the OAuth link to the already running app.
   // supabase_flutter's app_links observer then exchanges the auth code.
-  if (SendAppLinkToInstance()) {
+  if (ForwardAuthLinkToExistingWindow(command_line)) {
     return EXIT_SUCCESS;
   }
   RegisterPohantoonAuthProtocol();
