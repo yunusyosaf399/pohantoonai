@@ -1,0 +1,88 @@
+name: Build Android Test APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/android-apk.yml'
+      - 'lib/**'
+      - 'assets/**'
+      - 'android/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-test-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    name: Compile installable Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure Java 17 for Android Gradle Plugin
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Display toolchain versions
+        run: |
+          flutter --version
+          java -version
+          flutter doctor -v
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Build test APK (debug signed)
+        run: flutter build apk --debug --no-pub
+
+      - name: Verify APK exists and is nonempty
+        run: |
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          ls -lh build/app/outputs/flutter-apk/app-debug.apk
+          sha256sum build/app/outputs/flutter-apk/app-debug.apk > build/app/outputs/flutter-apk/app-debug.apk.sha256
+
+      - name: Upload APK as downloadable Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pohantoonai-android-test-apk
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/flutter-apk/app-debug.apk.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Publish test APK in GitHub Releases for phone installation
+        # A private prerelease is convenient for mobile; Actions artifact
+        # remains available even if repository Release permissions block this.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_NUMBER: ${{ github.run_number }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          gh release create "android-test-${RUN_NUMBER}" \
+            "build/app/outputs/flutter-apk/app-debug.apk#pohantoonai-android-test.apk" \
+            "build/app/outputs/flutter-apk/app-debug.apk.sha256#pohantoonai-android-test.apk.sha256" \
+            --target "${TARGET_SHA}" \
+            --title "Pohantoon AI Android test #${RUN_NUMBER} (DEBUG)" \
+            --notes "Development-only debug APK from commit ${TARGET_SHA}. Private testing; not for production distribution. Requires Android to permit installation from the chosen browser/files app." \
+            --prerelease
