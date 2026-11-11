@@ -365,3 +365,11 @@ After **every** accepted task: (1) change its checkbox; (2) set milestone status
 
 - Additional [SQL 14 server-validation migration](../../supabase/schema/14_dev_workspace_required_fields.sql) deployed after end-to-end SQL tests identified the draft table already has some required field checks. Workspace RLS and trigger now validate all essential school identity/contact/capacity fields independently; [negative test 14](../../supabase/tests/14_dev_workspace_required_fields_security.sql) passed with ROLLBACK.
 
+
+### 2026-11-11 — Authentication and return-to-dashboard acceptance
+
+- Stable Supabase Auth user ID now drives session change handling, clearing account A's dashboard on a direct switch to account B and protecting the same school's saved workspace after Google/password sign-in.
+- Committed test: [Google→password→same demo dashboard, email signup→OTP→new dashboard, negative account switch](../../test/auth/auth_return_to_dashboard_flow_test.dart). Flutter tests are **not executed** because remote Actions runner is blocked and local SDK is unavailable here.
+- Executed [auth identity/workspace RLS SQL 15](../../supabase/tests/15_auth_provider_same_account_rls.sql) successfully: one verified account with Google+password can read its matching owner-only development workspace, a second confirmed account cannot. Rolled back without changing data.
+- Hosted Auth templates/SMTP setup and real device tests remain tracked as [issue #1](https://github.com/yunusyosaf399/pohantoonai/issues/1) and [issue #2](https://github.com/yunusyosaf399/pohantoonai/issues/2). Full [acceptance runbook](../testing/auth_return_to_dashboard_acceptance.md).
+
