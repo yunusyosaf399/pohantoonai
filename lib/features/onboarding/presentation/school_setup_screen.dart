@@ -18,6 +18,7 @@ class SchoolSetupScreen extends StatefulWidget {
     required this.onBack,
     required this.onContinue,
     this.accountEmail,
+    this.initialSection,
   });
   final OnboardingPlanOffer plan;
   final SchoolSetupRepository repository;
@@ -26,6 +27,8 @@ class SchoolSetupScreen extends StatefulWidget {
   final VoidCallback onBack;
   final ValueChanged<SchoolSetupDraft> onContinue;
   final String? accountEmail;
+  /// Opens the matching card when an Edit action is chosen in Step 4.
+  final String? initialSection;
 
   @override
   State<SchoolSetupScreen> createState() => _SchoolSetupScreenState();
@@ -39,6 +42,12 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     'board','curriculum','otherCountry','otherZone','otherCurrency',
     'otherLowest','otherHighest',
   ];
+  final Map<String, GlobalKey> sectionKeys = {
+    'identity': GlobalKey(),
+    'contact': GlobalKey(),
+    'location': GlobalKey(),
+    'academics': GlobalKey(),
+  };
   final Map<String,TextEditingController> fields = {
     for (final name in fieldNames) name: TextEditingController(),
   };
@@ -153,6 +162,18 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
       if (!mounted) return;
       if (existing != null) _restore(existing);
       setState(() { loading = false; loaded = true; dirty = false; });
+      if (widget.initialSection != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final target = sectionKeys[widget.initialSection]?.currentContext;
+          if (target != null) {
+            Scrollable.ensureVisible(target,
+              alignment: 0.08,
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOut);
+          }
+        });
+      }
     } catch (_) {
       if (mounted) setState(() {
         loading = false;
@@ -644,7 +665,14 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
       {bool account=false}) {
     final colors=Theme.of(context).colorScheme;
     final dark=Theme.of(context).brightness==Brightness.dark;
+    final section = switch(title) {
+      'School Identity' => 'identity',
+      'Primary Contact' => 'contact',
+      'Location & Preferences' => 'location',
+      _ => 'academics',
+    };
     return Container(
+      key: sectionKeys[section],
       padding:const EdgeInsets.all(18),
       decoration:BoxDecoration(
         color:dark?const Color(0xFF122D31):Colors.white,
