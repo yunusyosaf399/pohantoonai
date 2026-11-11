@@ -122,3 +122,12 @@ A later trusted backend service must create school records, memberships and aggr
 ## Design and authorization recommendation
 
 Treat "school application draft" and "approved active school" as distinct states/tables. During testing, all demo analytics must stay isolated from actual student records. After approval, migrate/validate the applicant school information into public.schools through an audited server-side provisioning workflow; grant the user a school_owner membership transactionally. Allow non-locked school profile edits through separate real-school endpoints with authorization and audit logs. This avoids any bypass through the Step 5 skip button.
+
+
+## Final hardening notes — 2026-11-11
+
+- [Logo path negative test](../../supabase/tests/09_school_logo_security.sql) executed in ROLLBACK: own-image path allowed; cross-account path, wrong folder and SVG extension rejected. No production object was uploaded in this automated SQL test; real Storage API integration still needs a signed-in device test.
+- [Dashboard widget test](../../test/dashboard/school_dashboard_test.dart) includes 10-second auto-rotation, mouse hover pause/resume, recent approvals/admissions auto-rotation, full-screen viewer and profile menu callback. Tests are **committed, not executed**.
+- Desktop Ctrl+K now opens the demo search dialog, matching the shortcut hint shown in the UI.
+- macOS Runner DebugProfile and Release entitlements explicitly permit user-selected read-only files, as required by file_selector. Windows/Linux/Android/iOS/Web use the endorsed file selector implementation.
+- **Dependency caveat:** pubspec.yaml pins file_selector 1.1.0; pubspec.lock has not yet been regenerated because no Flutter SDK is installed in this execution environment. On the developer laptop run flutter pub get and commit the updated lockfile together with generated platform registrant changes, then flutter analyze, flutter test and flutter run -d windows.
