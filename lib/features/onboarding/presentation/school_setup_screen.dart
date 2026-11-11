@@ -139,7 +139,11 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     _load();
   }
   void _changed() {
-    if (!loading) dirty = true;
+    if (loading) return;
+    dirty = true;
+    if (error != null && mounted) {
+      setState(() => error = null);
+    }
   }
 
   Future<void> _load() async {
@@ -677,7 +681,7 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
             const SizedBox(height:13),
           ],
           LayoutBuilder(builder:(context,bounds) {
-            final columns=bounds.maxWidth>=450?2:1;
+            final columns=bounds.maxWidth>=300?2:1;
             final fieldWidth=(bounds.maxWidth-(columns-1)*12)/columns;
             return Wrap(spacing:12,runSpacing:14,children:[
               for(final item in items)
