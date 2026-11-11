@@ -15,6 +15,18 @@ The first screen now matches the supplied mobile and desktop design references: 
 
 **Security:** Authentication never grants organization or school administrator status. The existing Organization Control Panel feature is still in [`lib/features/organization/`](lib/features/organization/) for future role-protected integration; it's only accessible through an explicit test/development preview flag today.
 
+## Step 2 of 6 — Choose Your Subscription Plan
+
+After a valid Google/email account session, Flutter now opens a **responsive plan-selection screen** with desktop sidebar and mobile cards, active plans from Supabase, two-way Light/Dark/System appearance settings, and saved choices scoped to the signed-in user.
+
+- [Flutter plan selection screen](lib/features/onboarding/presentation/plan_selection_screen.dart)
+- [RLS-backed data repository](lib/features/onboarding/data/onboarding_plan_repository.dart)
+- [Portable deployed SQL](supabase/schema/04_onboarding_plan_selection.sql)
+- [Supabase security smoke tests](supabase/tests/04_onboarding_plan_security.sql)
+- [Detailed design and status](docs/database/module_01_plan_selection.md)
+
+**Database deployed and security smoke-tested.** Source now has 3 published demo plans and only the account owner can save their draft choice; no subscription, payment, school or permission is created. Step 3 is currently an honest placeholder until we implement school legal/contact information. Flutter widget tests are written but **not yet run**: GitHub Actions jobs fail before starting because of account billing/spending restrictions.
+
 ## Run Flutter
 
 ```bash
