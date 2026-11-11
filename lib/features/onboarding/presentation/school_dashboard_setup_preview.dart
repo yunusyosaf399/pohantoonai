@@ -193,7 +193,7 @@ class _SchoolDashboardSetupPreviewState
     itemBuilder: (_) => const [
       PopupMenuItem(value:'school',child:ListTile(
         leading:Icon(Icons.apartment_outlined),
-        title:Text('School profile & logo'))),
+        title:Text('Edit school details'))),
       PopupMenuItem(value:'owner',child:ListTile(
         leading:Icon(Icons.person_outline),
         title:Text('Owner & security settings'))),
@@ -916,9 +916,11 @@ class _SchoolDashboardSetupPreviewState
                 style:TextStyle(fontSize:11,
                   color:colors.onSurfaceVariant))),
               TextButton(
-                key:const Key('dashboard-sign-out'),
-                onPressed:widget.onSignOut,
-                child:const Text('Sign out')),
+                key:Key(widget.onSignOut==null
+                  ? 'dashboard-back-to-payment' : 'dashboard-sign-out'),
+                onPressed:widget.onSignOut ?? widget.onBack,
+                child:Text(widget.onSignOut==null
+                  ? 'Back to payment (test)' : 'Sign out')),
             ]),
           ],
         ),
