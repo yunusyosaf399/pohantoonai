@@ -61,6 +61,7 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
 class _SchoolDashboardSetupPreviewState
     extends State<SchoolDashboardSetupPreview> {
   late SchoolSetupDraft currentDraft;
+  String? ownerDisplayName;
   DemoDashboardPreferences settings = const DemoDashboardPreferences();
   String? schoolLogoUrl;
   bool settingsLoaded = false;
@@ -81,6 +82,7 @@ class _SchoolDashboardSetupPreviewState
     currentDraft=widget.draft;
     _loadSettings();
     _loadLogo();
+    _loadOwnerName();
   }
 
   DemoDashboardPreferencesRepository? get preferences {
@@ -102,6 +104,15 @@ class _SchoolDashboardSetupPreviewState
     } catch (_) {
       if (mounted) setState(() => settingsLoaded = true);
     }
+  }
+
+  Future<void> _loadOwnerName() async {
+    try{
+      final name=await widget.ownerRepository?.loadDisplayName();
+      if(mounted&&name!=null&&name.trim().isNotEmpty){
+        setState(()=>ownerDisplayName=name);
+      }
+    }catch(_){}
   }
 
   Future<void> _loadLogo() async {
@@ -128,12 +139,12 @@ class _SchoolDashboardSetupPreviewState
   }
 
   String get name {
-    final full = widget.draft.contactName?.trim();
+    final full = (ownerDisplayName??currentDraft.contactName)?.trim();
     if (full == null || full.isEmpty) return 'School owner';
     return full.split(RegExp(r'\s+')).first;
   }
   String get initials {
-    final full = widget.draft.contactName?.trim();
+    final full = currentDraft.contactName?.trim();
     if (full == null || full.isEmpty) return 'SO';
     final parts = full.split(RegExp(r'\s+'));
     return (parts.first[0] +
@@ -165,6 +176,9 @@ class _SchoolDashboardSetupPreviewState
           logoRepository:widget.logoRepository,
           credentials:widget.credentials,
           initialTab:tab,
+          onOwnerSaved:(name){
+            if(mounted)setState(()=>ownerDisplayName=name);
+          },
           onDraftSaved:(saved){
             if(mounted)setState((){
               currentDraft=saved;
@@ -401,7 +415,7 @@ class _SchoolDashboardSetupPreviewState
         if(!compact)
           ListTile(
             leading:const Icon(Icons.apartment_outlined),
-            title:Text(widget.draft.schoolName ?? 'School workspace',
+            title:Text(currentDraft.schoolName ?? 'School workspace',
               maxLines:1,overflow:TextOverflow.ellipsis,
               style:const TextStyle(
                 fontSize:12,fontWeight:FontWeight.w800)),
@@ -603,7 +617,7 @@ class _SchoolDashboardSetupPreviewState
             color:colors.primary),
         ]),
         const SizedBox(height:5),
-        Text('Demo billing overview · ' + widget.draft.currencyCode,
+        Text('Demo billing overview · ' + currentDraft.currencyCode,
           style:TextStyle(fontSize:11,
             color:colors.onSurfaceVariant)),
         const SizedBox(height:24),
@@ -612,13 +626,13 @@ class _SchoolDashboardSetupPreviewState
             crossAxisAlignment:CrossAxisAlignment.start,children:[
               const Text('Collected',style:TextStyle(fontSize:11)),
               const SizedBox(height:5),
-              Text(widget.draft.currencyCode + ' 842K',style:const TextStyle(
+              Text(currentDraft.currencyCode + ' 842K',style:const TextStyle(
                 fontSize:19,fontWeight:FontWeight.w800)),
           ])),
           Column(crossAxisAlignment:CrossAxisAlignment.end,children:[
             const Text('Outstanding',style:TextStyle(fontSize:11)),
             const SizedBox(height:5),
-            Text(widget.draft.currencyCode + ' 186K',style:const TextStyle(
+            Text(currentDraft.currencyCode + ' 186K',style:const TextStyle(
               fontSize:19,fontWeight:FontWeight.w800)),
           ]),
         ]),
