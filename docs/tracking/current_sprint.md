@@ -224,3 +224,11 @@ SaaS Control Panel
 | Real school approval, provision, live students/admissions/finance | **[NOT implemented]** | Server-side authorization and domain modules are explicit next gate |
 
 **Important:** real school dashboard metrics, memberships and activity are not created for anyone who skipped payment. Visible demo values are isolated Flutter fixtures only. Existing Supabase Security Advisor warning for leaked-password protection remains separate.
+
+
+### Module 02 hardening follow-ups (2026-11-11)
+
+- Deployed logo path test [09_school_logo_security.sql](../../supabase/tests/09_school_logo_security.sql) passed with ROLLBACK. No real school-logo object uploaded in automated tests.
+- Added macOS user-selected read-only file entitlements and functional Ctrl+K demo search shortcut.
+- [Dashboard Flutter widget tests](../../test/dashboard/school_dashboard_test.dart) now include rotation every 10 seconds, hover pause/resume, full-screen trends, full activity lists, school profile editing.
+- **Build gate remains open:** new pinned file_selector 1.1.0 needs developer's flutter pub get to regenerate pubspec.lock, Flutter analyze/test and Windows/mobile/Web runtime validation.
