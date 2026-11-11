@@ -20,8 +20,10 @@ Step 3: school details
     → server rejects forged account, invalid fields and plan overages
     → saves ready_for_review (NOT submitted/approved)
     ↓
-Step 4: read-only review preview with Back to edit
-    → operator submission/review module NOT YET IMPLEMENTED
+Step 4: responsive Application Review with section-level Edit buttons
+    → accuracy checkbox and server-verified review acknowledgement
+    → Go to Payment opens safe Step 5 preview
+    → operator submission/review and real payment NOT YET IMPLEMENTED
 ```
 
 **Neither Step 3 nor Step 4 creates a school, accepts payment, activates a plan, grants tenant access or submits a review application.** The user-facing review step is deliberately labelled preview until its own server-side submission workflow exists.
@@ -107,4 +109,4 @@ SQL source: [`supabase/schema/05_school_setup_drafts.sql`](../../supabase/schema
 - [`test/onboarding/plan_app_navigation_test.dart`](../../test/onboarding/plan_app_navigation_test.dart)
 - [`supabase/tests/05_school_setup_security.sql`](../../supabase/tests/05_school_setup_security.sql)
 
-**Next:** Step 4 Application Review and formal submission with an applicant-owned request, consent/attachment policy, server-only review transition, and operator inbox. Do not treat this draft's ready marker as an approval decision.
+**Next:** The [Step 4 review screen and own-account acknowledgement](module_01_application_review.md) are now implemented. Step 5 requires a verified payment provider and protected billing/server workflow; operator approval remains a separate unimplemented module. The Step 3 draft's ready marker is not an approval decision.
