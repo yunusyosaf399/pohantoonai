@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/settings/appearance_settings_button.dart';
 import '../data/account_auth_gateway.dart';
+import 'email_credentials_panel.dart';
 import 'school_campus_illustration.dart';
 
 /// Step 1 / 6: an adaptive *app* screen, not a website template.
@@ -296,7 +297,7 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
         ),
         const SizedBox(height: 14),
         Text(
-          'Sign in securely with Google or email to begin registering your school.',
+          'Use Google or your email and password to access your school.',
           style: text.bodyLarge?.copyWith(
             color: colors.onSurfaceVariant, height: 1.55,
           ),
@@ -348,6 +349,11 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
               foregroundColor: colors.onSurface,
               minimumSize: const Size.fromHeight(54),
             ),
+          )
+        else if(widget.auth is AccountEmailCredentials)
+          EmailCredentialsPanel(
+            key:const Key('email-credentials-panel'),
+            auth:widget.auth as AccountEmailCredentials,
           )
         else if (_emailSent)
           Container(
