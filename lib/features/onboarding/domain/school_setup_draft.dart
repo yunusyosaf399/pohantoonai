@@ -27,6 +27,7 @@ class SchoolSetupDraft {
     this.highestGrade,
     this.teachingLanguages = const [],
     this.readyForReview = false,
+    this.updatedAt,
   });
 
   final String? schoolName, legalSchoolName, schoolType;
@@ -40,6 +41,9 @@ class SchoolSetupDraft {
   final String? educationBoard, curriculum, lowestGrade, highestGrade;
   final List<String> teachingLanguages;
   final bool readyForReview;
+  /// Database-issued optimistic-concurrency token for review confirmation.
+  /// Not client-editable and deliberately excluded from [toJson].
+  final DateTime? updatedAt;
 
   factory SchoolSetupDraft.fromJson(Map<String, dynamic> json) =>
       SchoolSetupDraft(
@@ -71,6 +75,8 @@ class SchoolSetupDraft {
         teachingLanguages: (json['teaching_languages'] as List<dynamic>? ?? [])
             .map((value) => value.toString()).toList(growable: false),
         readyForReview: json['draft_status'] == 'ready_for_review',
+        updatedAt: json['updated_at'] == null
+            ? null : DateTime.parse(json['updated_at'] as String),
       );
 
   Map<String, dynamic> toJson() => {
