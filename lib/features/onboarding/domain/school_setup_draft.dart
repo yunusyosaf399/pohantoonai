@@ -7,6 +7,7 @@ class SchoolSetupDraft {
     this.registrationLicenseNumber,
     this.establishedYear,
     this.websiteUrl,
+    this.logoStoragePath,
     this.contactName,
     this.contactPosition,
     this.contactEmail,
@@ -32,7 +33,7 @@ class SchoolSetupDraft {
   });
 
   final String? schoolName, legalSchoolName, schoolType;
-  final String? registrationLicenseNumber, websiteUrl;
+  final String? registrationLicenseNumber, websiteUrl, logoStoragePath;
   final int? establishedYear;
   final String? contactName, contactPosition, contactEmail, contactPhone;
   final String? countryCode, region, city, streetAddress, postalCode;
@@ -54,6 +55,7 @@ class SchoolSetupDraft {
         registrationLicenseNumber: json['registration_license_number'] as String?,
         establishedYear: (json['established_year'] as num?)?.toInt(),
         websiteUrl: json['website_url'] as String?,
+        logoStoragePath: json['logo_storage_path'] as String?,
         contactName: json['contact_name'] as String?,
         contactPosition: json['contact_position'] as String?,
         contactEmail: json['contact_email'] as String?,
@@ -88,6 +90,7 @@ class SchoolSetupDraft {
     'registration_license_number': registrationLicenseNumber,
     'established_year': establishedYear,
     'website_url': websiteUrl,
+    'logo_storage_path': logoStoragePath,
     'contact_name': contactName,
     'contact_position': contactPosition,
     'contact_email': contactEmail,
