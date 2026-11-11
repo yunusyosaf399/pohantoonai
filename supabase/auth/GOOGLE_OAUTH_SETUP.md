@@ -1,6 +1,6 @@
 # Google OAuth Setup — Pohantoon AI
 
-> **Status:** [Requires owner action in Google Cloud + Supabase Dashboard] · **Last reviewed:** 2026-11-11  
+> **Status:** [Google flow has previously reached Supabase; return-to-app still requires dashboard redirect allowlist and device testing] · **Last reviewed:** 2026-11-11  
 > **Supabase project:** `pohantoonai`, organization `YouPro School`, project ref `umlzqlbakfwzgadafhyy`.  
 > **Do not commit OAuth client secrets, Google credential JSON, management API tokens, or screenshots containing secrets.**
 
@@ -32,6 +32,8 @@ Google OAuth is **project-wide authentication** for the one `pohantoonai` Supaba
 
 ### 3. Allow Flutter callbacks in Supabase
 
+**Updated platform contract:** [Cross-platform OAuth callback remediation](OAUTH_CALLBACK_PLATFORMS.md). The app now uses an explicit Web URL with a preserved base path, and native `pohantoonai://auth-callback`; Windows automatically registers the scheme for unpackaged executables, while mobile uses the `app_links` plugin. This must be accompanied by the Dashboard allowlist entries. Use an exact Web URL (including `/` for root) in addition to the development wildcard.
+
 Open [pohantoonai URL Configuration](https://supabase.com/dashboard/project/umlzqlbakfwzgadafhyy/auth/url-configuration):
 
 - **Additional Redirect URL:** `pohantoonai://auth-callback` (matches `SupabaseConfiguration.mobileRedirect` and the app's configured native deep-link handlers).
@@ -41,7 +43,7 @@ Open [pohantoonai URL Configuration](https://supabase.com/dashboard/project/umlz
 
 ### 4. Flutter and database implementation already present
 
-- Flutter: `lib/features/auth/data/account_auth_gateway.dart` uses `supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: kIsWeb ? null : SupabaseConfiguration.mobileRedirect)`.
+- Flutter: `lib/features/auth/data/account_auth_gateway.dart` uses `supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: oauthRedirectForApp(isWeb: kIsWeb, currentUri: Uri.base))`, with system-browser launch on native platforms.
 - Flutter: `lib/features/auth/presentation/account_welcome_screen.dart` shows Google/email and light/dark theme switch on mobile and desktop.
 - Database: `public.user_profiles` and `public.user_preferences` own-row RLS; no Google OAuth credentials stored in app tables.
 - Edge Function: `supabase/functions/account-bootstrap/index.ts` validates user JWT and initializes own profile/preferences. It does not grant school permissions.
