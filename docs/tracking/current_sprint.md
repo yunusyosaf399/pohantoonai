@@ -91,3 +91,13 @@ SaaS Control Panel
 
 **Next:** Configure provider settings and email delivery, fix Flutter CI execution, generate lockfile, then test the first screen and Auth flow on Android and Windows/Web. Continue plan-selection UI only after account creation is confirmed. Do not start student/finance live table exposure without RLS.
 
+
+## OAuth callback debugging — 2026-11-11
+
+- **Live Auth evidence:** Supabase Auth log at 03:06:51 UTC: external Google provider redirect; 03:07:00 UTC: `user_signedup` + HTTP 302. Aggregate `auth.users`: one account created recently. This is server-side progress, not a verified Flutter session.
+- **Earlier error:** at 03:04:07 UTC, `400: OAuth state parameter missing` observed on a separate attempt; do not replay Google callbacks or share token-bearing URLs.
+- **Flutter fix:** [OAuth gateway](../../lib/features/auth/data/account_auth_gateway.dart) uses the active Flutter Web origin/port as `redirectTo` for Google and email; mobile retains `pohantoonai://auth-callback`. Added [redirect tests](../../test/auth/oauth_redirect_test.dart).
+- **External configuration gate:** Set a stable Flutter Web port, add `http://localhost:3000/**` to the Supabase **Additional Redirect URLs** in the test project. This is separate from Google's Supabase-hosted callback URI.
+- **Outstanding:** No ability to inspect or mutate Supabase's Site URL/allowlist via currently connected management tool; no Flutter SDK available to run new test; latest GitHub Actions workflows also failed, so test acceptance is still open. Windows protocol handler is not yet implemented.
+- **Next verification:** complete one Google sign-in at `http://localhost:3000` and confirm the app receives Auth session, invokes `account-bootstrap` and transitions to Step 1 success UI.
+
