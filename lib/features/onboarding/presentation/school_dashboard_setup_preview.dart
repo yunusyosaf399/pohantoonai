@@ -130,18 +130,16 @@ class _SchoolDashboardSetupPreviewState
   }
 
   void _handleProfileAction(String value) {
-    switch(value) {
-      case 'school':
-      case 'logo':
-        widget.onEditDetails?.call('identity');
-      case 'contact':
-        widget.onEditDetails?.call('contact');
-      case 'location':
-        widget.onEditDetails?.call('location');
-      case 'academic':
-        widget.onEditDetails?.call('academics');
-      case 'back':
-        widget.onBack();
+    if (value == 'back') {
+      widget.onBack();
+    } else if (value == 'school' || value == 'logo') {
+      widget.onEditDetails?.call('identity');
+    } else if (value == 'contact') {
+      widget.onEditDetails?.call('contact');
+    } else if (value == 'location') {
+      widget.onEditDetails?.call('location');
+    } else if (value == 'academic') {
+      widget.onEditDetails?.call('academics');
     }
   }
 
@@ -396,8 +394,9 @@ class _SchoolDashboardSetupPreviewState
                   dense:true,
                   contentPadding:EdgeInsets.symmetric(
                     horizontal:compact?16:11),
-                  onTap:()=>item.$1=='Dashboard'
-                    ? null : _unavailable(item.$1),
+                  onTap:() {
+                    if (item.$1 != 'Dashboard') _unavailable(item.$1);
+                  },
                 )),
             ),
         ])),
