@@ -260,6 +260,13 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - **Build validation blocked:** Current GitHub Actions job reports failure without job steps or downloadable runner logs; Flutter SDK unavailable in this execution environment. Pin versions in `pubspec.yaml` and commit a resolved lockfile when the toolchain runs. Do not check implementation tasks as complete until verification passes.
 - **Existing `platform` tables:** 12 private tables intentionally keep zero policies; no general authenticated access to organizational records.
 
+## Cross-platform Auth callback remediation — 2026-11-11
+
+- [Callback setup/acceptance guide](../../supabase/auth/OAUTH_CALLBACK_PLATFORMS.md): desktop Windows unpackaged current-user URI registration + app-links single-instance forwarding, Android/iOS competing Flutter-router disabled, macOS callback URI registered, Flutter Web redirect preserves origin/port/base path while dropping OAuth query/fragment parameters.
+- `lib/features/auth/data/account_auth_gateway.dart` launches Google OAuth via the external system browser on native; `lib/main.dart` handles callback code-exchange errors without leaking tokens.
+- Regression tests: [Web redirect helper](../../test/auth/oauth_redirect_test.dart) and [native registration contracts](../../test/auth/native_callback_contract_test.dart).
+- **Pending release gate:** owner must allowlist `pohantoonai://auth-callback` and exact Web URL(s) in hosted Supabase Auth URL Configuration. Flutter compilation, CI tests and Windows/Android/iOS/Web sign-in remain unverified due account billing/runner blocker. No database schema changes needed.
+
 ## Module 01.3 execution evidence — 2026-11-11
 
 - [Step 3 module design](../database/module_01_school_setup.md) documents database and responsive Flutter UI; live schema `20261111064830` applied to the single `pohantoonai` development project.
