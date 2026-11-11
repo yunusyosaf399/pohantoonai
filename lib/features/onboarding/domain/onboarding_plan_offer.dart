@@ -46,10 +46,6 @@ class OnboardingPlanOffer {
       '${amount(studentLimit)} students · ${amount(campusLimit)} campuses · '
       '${amount(staffLimit)} staff';
 
-  String get shortDescription => switch (code) {
-        'starter_demo' => 'Essential tools for a single-campus school.',
-        'growth_demo' => 'For growing schools and multiple campuses.',
-        'enterprise_demo' => 'For larger institutions with extensive operational needs.',
-        _ => summary,
-      };
+  /// Read visible copy from the database, not Flutter-only constants.
+  String get shortDescription => summary;
 }
