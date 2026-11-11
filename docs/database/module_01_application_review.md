@@ -27,7 +27,7 @@ Step 1: Authenticate → Step 2: choose plan
 - **Desktop (>=1024 px):** left Pohantoon AI registration sidebar with steps 1–6; main review area with progress 4/6, header, banner and info cards; wider workspaces show the selected-plan card to the right.
 - **Tablet/intermediate:** no forced full-width desktop sidebar, two-column school cards where space permits.
 - **Phone:** one-column school cards, account/theme header, progress, confirmation and adaptive Back / Go to Payment actions. 320px-wide footer stacks actions.
-- **Review cards:** School Identity, Owner & Contact Information, School Location, Academic & Capacity. Values come from the actual Step 3 saved draft and signed-in account, never sample Horizon International School data. Missing optional values show an em dash.
+- **Review cards:** School Identity, Owner & Contact Information, School Location (including optional postal code), Academic & Capacity. Values come from the actual Step 3 saved draft and signed-in account, never sample Horizon International School data. Missing optional values show an em dash.
 - **Edit controls:** all four cards provide distinct, working Edit callbacks that reopen Step 3 and scroll to the corresponding form section. Unsaved or changed values require a fresh save and review.
 - **Selected Plan:** sourced from the actual Step 2 offer model, including student/campus/staff caps, trial length and demo status.
 - **Accuracy checkbox:** initially unchecked; disables Go to Payment until explicitly checked.
@@ -79,3 +79,7 @@ These checks are performed **in PostgreSQL**, independent of Flutter. Future pay
 - [Step 5 payment preview](../../lib/features/onboarding/presentation/school_payment_preview.dart)
 - [Live SQL](../../supabase/schema/06_onboarding_review_confirmation.sql)
 - [SQL negative tests](../../supabase/tests/06_review_confirmation_security.sql)
+
+## Postal code completeness (Step 3 + Step 4)
+
+The supplied reference shows a postal/ZIP code field in the Location review card, but the earlier Step 3 schema had no such field. [Migration `20261111120829`](../../supabase/schema/07_school_setup_postal_code.sql) adds nullable `postal_code` to `public.school_setup_drafts` (maximum 32 characters), without changing existing rows. The Step 3 form, typed draft model and Step 4 review now read/write and display it. No placeholder address values are fabricated.
