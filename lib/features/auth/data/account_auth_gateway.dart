@@ -3,6 +3,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/supabase_configuration.dart';
 
+/// Returns to the actual Flutter Web origin (including its dev server port).
+/// For installed apps the scheme/host must be registered with the OS and
+/// allowlisted in Supabase Auth → URL Configuration.
+String oauthRedirectForApp({
+  required bool isWeb,
+  required Uri currentUri,
+}) {
+  return isWeb ? currentUri.origin : SupabaseConfiguration.mobileRedirect;
+}
+
 abstract class AccountAuthGateway {
   bool get signedIn;
   String? get signedInEmail;
@@ -34,7 +44,7 @@ class SupabaseAccountAuthGateway implements AccountAuthGateway {
   Future<void> signInWithGoogle() async {
     final opened = await _client.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: kIsWeb ? null : SupabaseConfiguration.mobileRedirect,
+      redirectTo: oauthRedirectForApp(isWeb: kIsWeb, currentUri: Uri.base),
     );
     if (!opened) {
       throw const AuthException('Could not open Google sign-in. Try again.');
@@ -46,7 +56,7 @@ class SupabaseAccountAuthGateway implements AccountAuthGateway {
     await _client.auth.signInWithOtp(
       email: email.trim(),
       shouldCreateUser: true,
-      emailRedirectTo: kIsWeb ? null : SupabaseConfiguration.mobileRedirect,
+      emailRedirectTo: oauthRedirectForApp(isWeb: kIsWeb, currentUri: Uri.base),
     );
   }
 
