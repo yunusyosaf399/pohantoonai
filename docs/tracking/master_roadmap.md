@@ -260,6 +260,16 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - **Build validation blocked:** Current GitHub Actions job reports failure without job steps or downloadable runner logs; Flutter SDK unavailable in this execution environment. Pin versions in `pubspec.yaml` and commit a resolved lockfile when the toolchain runs. Do not check implementation tasks as complete until verification passes.
 - **Existing `platform` tables:** 12 private tables intentionally keep zero policies; no general authenticated access to organizational records.
 
+## Module 02 dashboard and school branding evidence — 2026-11-11
+
+- Implemented [responsive Step 6 Flutter dashboard](../../lib/features/onboarding/presentation/school_dashboard_setup_preview.dart), [10-second pause-on-hover/fullscreen analytics and rotating admissions/approvals](../../lib/features/dashboard/presentation/rotating_dashboard_panels.dart); explicitly DEMO DATA only.
+- Deployed [private Storage bucket](../../supabase/schema/09_school_logo_storage.sql) with 2 MiB size/MIME limits and owner-only policies, draft path and signed logo preview; school logo upload available in Step 3; profile menus return to editable Step 3 sections.
+- Deployed [demo dashboard preferences](../../supabase/schema/10_demo_dashboard_preferences.sql) with own-account RLS and skip prerequisite, and [real school read-only tenant foundation](../../supabase/schema/11_school_dashboard_foundation.sql) with active school_owner/school_admin membership checks for finance/admissions analytics. Zero real schools/memberships/snapshots provisioned.
+- Migration versions: 20261111125611, 20261111125713, 20261111125810. [SQL security tests](../../supabase/tests/11_dashboard_foundation_security.sql) and [demo preferences negative tests](../../supabase/tests/10_demo_dashboard_preferences_security.sql) passed and rolled back.
+- Flutter code and tests committed, but **Flutter compile/visual test pending**; new file_selector dependency requires flutter pub get and regenerating pubspec.lock on the user's Flutter SDK. Real server-only provisioning, domain CRUD and approval workflows remain separate milestones.
+- [Full implementation and security contract](../database/module_02_school_dashboard.md).
+
+
 ## Module 01.5 execution evidence — 2026-11-11
 
 - [Step 5 Subscription Payment UI](../../lib/features/onboarding/presentation/school_payment_preview.dart) implements responsive reference layout, method/cycle/billing preferences, disabled real Pay Now, and active Skip for Now. [Step 6](../../lib/features/onboarding/presentation/school_dashboard_setup_preview.dart) is an explicit non-activated dashboard test preview.
