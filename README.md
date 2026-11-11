@@ -15,6 +15,16 @@ The first screen now matches the supplied mobile and desktop design references: 
 
 **Security:** Authentication never grants organization or school administrator status. The existing Organization Control Panel feature is still in [`lib/features/organization/`](lib/features/organization/) for future role-protected integration; it's only accessible through an explicit test/development preview flag today.
 
+## Cross-platform Google OAuth and email return-to-app callback
+
+**Updated 2026-11-11:** Flutter Web now returns to the active URL including its deployment path; Android/iOS/macOS let Supabase's `app_links` consume callbacks instead of Flutter's competing router. The Windows runner registers `pohantoonai://` under the current user and forwards second-instance callbacks to the existing app. OAuth launches in the system browser, and authentication-stream failures show recoverable sign-in feedback.
+
+- [Complete platform callback setup, Supabase allowlist and testing instructions](supabase/auth/OAUTH_CALLBACK_PLATFORMS.md)
+- [Web redirect unit tests](test/auth/oauth_redirect_test.dart)
+- [Native Android/iOS/macOS/Windows callback contract tests](test/auth/native_callback_contract_test.dart)
+
+**Action still required in Supabase Dashboard:** Add `pohantoonai://auth-callback` plus the **exact** active Flutter Web origin (for example `http://localhost:3000/`) under Authentication → URL Configuration → Additional Redirect URLs. Client source code cannot override a blocked server redirect. **These source changes are committed, not runtime-verified**; Flutter runners remain blocked by account billing/spending restrictions.
+
 ## Step 2 of 6 — Choose Your Subscription Plan
 
 After a valid Google/email account session, Flutter now opens a **responsive plan-selection screen** with desktop sidebar and mobile cards, active plans from Supabase, two-way Light/Dark/System appearance settings, and saved choices scoped to the signed-in user.
