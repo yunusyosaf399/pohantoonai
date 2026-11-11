@@ -13,7 +13,7 @@ Four supplied reference images establish one coherent Step 2 rather than four se
 - **Narrow phones:** footer actions stack rather than overflowing. Selected cards have a clear border, checkmark and semantic selection state; summaries update without network mutation.
 - **Theme:** existing `ThemeController` persists Light/Dark/System locally, and user preference in RLS-protected `user_preferences` after login. No second theme system was introduced.
 
-**User flow**: Supabase Auth session (Step 1) → Step 2 fetch active published plans → user chooses (visual only) → taps Continue → selection is saved under their Auth user id → Step 3 placeholder. Step 3 is **not yet a completed school information form**: nothing creates a school, activates a subscription, charges money or assigns user permissions.
+**User flow**: Supabase Auth session (Step 1) → Step 2 fetch active published plans → user chooses (visual only) → taps Continue → selection is saved under their Auth user id → Step 3 now has a full school-information form. The form saves a user-owned draft but still does not create a school, activate a subscription, charge money or assign permissions.
 
 ## Database schema and role boundaries
 
@@ -49,10 +49,10 @@ Null limit means unlimited; **0 means unavailable**. Descriptions were aligned t
 - [Plan domain model](../../lib/features/onboarding/domain/onboarding_plan_offer.dart): typed field parsing, limits and presentation strings.
 - [Supabase plan repository](../../lib/features/onboarding/data/onboarding_plan_repository.dart): authenticated read, own saved-selection read, owner-scoped upsert with returned id confirmation.
 - [Responsive Step 2 screen](../../lib/features/onboarding/presentation/plan_selection_screen.dart): desktop/tablet/mobile presentation, dark/light states, loading, retry, save-failure handling, keyboard and semantic click target via InkWell.
-- [Step 3 preview](../../lib/features/onboarding/presentation/school_setup_preview.dart): honest confirmation after saving; full school-information module remains future work.
+- [Step 3 form](../../lib/features/onboarding/presentation/school_setup_screen.dart): four-section applicant-owned school details with Save Draft and Continue to Review, backed by [deployed SQL](../../supabase/schema/05_school_setup_drafts.sql).
 - [App routing](../../lib/main.dart): a valid Auth session shows Step 2, never the private platform operator dashboard; returning to Step 1 prompts for sign-out.
 - [Screen widget tests](../../test/onboarding/plan_selection_test.dart): desktop/mobile/compact, plan switching, dark-mode saved choice, retry and write failure.
-- [App navigation test](../../test/onboarding/plan_app_navigation_test.dart): sign-in → plan persistence → Step 3 preview → back to Step 2.
+- [App navigation test](../../test/onboarding/plan_app_navigation_test.dart): sign-in → plan persistence → Step 3 real form → save draft → Step 4 read-only review preview → back to Step 3.
 
 A **draft choice is not a subscription**. The DB is the source for active offers, and the Flutter screen never trusts a client-generated price or feature tier. API failures are shown as usable, non-sensitive UI messages. The Continue action is disabled during save, preventing repeated submissions.
 
@@ -71,10 +71,10 @@ A **draft choice is not a subscription**. The DB is the source for active offers
 - [ ] **Flutter tests:** cannot mark as passing. GitHub Actions runner is blocked before steps by billing/spending limit; local Flutter SDK unavailable here.
 - [ ] Android, iOS, Web and Windows visual/device tests.
 - [ ] Live SDK session test using actual Google/email account, plus session refresh/expired JWT behavior.
-- [ ] Real Step 3 school-information fields and transactional application save.
+- [x] Step 3 school-information draft fields and secure owner-only save (not application submission).
 
 ## Portability / next module
 
 The **source of truth for portable SQL is in `supabase/`**. When using a different Supabase account, run reviewed scripts in dependency order: Module 01 private foundation, Module 01.1 Auth, then Module 01.2 published plan offers; keep fake seed separate and reconcile Supabase's recorded live migration versions before importing. Do not replay the current migration on the same project under another name.
 
-Next: design Step 3 school legal/contact/campus/education information, create typed validations and owner-scoped draft onboarding (requires additional school applicant boundaries), implement review workflow, and only then consider verified billing or provisioning. The 383-table planning catalog remains a candidate inventory, not an instruction to create all tables.
+Next: test Step 3 Flutter builds, then implement Step 4 formal submission/review controls with separate authorization and audit, implement review workflow, and only then consider verified billing or provisioning. The 383-table planning catalog remains a candidate inventory, not an instruction to create all tables.
