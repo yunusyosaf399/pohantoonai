@@ -18,6 +18,8 @@ import 'features/onboarding/data/review_confirmation_repository.dart';
 import 'features/onboarding/presentation/school_payment_preview.dart';
 import 'features/onboarding/presentation/school_dashboard_setup_preview.dart';
 import 'features/onboarding/data/onboarding_payment_preferences_repository.dart';
+import 'features/onboarding/data/school_logo_repository.dart';
+import 'features/dashboard/data/demo_dashboard_preferences_repository.dart';
 import 'features/onboarding/presentation/school_setup_screen.dart';
 import 'features/onboarding/presentation/school_review_preview.dart';
 import 'features/onboarding/presentation/plan_selection_screen.dart';
@@ -43,6 +45,8 @@ class PohantoonAiApp extends StatefulWidget {
     this.schoolSetupRepository,
     this.reviewConfirmationRepository,
     this.paymentPreferencesRepository,
+    this.logoRepository,
+    this.demoDashboardPreferencesRepository,
     this.showOrganizationPreview = false,
     this.authGateway,
     this.themeController,
@@ -59,6 +63,8 @@ class PohantoonAiApp extends StatefulWidget {
   final ReviewConfirmationRepository? reviewConfirmationRepository;
   /// Mockable Step 5; real implementation uses applicant-owned RLS.
   final OnboardingPaymentPreferencesRepository? paymentPreferencesRepository;
+  final SchoolLogoRepository? logoRepository;
+  final DemoDashboardPreferencesRepository? demoDashboardPreferencesRepository;
   final AccountAuthGateway? authGateway;
   final ThemeController? themeController;
 
@@ -210,6 +216,22 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                             draft: _reviewDraft!,
                             themeMode: _theme.value,
                             onThemeChanged: _changeTheme,
+                            preferencesRepository: widget.demoDashboardPreferencesRepository ??
+                                (widget.authGateway == null
+                                  ? SupabaseDemoDashboardPreferencesRepository(
+                                      Supabase.instance.client)
+                                  : null),
+                            logoRepository: widget.logoRepository ??
+                                (widget.authGateway == null
+                                  ? SupabaseSchoolLogoRepository(
+                                      Supabase.instance.client)
+                                  : null),
+                            onEditDetails: (section) => setState(() {
+                              _dashboardTestPreview = false;
+                              _paymentStep = false;
+                              _reviewDraft = null;
+                              _editSection = section;
+                            }),
                             onBack: () =>
                                 setState(() => _dashboardTestPreview = false),
                           )
@@ -255,6 +277,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                                     SupabaseSchoolSetupRepository(
                                         Supabase.instance.client),
                                 initialSection: _editSection,
+                                logoRepository: widget.logoRepository,
                                 accountEmail: _auth?.signedInEmail,
                                 themeMode: _theme.value,
                                 onThemeChanged: _changeTheme,
