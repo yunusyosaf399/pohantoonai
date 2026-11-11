@@ -34,6 +34,7 @@ abstract class AccountAuthGateway {
 /// Optional email credential features. Kept separate from AccountAuthGateway
 /// so existing OAuth/mock implementations are backward compatible.
 abstract class AccountEmailCredentials {
+  Stream<void> get passwordRecoveryEvents;
   Future<void> signUpWithPassword(String email,String password);
   Future<void> verifyEmailCode(String email,String code,
       {required bool isSignup});
@@ -84,6 +85,12 @@ class SupabaseAccountAuthGateway
       emailRedirectTo: oauthRedirectForApp(isWeb: kIsWeb, currentUri: Uri.base),
     );
   }
+
+  @override
+  Stream<void> get passwordRecoveryEvents =>
+    _client.auth.onAuthStateChange
+      .where((state)=>state.event==AuthChangeEvent.passwordRecovery)
+      .map((_) {});
 
   @override
   Future<void> signUpWithPassword(String email,String password) async {
