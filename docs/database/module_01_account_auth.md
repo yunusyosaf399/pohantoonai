@@ -32,6 +32,9 @@ Open app
 
 ## Dashboard actions still required for real sign-in
 
+**Current actionable setup:** [Google OAuth client + Supabase provider checklist](../../supabase/auth/GOOGLE_OAUTH_SETUP.md). Google Client ID and Secret are supplied directly in the respective dashboards, never in GitHub or Flutter.
+
+
 These settings **cannot be deployed with the current connected Supabase management tools**, which do not expose provider/SMTP configuration. Avoid putting provider secrets in Flutter or SQL.
 
 1. **Google provider:** create Google OAuth credentials and configure Supabase Dashboard → Authentication → Sign In / Providers → Google with the Google Client ID and **Client Secret** (dashboard only). Configure Google Cloud authorized redirect URI to exactly `https://umlzqlbakfwzgadafhyy.supabase.co/auth/v1/callback`. Google consent screen may need publishing/test-user access.
