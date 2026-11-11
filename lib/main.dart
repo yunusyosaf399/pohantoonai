@@ -86,6 +86,18 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   StreamSubscription<bool>? _authListener;
   StreamSubscription<void>? _recoveryListener;
   final GlobalKey<NavigatorState> _navigatorKey=GlobalKey<NavigatorState>();
+  final GlobalKey<ScaffoldMessengerState> _messengerKey=
+    GlobalKey<ScaffoldMessengerState>();
+
+  void _showWorkspaceMessage() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notice=_workspaceError;
+      if(!mounted||notice==null)return;
+      _messengerKey.currentState?.showSnackBar(
+        SnackBar(content:Text(notice)));
+    });
+  }
+
   bool _signedIn = false;
   String? _authError;
   OnboardingPlanOffer? _schoolSetupPlan;
@@ -155,6 +167,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         setState(()=>_workspaceError=
           'Could not check your saved school dashboard. '
           'Check the connection and retry.');
+        _showWorkspaceMessage();
       }
     }finally{
       if(mounted&&generation==_authGeneration) {
@@ -185,9 +198,12 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         _paymentStep=false;
       });
     }catch(_){
-      if(mounted)setState(()=>_workspaceError=
-        'School details were saved, but demo access could not be enabled. '
-        'Retry opening the dashboard.');
+      if(mounted){
+        setState(()=>_workspaceError=
+          'School details were saved, but demo access could not be enabled. '
+          'Retry opening the dashboard.');
+        _showWorkspaceMessage();
+      }
     }finally{
       if(mounted)setState(()=>_restoringWorkspace=false);
     }
@@ -333,6 +349,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         navigatorKey:_navigatorKey,
+        scaffoldMessengerKey:_messengerKey,
         title: 'Pohantoon AI',
         theme: PohantoonTheme.light,
         darkTheme: PohantoonTheme.dark,
