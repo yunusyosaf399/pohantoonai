@@ -121,8 +121,19 @@ class _SchoolPaymentPreviewState extends State<SchoolPaymentPreview> {
 
   Future<void> _persist({required bool skip}) async {
     if (saving || loading || !loaded) return;
-    final preferences = _formState(skip: skip);
-    final issues = preferences.validate();
+    var preferences = _formState(skip: skip);
+    var issues = preferences.validate();
+    if (skip && issues.isNotEmpty) {
+      // Billing fields are optional in test mode. If the applicant started
+      // typing invalid billing info, skip without persisting those fields;
+      // do not make test-only navigation depend on optional billing data.
+      preferences = OnboardingPaymentPreferences(
+        billingCycle: cycle,
+        preferredMethod: method,
+        skippedForTesting: true,
+      );
+      issues = preferences.validate();
+    }
     if (issues.isNotEmpty) {
       setState(() { error = issues.join('\n'); info = null; });
       _showTop();
