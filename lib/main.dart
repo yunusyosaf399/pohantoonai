@@ -62,6 +62,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   AccountAuthGateway? _auth;
   StreamSubscription<bool>? _authListener;
   bool _signedIn = false;
+  String? _authError;
   OnboardingPlanOffer? _schoolSetupPlan;
   SchoolSetupDraft? _reviewDraft;
 
@@ -83,12 +84,24 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         if (!mounted) return;
         setState(() {
           _signedIn = signedIn;
+          if (signedIn) _authError = null;
           if (!signedIn) {
             _schoolSetupPlan = null;
             _reviewDraft = null;
           }
         });
         if (signedIn) _loadAccountPreferences();
+      }, onError: (Object error, StackTrace stack) {
+        // Supabase emits OAuth code-exchange failures and network failures
+        // on the auth stream. Without onError they become uncaught errors.
+        // Never log full callback URIs, codes, JWTs or auth provider tokens.
+        if (!mounted) return;
+        debugPrint('Supabase Auth callback could not complete.');
+        setState(() {
+          _authError = 'Sign-in could not finish. Check that the browser '
+              'returned to Pohantoon AI, then try again. If it repeats, '
+              'verify your Supabase Auth redirect URL settings.';
+        });
       });
       // The storage plugin may not be available in isolated widget tests;
       // the app remains usable with system theme in that case.
@@ -117,6 +130,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     await _auth!.signOut();
     if (mounted) setState(() {
       _signedIn = false;
+      _authError = null;
       _schoolSetupPlan = null;
       _reviewDraft = null;
     });
@@ -165,6 +179,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             : !_signedIn
                 ? AccountWelcomeScreen(
                     auth: _auth!,
+                    authError: _authError,
+                    onAuthRetry: () => setState(() => _authError = null),
                     themeMode: _theme.value,
                     onThemeChanged: _changeTheme,
                   )
