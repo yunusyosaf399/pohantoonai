@@ -10,11 +10,16 @@ class AccountWelcomeScreen extends StatefulWidget {
   const AccountWelcomeScreen({
     super.key,
     required this.auth,
+    this.authError,
+    this.onAuthRetry,
     required this.themeMode,
     required this.onThemeChanged,
   });
 
   final AccountAuthGateway auth;
+  /// Sanitized callback error from the auth-state stream.
+  final String? authError;
+  final VoidCallback? onAuthRetry;
   final ThemeMode themeMode;
   final Future<void> Function(ThemeMode) onThemeChanged;
 
@@ -37,10 +42,13 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
     super.dispose();
   }
 
-  void _resetErrors() => setState(() {
-        _error = null;
-        _message = null;
-      });
+  void _resetErrors() {
+    widget.onAuthRetry?.call();
+    setState(() {
+      _error = null;
+      _message = null;
+    });
+  }
 
   Future<void> _google() async {
     if (_busy) return;
@@ -409,9 +417,10 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
           const Center(child: CircularProgressIndicator(
             key: Key('auth-loading-indicator'))),
         ],
-        if (_error != null) ...[
+        if (_error != null || widget.authError != null) ...[
           const SizedBox(height: 16),
-          Text(_error!, key: const Key('auth-error-message'),
+          Text(_error ?? widget.authError!,
+            key: const Key('auth-error-message'),
             style: TextStyle(color: colors.error)),
         ],
         if (_message != null) ...[
