@@ -128,3 +128,8 @@ Executed [transactional SQL security test](tests/08_payment_preferences_security
 - [tests/12_dev_workspace_security.sql](tests/12_dev_workspace_security.sql): executed transaction-only test. Forged access and payment/school writes denied; rollback preserved existing users.
 - [Auth code email template sources](auth/templates/confirm_signup.html) and [Magic Link/OTP template](auth/templates/magic_link_otp.html): committed to repo but NOT installed in the Supabase hosted Authentication Email Templates settings. The Supabase project also needs SMTP configuration and leaked-password protection.
 - [Module 02.2 design](../docs/database/module_02_2_dashboard_auth_profiles.md) describes database, Flutter and Auth setup.
+
+
+### Owner profile extension (migration 13)
+
+[13_owner_profile_contact_details.sql](schema/13_owner_profile_contact_details.sql): deployed account-owned phone and position fields with length constraints; never store any password or OTP. Existing user_profiles own-row RLS remains enabled. [Rollback-only negative tests](tests/13_owner_profile_security.sql) passed.
