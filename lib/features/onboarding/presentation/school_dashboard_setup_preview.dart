@@ -492,3 +492,468 @@ class _SchoolDashboardSetupPreviewState
     );
   });
 
+  Widget _attendance() {
+    final colors=Theme.of(context).colorScheme;
+    return _panel(Column(
+      crossAxisAlignment:CrossAxisAlignment.stretch,
+      children:[
+        const Text('Attendance overview',
+          style:TextStyle(fontSize:17,fontWeight:FontWeight.w800)),
+        const SizedBox(height:5),
+        Text('Today’s student presence · demo',
+          style:TextStyle(fontSize:12,
+            color:colors.onSurfaceVariant)),
+        const SizedBox(height:18),
+        Row(children:[
+          SizedBox(width:144,height:144,
+            child:Stack(alignment:Alignment.center,children:[
+              CustomPaint(
+                key:const Key('dashboard-attendance-donut'),
+                size:const Size(140,140),
+                painter:_AttendanceDonut(colors.primary)),
+              Column(mainAxisSize:MainAxisSize.min,children:[
+                const Text('94.6%',
+                  style:TextStyle(
+                    fontSize:24,fontWeight:FontWeight.w900)),
+                Text('Present today',style:TextStyle(
+                  fontSize:10,color:colors.onSurfaceVariant)),
+              ]),
+            ]),
+          ),
+          const SizedBox(width:15),
+          Expanded(child:Column(children:[
+            _legend('Present','1,181',colors.primary),
+            _legend('Absent','49',const Color(0xFFE9A85B)),
+            _legend('Excused','18',const Color(0xFF70A5F6)),
+          ])),
+        ]),
+        const SizedBox(height:19),
+        Container(
+          padding:const EdgeInsets.all(10),
+          decoration:BoxDecoration(
+            borderRadius:BorderRadius.circular(10),
+            color:colors.primaryContainer.withValues(alpha:.48)),
+          child:const Text('✓ Demo attendance is tracking above 90%',
+            style:TextStyle(fontSize:11)),
+        ),
+      ],
+    ));
+  }
+
+  Widget _legend(String label,String value,Color color) {
+    final colors=Theme.of(context).colorScheme;
+    return Padding(
+      padding:const EdgeInsets.symmetric(vertical:9),
+      child:Row(children:[
+        CircleAvatar(radius:4,backgroundColor:color),
+        const SizedBox(width:8),
+        Expanded(child:Text(label,style:TextStyle(
+          fontSize:11,color:colors.onSurfaceVariant))),
+        Text(value,style:const TextStyle(
+          fontSize:11,fontWeight:FontWeight.w800)),
+      ]),
+    );
+  }
+
+  Widget _fees() {
+    final colors=Theme.of(context).colorScheme;
+    return _panel(Column(
+      crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Row(children:[
+          const Expanded(child:Text('Fees this month',
+            style:TextStyle(fontSize:17,
+              fontWeight:FontWeight.w800))),
+          Icon(Icons.account_balance_wallet_outlined,
+            color:colors.primary),
+        ]),
+        const SizedBox(height:5),
+        Text('Demo billing overview · AFN',
+          style:TextStyle(fontSize:11,
+            color:colors.onSurfaceVariant)),
+        const SizedBox(height:24),
+        Row(children:[
+          Expanded(child:Column(
+            crossAxisAlignment:CrossAxisAlignment.start,children:[
+              const Text('Collected',style:TextStyle(fontSize:11)),
+              const SizedBox(height:5),
+              const Text('AFN 842K',style:TextStyle(
+                fontSize:19,fontWeight:FontWeight.w800)),
+          ])),
+          Column(crossAxisAlignment:CrossAxisAlignment.end,children:[
+            const Text('Outstanding',style:TextStyle(fontSize:11)),
+            const SizedBox(height:5),
+            const Text('AFN 186K',style:TextStyle(
+              fontSize:19,fontWeight:FontWeight.w800)),
+          ]),
+        ]),
+        const SizedBox(height:18),
+        ClipRRect(borderRadius:BorderRadius.circular(20),
+          child:LinearProgressIndicator(
+            value:.819,minHeight:10,
+            color:colors.primary,
+            backgroundColor:colors.surfaceContainerHighest)),
+        const SizedBox(height:9),
+        Row(children:[
+          Text('81.9% collected · demo',
+            style:TextStyle(
+              fontSize:11,fontWeight:FontWeight.w700,
+              color:colors.primary)),
+          const Spacer(),
+          TextButton(
+            onPressed:()=>_unavailable('Fees & Finance'),
+            child:const Text('View finance →')),
+        ]),
+      ],
+    ),height:240);
+  }
+
+  Future<void> _customizeActions() async {
+    final chosen=settings.quickActions.toSet();
+    await showModalBottomSheet<void>(
+      context:context,isScrollControlled:true,showDragHandle:true,
+      builder:(sheetContext)=>StatefulBuilder(
+        builder:(ctx,setSheet)=>SafeArea(child:Padding(
+          padding:const EdgeInsets.fromLTRB(20,8,20,25),
+          child:Column(
+            mainAxisSize:MainAxisSize.min,
+            crossAxisAlignment:CrossAxisAlignment.stretch,
+            children:[
+              Text('Customize quick actions',
+                style:Theme.of(ctx).textTheme.titleLarge),
+              const Text('Choose which demo shortcuts appear on the dashboard.'),
+              const SizedBox(height:10),
+              for(final action in actions)
+                CheckboxListTile(
+                  dense:true,
+                  value:chosen.contains(action.$1),
+                  title:Text(action.$2),
+                  onChanged:(v)=>setSheet(() {
+                    if(v==true && chosen.length<8) {
+                      chosen.add(action.$1);
+                    } else if(v==false) {
+                      chosen.remove(action.$1);
+                    }
+                  }),
+                ),
+              const SizedBox(height:10),
+              FilledButton(
+                onPressed:(){
+                  Navigator.pop(sheetContext);
+                  _saveSettings(DemoDashboardPreferences(
+                    academicYearLabel:settings.academicYearLabel,
+                    selectedChart:settings.selectedChart,
+                    quickActions:chosen.toList(),
+                  ));
+                },
+                child:const Text('Save shortcuts')),
+            ],
+          ),
+        )),
+      ),
+    );
+  }
+
+  Widget _quickActions() {
+    final colors=Theme.of(context).colorScheme;
+    final chosen=actions.where((a)=>settings.quickActions.contains(a.$1))
+      .toList();
+    return _panel(Column(
+      crossAxisAlignment:CrossAxisAlignment.stretch,
+      children:[
+        Row(children:[
+          const Expanded(child:Text('Quick actions',
+            style:TextStyle(fontSize:16,
+              fontWeight:FontWeight.w800))),
+          TextButton(
+            key:const Key('dashboard-customize-actions'),
+            onPressed:_customizeActions,
+            child:const Text('Customize ›')),
+        ]),
+        Text('Frequently used school tasks',
+          style:TextStyle(
+            fontSize:11,color:colors.onSurfaceVariant)),
+        const SizedBox(height:15),
+        if(chosen.isEmpty)
+          const Padding(padding:EdgeInsets.all(22),
+            child:Text('No shortcuts selected. Choose Customize.'))
+        else LayoutBuilder(builder:(context,limits){
+          final cols=limits.maxWidth < 360 ? 2 : 3;
+          return GridView.builder(
+            shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),
+            itemCount:chosen.length,
+            gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount:cols,
+              crossAxisSpacing:8,mainAxisSpacing:8,mainAxisExtent:95),
+            itemBuilder:(context,i) {
+              final action=chosen[i];
+              return InkWell(
+                key:Key('dashboard-quick-' + action.$1),
+                borderRadius:BorderRadius.circular(11),
+                onTap:()=>_unavailable(action.$2),
+                child:Container(
+                  decoration:BoxDecoration(
+                    color:colors.surfaceContainerLowest,
+                    border:Border.all(color:colors.outlineVariant),
+                    borderRadius:BorderRadius.circular(11)),
+                  child:Column(
+                    mainAxisAlignment:MainAxisAlignment.center,
+                    children:[
+                      Icon(action.$3,size:23,color:colors.primary),
+                      const SizedBox(height:9),
+                      Text(action.$2,
+                        textAlign:TextAlign.center,
+                        style:const TextStyle(
+                          fontSize:11,fontWeight:FontWeight.w800)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        }),
+      ],
+    ));
+  }
+
+  Widget _analyticsRow() => LayoutBuilder(builder:(context,bounds) {
+    final trend=_panel(
+      RotatingAnalyticsPanel(
+        initialChart:settings.selectedChart,
+        onChartSelected:(chart) => _saveSettings(
+          DemoDashboardPreferences(
+            selectedChart:chart,
+            academicYearLabel:settings.academicYearLabel,
+            quickActions:settings.quickActions,
+          )),
+      ),key:const Key('dashboard-analytics-panel'));
+    final attendance=_attendance();
+    if(bounds.maxWidth>=860) return Row(
+      crossAxisAlignment:CrossAxisAlignment.start,
+      children:[
+        Expanded(flex:6,child:trend),
+        const SizedBox(width:15),
+        Expanded(flex:4,child:attendance),
+      ],
+    );
+    return Column(children:[
+      trend,const SizedBox(height:15),attendance,
+    ]);
+  });
+
+  Widget _activityRow() => LayoutBuilder(builder:(context,bounds) {
+    final quick=_quickActions();
+    Widget recent(String title,String key,List<DemoActivity> values) =>
+      SizedBox(height:355,
+        child:_panel(RotatingActivityPanel(
+          title:title,panelKey:key,entries:values)));
+    final admission=recent('Recent admissions','admissions',
+      recentDemoAdmissions);
+    final approval=recent('Recent approvals','approvals',
+      recentDemoApprovals);
+    if(bounds.maxWidth>=1130) return Row(
+      crossAxisAlignment:CrossAxisAlignment.start,
+      children:[
+        Expanded(child:quick),const SizedBox(width:13),
+        Expanded(child:admission),const SizedBox(width:13),
+        Expanded(child:approval),
+      ],
+    );
+    if(bounds.maxWidth>=690) return Column(children:[
+      Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Expanded(child:quick),const SizedBox(width:13),
+        Expanded(child:admission),
+      ]),
+      const SizedBox(height:15),approval,
+    ]);
+    return Column(children:[
+      quick,const SizedBox(height:14),
+      admission,const SizedBox(height:14),
+      approval,
+    ]);
+  });
+
+  Widget _demoWarning() {
+    final colors=Theme.of(context).colorScheme;
+    return Container(
+      key:const Key('dashboard-not-provisioned-warning'),
+      padding:const EdgeInsets.all(13),
+      decoration:BoxDecoration(
+        color:colors.primaryContainer.withValues(alpha:.37),
+        borderRadius:BorderRadius.circular(11)),
+      child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Icon(Icons.shield_outlined,size:20,color:colors.primary),
+        const SizedBox(width:10),
+        const Expanded(child:Text(
+          'DEMO DATA ONLY. Payment skipped for testing. '
+          'No subscription activated, school tenant created, '
+          'or access to real school records granted.',
+          style:TextStyle(fontSize:11,height:1.5))),
+      ]),
+    );
+  }
+
+  Widget _toolbar() {
+    final colors=Theme.of(context).colorScheme;
+    final now=DateTime.now();
+    const months=['Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'];
+    final date=now.day.toString()+' '+months[now.month-1]+' '+
+      now.year.toString();
+    return Wrap(spacing:9,runSpacing:9,crossAxisAlignment:WrapCrossAlignment.center,
+      children:[
+        Chip(
+          key:const Key('dashboard-demo-label'),
+          label:const Text('DEMO DATA',style:TextStyle(
+            fontSize:11,fontWeight:FontWeight.w800)),
+          backgroundColor:colors.tertiaryContainer),
+        Chip(
+          avatar:const Icon(Icons.calendar_month_outlined,size:16),
+          label:Text(date,style:const TextStyle(fontSize:11))),
+        DropdownButton<String>(
+          key:const Key('dashboard-academic-year'),
+          value:['2026–27','2025–26','2027–28'].contains(
+              settings.academicYearLabel)
+            ? settings.academicYearLabel : '2026–27',
+          items:const [
+            DropdownMenuItem(value:'2025–26',
+              child:Text('Academic Year: 2025–26')),
+            DropdownMenuItem(value:'2026–27',
+              child:Text('Academic Year: 2026–27')),
+            DropdownMenuItem(value:'2027–28',
+              child:Text('Academic Year: 2027–28')),
+          ],
+          onChanged:(value) {
+            if(value==null)return;
+            _saveSettings(DemoDashboardPreferences(
+              academicYearLabel:value,
+              selectedChart:settings.selectedChart,
+              quickActions:settings.quickActions,
+            ));
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _dashboardBody(bool mobile) {
+    final colors=Theme.of(context).colorScheme;
+    return SingleChildScrollView(
+      key:const Key('dashboard-main-scroll'),
+      padding:EdgeInsets.fromLTRB(mobile?17:25,20,mobile?17:25,35),
+      child:Center(child:ConstrainedBox(
+        constraints:const BoxConstraints(maxWidth:1450),
+        child:Column(
+          crossAxisAlignment:CrossAxisAlignment.stretch,
+          children:[
+            if(mobile) ...[_searchBar(mobile:true),
+              const SizedBox(height:18)],
+            if(!mobile) Text('Workspace   ›   Dashboard',
+              style:TextStyle(fontSize:11,
+                color:colors.onSurfaceVariant)),
+            const SizedBox(height:8),
+            Text('Good morning, '+name+' 👋',
+              key:const Key('dashboard-test-preview-title'),
+              style:Theme.of(context).textTheme.headlineMedium
+                ?.copyWith(fontWeight:FontWeight.w900,
+                  fontSize:mobile?24:27)),
+            const SizedBox(height:7),
+            Text("Here's what's happening at your school today.",
+              style:TextStyle(fontSize:13,
+                color:colors.onSurfaceVariant)),
+            const SizedBox(height:12),
+            _toolbar(),
+            const SizedBox(height:17),
+            _demoWarning(),
+            const SizedBox(height:17),
+            _metrics(),
+            const SizedBox(height:16),
+            _analyticsRow(),
+            const SizedBox(height:17),
+            _activityRow(),
+            const SizedBox(height:17),
+            _fees(),
+            const SizedBox(height:15),
+            Row(children:[
+              Expanded(child:Text(
+                'Illustrative dashboards — not connected to live '
+                'school data or permissions.',
+                style:TextStyle(fontSize:11,
+                  color:colors.onSurfaceVariant))),
+              TextButton(
+                key:const Key('dashboard-back-to-payment'),
+                onPressed:widget.onBack,
+                child:const Text('Back to payment')),
+            ]),
+          ],
+        ),
+      )),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark=Theme.of(context).brightness==Brightness.dark;
+    return LayoutBuilder(builder:(context,bounds){
+      final mobile=bounds.maxWidth<720;
+      final compact=bounds.maxWidth>=720 && bounds.maxWidth<1160;
+      return Scaffold(
+        backgroundColor:dark?const Color(0xFF071B23)
+          :const Color(0xFFF3F7FB),
+        body:SafeArea(child:Row(children:[
+          if(!mobile)_sideBar(compact:compact),
+          Expanded(child:Column(children:[
+            _topBar(mobile),
+            Expanded(child:_dashboardBody(mobile)),
+          ])),
+        ])),
+        bottomNavigationBar:mobile?NavigationBar(
+          selectedIndex:0,
+          onDestinationSelected:(i) {
+            if(i==3) {
+              _openNavSheet();
+            } else if(i!=0) {
+              _unavailable(i==1 ? 'Students' : 'Admissions');
+            }
+          },
+          destinations:const [
+            NavigationDestination(
+              icon:Icon(Icons.home_outlined),
+              selectedIcon:Icon(Icons.home),label:'Home'),
+            NavigationDestination(
+              icon:Icon(Icons.people_outline),label:'Students'),
+            NavigationDestination(
+              icon:Icon(Icons.note_add_outlined),label:'Admissions'),
+            NavigationDestination(
+              icon:Icon(Icons.more_horiz),label:'More'),
+          ],
+        ):null,
+      );
+    });
+  }
+}
+
+class _AttendanceDonut extends CustomPainter {
+  const _AttendanceDonut(this.accent);
+  final Color accent;
+  @override
+  void paint(Canvas canvas,Size size) {
+    final rect=Rect.fromLTWH(8,8,size.width-16,size.height-16);
+    final stroke=Paint()
+      ..strokeWidth=15
+      ..strokeCap=StrokeCap.butt
+      ..style=PaintingStyle.stroke;
+    double begin=-math.pi/2;
+    for(final piece in [
+      (0.946,accent),
+      (0.039,const Color(0xFFE9A85B)),
+      (0.015,const Color(0xFF70A5F6)),
+    ]) {
+      final sweep=2*math.pi*piece.$1;
+      canvas.drawArc(rect,begin,sweep,false,stroke..color=piece.$2);
+      begin+=sweep;
+    }
+  }
+  @override
+  bool shouldRepaint(covariant _AttendanceDonut old)=>
+    old.accent!=accent;
+}
