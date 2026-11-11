@@ -48,7 +48,7 @@ class _SchoolLogoPickerState extends State<SchoolLogoPicker> {
 
   Future<void> _load(String? path) async {
     if (path == null) {
-      if (mounted) setState(() => imageUrl = null);
+      imageUrl = null;
       return;
     }
     try {
