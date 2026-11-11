@@ -257,3 +257,9 @@ SaaS Control Panel
 - [13_owner_profile_contact_details.sql](../../supabase/schema/13_owner_profile_contact_details.sql): **deployed**, adding nullable account-owned phone/title; existing user_profiles RLS unchanged.
 - [Owner contact security tests](../../supabase/tests/13_owner_profile_security.sql): **passed** with ROLLBACK, including wrong-user and field-length rejection.
 - [Profile settings tests](../../test/dashboard/dashboard_profile_settings_test.dart): **committed, not executed**; checks owner contact updates and adding an Auth password.
+
+
+### Server-side school completion enforcement (2026-11-11)
+
+- [SQL 14](../../supabase/schema/14_dev_workspace_required_fields.sql): **deployed**; repeated required school name, contact, region and plan capacity checks in workspace RLS INSERT policy plus trigger; no client-only trust.
+- [SQL negative test 14](../../supabase/tests/14_dev_workspace_required_fields_security.sql): **passed** with rollback; invalid ready drafts rejected, incomplete drafts cannot create development workspace.
