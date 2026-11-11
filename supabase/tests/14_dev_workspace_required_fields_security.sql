@@ -16,21 +16,27 @@ BEGIN
  IF actor IS NULL THEN RAISE EXCEPTION 'No test applicant exists'; END IF;
  SELECT selected_plan_id INTO pid FROM public.onboarding_plan_selections
   WHERE user_id=actor;
- UPDATE public.school_setup_drafts
-   SET school_name=NULL WHERE user_id=actor;
+ -- The draft schema itself also rejects missing required fields while ready.
  BEGIN
-   INSERT INTO public.onboarding_dev_workspaces(user_id,selected_plan_id)
-   VALUES(actor,pid) ON CONFLICT(user_id) DO NOTHING;
-   RAISE EXCEPTION 'SECURITY FAILURE: blank school got demo workspace';
- EXCEPTION WHEN insufficient_privilege OR check_violation THEN NULL;
+   UPDATE public.school_setup_drafts
+     SET school_name=NULL WHERE user_id=actor;
+   RAISE EXCEPTION 'SECURITY FAILURE: blank ready school draft accepted';
+ EXCEPTION WHEN check_violation THEN NULL;
  END;
+ BEGIN
+   UPDATE public.school_setup_drafts
+     SET contact_email='not-an-email' WHERE user_id=actor;
+   RAISE EXCEPTION 'SECURITY FAILURE: invalid ready contact email accepted';
+ EXCEPTION WHEN check_violation THEN NULL;
+ END;
+ -- Even when the applicant deliberately downgrades to an incomplete draft,
+ -- a client may not create its development workspace.
  UPDATE public.school_setup_drafts
-   SET school_name='Valid Example Academy',contact_email='not-an-email'
-   WHERE user_id=actor;
+   SET draft_status='draft',school_name=NULL WHERE user_id=actor;
  BEGIN
    INSERT INTO public.onboarding_dev_workspaces(user_id,selected_plan_id)
    VALUES(actor,pid) ON CONFLICT(user_id) DO NOTHING;
-   RAISE EXCEPTION 'SECURITY FAILURE: invalid email got demo workspace';
+   RAISE EXCEPTION 'SECURITY FAILURE: incomplete draft got demo workspace';
  EXCEPTION WHEN insufficient_privilege OR check_violation THEN NULL;
  END;
 END;
