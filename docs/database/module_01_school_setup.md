@@ -50,7 +50,7 @@ All fields are in **one** owner-scoped draft table. This is intentional: pending
 |---|---|---|
 | Identity | `school_name`, `legal_school_name`, `school_type`, `registration_license_number`, `established_year`, `website_url` | school name and type |
 | Primary Contact | `contact_name`, `contact_position`, `contact_email`, `contact_phone` | contact name and school email |
-| Location | `country_code`, `region`, `city`, `street_address`, `timezone`, `currency_code` | country and city; timezone/currency have safe defaults |
+| Location | `country_code`, `region`, `city`, `street_address`, `postal_code`, `timezone`, `currency_code` | country and city; timezone/currency have safe defaults |
 | Academics | `estimated_students`, `campus_count`, `estimated_teachers`, `estimated_non_teaching_staff`, `education_board`, `curriculum`, `lowest_grade`, `highest_grade`, `teaching_languages` | student estimate (positive) and campus count (at least 1) |
 | Internal state | `user_id`, `draft_status`, `created_at`, `updated_at` | owner-only auth ID and controlled status |
 
@@ -110,3 +110,7 @@ SQL source: [`supabase/schema/05_school_setup_drafts.sql`](../../supabase/schema
 - [`supabase/tests/05_school_setup_security.sql`](../../supabase/tests/05_school_setup_security.sql)
 
 **Next:** The [Step 4 review screen and own-account acknowledgement](module_01_application_review.md) are now implemented. Step 5 requires a verified payment provider and protected billing/server workflow; operator approval remains a separate unimplemented module. The Step 3 draft's ready marker is not an approval decision.
+
+### Step 4 reference compatibility — postal code
+
+Additional migration [`supabase/schema/07_school_setup_postal_code.sql`](../../supabase/schema/07_school_setup_postal_code.sql) adds a nullable postal code of at most 32 characters so the School Location review shows genuine persisted user data, rather than synthetic sample addresses. Deployed as `20261111120829` and verified in the live schema without touching prior draft records.
