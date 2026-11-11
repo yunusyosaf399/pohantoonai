@@ -258,6 +258,11 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                                     SupabaseReviewConfirmationRepository(
                                       Supabase.instance.client),
                                 accountEmail: _auth?.signedInEmail,
+                                logoRepository: widget.logoRepository ??
+                                    (widget.authGateway == null
+                                      ? SupabaseSchoolLogoRepository(
+                                          Supabase.instance.client)
+                                      : null),
                                 themeMode: _theme.value,
                                 onThemeChanged: _changeTheme,
                                 onBack: () => setState(() {
