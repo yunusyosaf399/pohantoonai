@@ -13,9 +13,9 @@ INSERT INTO platform.subscription_plans
 SELECT o.id, p.code, p.name, p.summary, true, true, 'active', p.trial_days, p.sort_order
 FROM platform.organizations o
 CROSS JOIN (VALUES
- ('starter_demo','Starter Demo','Core school management demo; no real billing',14,10),
- ('growth_demo','Growth Demo','Multi-campus and advanced modules demo',14,20),
- ('enterprise_demo','Enterprise Demo','Full featured demonstration only',30,30)
+ ('starter_demo','Starter Demo','Essential tools for a single-campus school.',14,10),
+ ('growth_demo','Growth Demo','For growing schools and multiple campuses.',14,20),
+ ('enterprise_demo','Enterprise Demo','For larger institutions with extensive operational needs.',30,30)
 ) AS p(code,name,summary,trial_days,sort_order)
 WHERE o.slug='pohantoonai_demo'
 ON CONFLICT (organization_id,code) DO NOTHING;
