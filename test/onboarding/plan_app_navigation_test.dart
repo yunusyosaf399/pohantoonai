@@ -4,6 +4,8 @@ import 'package:pohantoonai/core/settings/theme_controller.dart';
 import 'package:pohantoonai/features/auth/data/account_auth_gateway.dart';
 import 'package:pohantoonai/features/onboarding/data/onboarding_plan_repository.dart';
 import 'package:pohantoonai/features/onboarding/domain/onboarding_plan_offer.dart';
+import 'package:pohantoonai/features/onboarding/domain/school_setup_draft.dart';
+import 'package:pohantoonai/features/onboarding/data/school_setup_repository.dart';
 import 'package:pohantoonai/main.dart';
 
 class TestAccount implements AccountAuthGateway {
@@ -44,36 +46,97 @@ class TestPlans implements OnboardingPlanRepository {
   Future<void> saveSelection(String planId) async => saved = planId;
 }
 
+class TestSchoolDrafts implements SchoolSetupRepository {
+  SchoolSetupDraft? saved;
+
+  @override
+  Future<SchoolSetupDraft?> load() async => saved;
+
+  @override
+  Future<SchoolSetupDraft> save(SchoolSetupDraft draft) async {
+    saved = draft;
+    return draft;
+  }
+}
+
 void main() {
-  testWidgets('signed-in user sees Step 2; saving advances to Step 3',
+  testWidgets('signed-in applicant advances from plan to real Step 3 form',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final plans = TestPlans();
+    final drafts = TestSchoolDrafts();
 
     await tester.pumpWidget(PohantoonAiApp(
       authGateway: TestAccount(),
       planRepository: plans,
+      schoolSetupRepository: drafts,
       themeController: ThemeController(),
     ));
     await tester.pumpAndSettle();
 
     expect(find.text('Choose the Right Plan for Your School'), findsOneWidget);
     expect(find.text('Organization overview'), findsNothing);
-
-    await tester.ensureVisible(find.byKey(
-      const Key('continue-to-school-setup')));
+    await tester.ensureVisible(
+      find.byKey(const Key('continue-to-school-setup')));
     await tester.tap(find.byKey(const Key('continue-to-school-setup')));
     await tester.pumpAndSettle();
 
     expect(plans.saved, 'growth-plan');
-    expect(find.byKey(const Key('school-setup-preview-title')), findsOneWidget);
-    expect(find.textContaining('no school has been created'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('return-to-plan-selection')));
+    expect(find.text('Tell us about your school'), findsOneWidget);
+    expect(find.byKey(const Key('school-save-draft')), findsOneWidget);
+    expect(find.byKey(const Key('school-account-email')), findsOneWidget);
+
+    // Save an incomplete draft, then continue editing.
+    await tester.ensureVisible(find.byKey(const Key('school-save-draft')));
+    await tester.tap(find.byKey(const Key('school-save-draft')));
     await tester.pumpAndSettle();
-    expect(find.text('Selected Plan: Growth Demo'), findsOneWidget);
+    expect(drafts.saved, isNotNull);
+    expect(drafts.saved!.readyForReview, false);
+
+    // Required review fields.
+    Future<void> type(String field,String value) async {
+      final target = find.byKey(Key('school-field-' + field));
+      await tester.ensureVisible(target);
+      await tester.enterText(target,value);
+      await tester.pumpAndSettle();
+    }
+
+    await type('schoolName','Sample Academy');
+    await type('contactName','Sample Owner');
+    await type('contactEmail','contact@example.invalid');
+    await type('city','Sample City');
+    await type('students','100');
+    await type('campuses','1');
+
+    await tester.ensureVisible(
+      find.byKey(const Key('school-select-school-type')));
+    await tester.tap(find.byKey(const Key('school-select-school-type')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Private School').last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('school-select-country')));
+    await tester.tap(find.byKey(const Key('school-select-country')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saudi Arabia').last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('school-continue-review')));
+    await tester.tap(find.byKey(const Key('school-continue-review')));
+    await tester.pumpAndSettle();
+
+    expect(drafts.saved?.readyForReview,true);
+    expect(drafts.saved?.schoolName,'Sample Academy');
+    expect(find.byKey(const Key('school-review-preview-title')),findsOneWidget);
+    expect(find.textContaining('no school was created'),findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('school-review-edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tell us about your school'),findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
