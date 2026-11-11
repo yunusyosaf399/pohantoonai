@@ -519,7 +519,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           ? const SizedBox(width: 16, height: 16,
               child: CircularProgressIndicator(strokeWidth: 2))
           : const Icon(Icons.arrow_forward),
-      label: const Text('Continue to School Setup'));
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12)),
+      label: Text('Continue to School Setup',
+        style: TextStyle(fontSize: desktop ? 14 : 12,
+          fontWeight: FontWeight.w700)));
     if (desktop) {
       return Row(children: [
         Expanded(child: Text('You can review your plan before submitting '
