@@ -12,7 +12,7 @@
 | Android | Flutter's default deep-link routing (enabled in recent Flutter) can intercept links intended for `supabase_flutter`'s `app_links` handler | `android/app/src/main/AndroidManifest.xml` sets `flutter_deeplinking_enabled=false`; existing `singleTop` and callback host/scheme remain |
 | iOS | Same competing Flutter router | `ios/Runner/Info.plist` disables Flutter router; retains `pohantoonai` URI scheme |
 | macOS | No registered app callback scheme | `macos/Runner/Info.plist` registers `pohantoonai` and disables competing router |
-| Windows (unpackaged Flutter executable) | `pohantoonai://` was not registered with the OS; second instance could not reliably pass callback to first | `windows/runner/main.cpp` registers protocol in current-user registry and calls `SendAppLinkToInstance()` before creating another window |
+| Windows (unpackaged Flutter executable) | `pohantoonai://` was not registered with the OS; second instance could not reliably pass callback to first | `windows/runner/main.cpp` registers protocol in current-user registry and uses a compatible local `ForwardAuthLinkToExistingWindow(command_line)` helper calling `SendAppLink(HWND)` before creating another window |
 | All | OAuth URL launch alone is not sign-in success; auth stream errors had no handler, potentially surfacing as uncaught errors | Google auth opens in **system browser**, main auth-state listener captures errors, welcome screen offers retry feedback |
 
 The system-browser choice intentionally avoids embedded-webview Google login, which can be rejected by Google's user-agent restrictions. Unlike a browser tab, the native application remains logged in after the deeplink returns; the system browser tab may remain open and can be closed by the user.
@@ -103,3 +103,11 @@ The harmless URL should activate the running app, not create a session. Then cli
 **GitHub CI limitation:** The last GitHub-hosted runner failed **before starting any steps** because of repository account billing/spending limits. The source was committed directly, but no device runtime test was performed here.
 
 References: [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls), [Supabase Dart OAuth](https://supabase.com/docs/reference/dart/auth-signinwithoauth), [Flutter app_links Windows](https://github.com/llfbandit/app_links/blob/main/doc/README_windows.md), [Flutter deep-link flag migration](https://docs.flutter.dev/release/breaking-changes/deep-links-flag-change), [Flutter Auth stream errors](https://supabase.com/docs/reference/dart/auth-onauthstatechange).
+
+## Windows C3861 follow-up (2026-11-11)
+
+The user reported compiler error `C3861: 'SendAppLinkToInstance': identifier not found` from `windows/runner/main.cpp`. That function was added in app_links 7.2.0, but earlier supported versions only expose `SendAppLink(HWND)`.
+
+**Fix committed:** the Windows runner now uses its own `ForwardAuthLinkToExistingWindow(command_line)` helper, matching the default Flutter window class/title and forwarding only `pohantoonai://auth-callback` to an existing instance. The native callback regression test was updated. No database or Supabase provider changes are needed for this compiler error. Windows compilation is still unverified and must be tested on the user's machine.
+
+Rebuild with `git pull origin main`, `flutter pub get`, then `flutter run -d windows`. If another error appears, inspect the actual `app_links` version in `pubspec.lock` before choosing a different API.
