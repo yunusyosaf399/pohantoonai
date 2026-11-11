@@ -31,6 +31,14 @@ abstract class AccountAuthGateway {
   Future<void> signOut();
 }
 
+/// Optional stable Auth identity. A user switching from account A to B
+/// without a signed-out event must never see A's in-memory workspace.
+/// No email or user-editable metadata is used as a tenant identifier.
+abstract class AccountSessionIdentity {
+  String? get currentAuthUserId;
+  Stream<String?> get sessionIdentityChanges;
+}
+
 /// Optional email credential features. Kept separate from AccountAuthGateway
 /// so existing OAuth/mock implementations are backward compatible.
 abstract class AccountEmailCredentials {
@@ -47,10 +55,18 @@ abstract class AccountEmailCredentials {
 /// User authentication is handled by Supabase Auth, not application-owned tables.
 /// Google provider configuration and email delivery must be configured in dashboard.
 class SupabaseAccountAuthGateway
-    implements AccountAuthGateway,AccountEmailCredentials {
+    implements AccountAuthGateway,AccountEmailCredentials,
+        AccountSessionIdentity {
   SupabaseAccountAuthGateway(this._client);
 
   final SupabaseClient _client;
+
+  @override
+  String? get currentAuthUserId => _client.auth.currentUser?.id;
+
+  @override
+  Stream<String?> get sessionIdentityChanges =>
+    _client.auth.onAuthStateChange.map((state) => state.session?.user.id);
 
   @override
   bool get signedIn => _client.auth.currentSession != null;
@@ -109,7 +125,10 @@ class SupabaseAccountAuthGateway
       {required bool isSignup}) async {
     final result=await _client.auth.verifyOTP(
       email:email.trim(),token:code.trim(),
-      type:isSignup?OtpType.signup:OtpType.email);
+      // Current GoTrue email OTP verification uses the email type for
+      // both sign-up confirmation and email-code sign-in.
+      // Legacy OtpType.signup is deprecated.
+      type:OtpType.email);
     if(result.session==null || result.user==null) {
       throw const AuthException('Email verification could not finish.');
     }
