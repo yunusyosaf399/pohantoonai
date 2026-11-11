@@ -114,3 +114,8 @@ SQL source: [`supabase/schema/05_school_setup_drafts.sql`](../../supabase/schema
 ### Step 4 reference compatibility — postal code
 
 Additional migration [`supabase/schema/07_school_setup_postal_code.sql`](../../supabase/schema/07_school_setup_postal_code.sql) adds a nullable postal code of at most 32 characters so the School Location review shows genuine persisted user data, rather than synthetic sample addresses. Deployed as `20261111120829` and verified in the live schema without touching prior draft records.
+
+
+### School logo addition — 2026-11-11
+
+[Private logo schema](../../supabase/schema/09_school_logo_storage.sql) deployed as migration 20261111125611. Step 3 now has an owner-only Choose/Replace/Remove logo field, with path persisted on the applicant school draft. Supported types: JPEG, PNG, WebP up to 2 MiB. Upload uses a private bucket, and preview uses a short-lived signed URL. Only saved draft path persists, not image bytes; adding/changing requires saving the form, and edits made from the Step 6 profile menu require a new Step 4 review. See [dashboard implementation contract](module_02_school_dashboard.md).
