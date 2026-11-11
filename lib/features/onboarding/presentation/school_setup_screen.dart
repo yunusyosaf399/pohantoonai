@@ -299,3 +299,380 @@ class _SchoolSetupScreenState extends State<SchoolSetupScreen> {
     super.dispose();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      backgroundColor: dark ? const Color(0xFF0B2025)
+          : const Color(0xFFF4F9FA),
+      body: SafeArea(
+        child: LayoutBuilder(builder: (context, outer) {
+          final desktop = outer.maxWidth >= 1250;
+          return Row(children: [
+            if (desktop)
+              SizedBox(width: 300, child: _sidebar()),
+            Expanded(child: SingleChildScrollView(
+              key: Key(desktop
+                  ? 'school-setup-desktop-layout'
+                  : 'school-setup-mobile-layout'),
+              padding: EdgeInsets.fromLTRB(desktop ? 30 : 18, 22,
+                  desktop ? 30 : 18, 38),
+              child: Center(child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _topBar(desktop),
+                    const SizedBox(height: 22),
+                    Text('STEP 3 OF 6 · SCHOOL SETUP',
+                      key: const Key('school-setup-progress-label'),
+                      style: const TextStyle(fontSize: 12,
+                        fontWeight: FontWeight.w800,letterSpacing: .9)),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: const LinearProgressIndicator(
+                        value: 3 / 6, minHeight: 8)),
+                    const SizedBox(height: 26),
+                    Text('Tell us about your school',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontSize: desktop ? 34 : 29,
+                            fontWeight: FontWeight.w800,height: 1.14)),
+                    const SizedBox(height: 8),
+                    Text('Start with essential details now. Optional details '
+                      'can be completed later and reviewed before submission.',
+                      style: TextStyle(height: 1.48,color:
+                        Theme.of(context).colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 22),
+                    _notices(),
+                    const SizedBox(height: 16),
+                    if (error != null) ...[
+                      _errorBox(), const SizedBox(height: 16),
+                    ],
+                    if (loading)
+                      const Padding(
+                        padding: EdgeInsets.all(52),
+                        child: Center(child: CircularProgressIndicator(
+                          key: Key('school-setup-loading'))))
+                    else if (!loaded)
+                      Center(child: OutlinedButton.icon(
+                        onPressed: _load,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry loading draft')))
+                    else ...[
+                      _formCards(),
+                      const SizedBox(height: 29),
+                      _footer(),
+                    ],
+                  ],
+                ),
+              )),
+            )),
+          ]);
+        }),
+      ),
+    );
+  }
+
+  Widget _topBar(bool desktop) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(children: [
+      IconButton(key:const Key('school-setup-back-top'),
+        onPressed:_back, tooltip:'Back to your plans',
+        icon:const Icon(Icons.arrow_back)),
+      if (!desktop) ...[
+        const SizedBox(width: 5),
+        ClipRRect(borderRadius:BorderRadius.circular(8),
+          child:Image.asset('assets/app_logo/app_icon.jpeg',
+            width:34,height:34,fit:BoxFit.cover)),
+        const SizedBox(width: 8),
+        const Expanded(child:Text('Pohantoon AI',
+          maxLines:1,overflow:TextOverflow.ellipsis,
+          style:TextStyle(fontSize:18,fontWeight:FontWeight.w800))),
+      ] else const Spacer(),
+      AppearanceSettingsButton(
+        mode:widget.themeMode,onChanged:widget.onThemeChanged),
+      const SizedBox(width: 8),
+      Tooltip(
+        message:widget.accountEmail ?? 'Signed-in account',
+        child:CircleAvatar(
+          backgroundColor:colors.primaryContainer,
+          child:Icon(Icons.person_outline,color:colors.primary)),
+      ),
+    ]);
+  }
+
+  Widget _sidebar() {
+    final colors = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding:const EdgeInsets.fromLTRB(24,34,24,24),
+      decoration:BoxDecoration(
+        color:dark?const Color(0xFF0D3B35):const Color(0xFFE5F5F0),
+        border:Border(right:BorderSide(color:colors.outlineVariant))),
+      child:ListView(children:[
+        Row(children:[
+          Image.asset('assets/app_logo/app_icon.jpeg',width:50,height:50),
+          const SizedBox(width:12),
+          const Expanded(child:Column(
+            crossAxisAlignment:CrossAxisAlignment.start,
+            children:[
+              Text('Pohantoon AI',style:TextStyle(
+                fontSize:19,fontWeight:FontWeight.w800)),
+              Text('Smarter School Management,\nPowered by AI',
+                style:TextStyle(fontSize:10)),
+            ])),
+        ]),
+        const SizedBox(height:44),
+        const SchoolCampusIllustration(),
+        const SizedBox(height:36),
+        const Divider(),
+        for (final step in const [
+          ('Account Connected','Sign in securely',1),
+          ('Choose Your Plan','Choose a subscription plan',2),
+          ('School Information','Tell us about your school',3),
+          ('Application Review','Review your details',4),
+          ('Subscription Payment','After approval',5),
+          ('School Dashboard','Set up your workspace',6),
+        ])
+          Container(
+            margin:const EdgeInsets.only(top:10),
+            padding:const EdgeInsets.symmetric(horizontal:10,vertical:12),
+            decoration:BoxDecoration(
+              color:step.$3==3
+                  ? colors.primary.withValues(alpha:.13)
+                  : Colors.transparent,
+              borderRadius:BorderRadius.circular(12)),
+            child:Row(children:[
+              CircleAvatar(radius:15,
+                backgroundColor:step.$3<3
+                    ? colors.primary
+                    : step.$3==3?colors.primaryContainer:colors.surface,
+                child:step.$3<3
+                    ? Icon(Icons.check,size:16,color:colors.onPrimary)
+                    : Text(step.$3.toString(),style:TextStyle(
+                        color:colors.primary,fontWeight:FontWeight.w700))),
+              const SizedBox(width:11),
+              Expanded(child:Column(
+                crossAxisAlignment:CrossAxisAlignment.start,
+                children:[
+                  Text(step.$1,style:TextStyle(fontSize:13,
+                    fontWeight:step.$3==3?FontWeight.w800:FontWeight.w600)),
+                  Text(step.$2,style:TextStyle(fontSize:10,
+                    color:colors.onSurfaceVariant)),
+                ])),
+            ]),
+          ),
+      ]),
+    );
+  }
+
+  Widget _notices() {
+    final info=_notice(Icons.info_outline,
+      'Recommended setup: essential + optional details. '
+      'No payment is charged at this stage.');
+    final plan=_notice(Icons.workspace_premium_outlined,
+      'Selected plan: '+widget.plan.name+'\n'+widget.plan.summaryLimits);
+    return LayoutBuilder(builder:(context,size) =>
+      size.maxWidth>=850
+        ? Row(children:[
+            Expanded(child:info),
+            const SizedBox(width:16),
+            Expanded(child:plan),
+          ])
+        : Column(children:[
+            info,const SizedBox(height:12),plan,
+          ]),
+    );
+  }
+
+  Widget _notice(IconData icon,String message) {
+    final colors=Theme.of(context).colorScheme;
+    final dark=Theme.of(context).brightness==Brightness.dark;
+    return Container(
+      width:double.infinity,
+      constraints:const BoxConstraints(minHeight:68),
+      padding:const EdgeInsets.all(15),
+      decoration:BoxDecoration(
+        color:dark?const Color(0xFF154339):const Color(0xFFE3F5EF),
+        borderRadius:BorderRadius.circular(13),
+        border:Border.all(color:colors.primary.withValues(alpha:.20))),
+      child:Row(children:[
+        Icon(icon,size:26,color:colors.primary),
+        const SizedBox(width:12),
+        Expanded(child:Text(message,
+          style:const TextStyle(fontSize:13,height:1.42))),
+      ]),
+    );
+  }
+
+  Widget _errorBox()=>Container(
+    key:const Key('school-setup-error'),
+    padding:const EdgeInsets.all(16),
+    decoration:BoxDecoration(
+      color:Theme.of(context).colorScheme.errorContainer,
+      borderRadius:BorderRadius.circular(12)),
+    child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Icon(Icons.error_outline,
+        color:Theme.of(context).colorScheme.error),
+      const SizedBox(width:10),
+      Expanded(child:Text(error!,style:TextStyle(
+        color:Theme.of(context).colorScheme.onErrorContainer))),
+    ]),
+  );
+
+  Widget _formCards() {
+    final cards=<Widget>[
+      _card('School Identity',Icons.apartment_outlined,[
+        _text('School name','schoolName',
+          hint:'Enter school name',mandatory:true),
+        _text('Legal school name','legalName',
+          hint:'Enter legal school name'),
+        _choice('School type',schoolType,const {
+          'public':'Public School','private':'Private School',
+          'international':'International School',
+          'nonprofit':'Nonprofit School','other':'Other',
+        },(v)=>setState(() { schoolType=v;dirty=true; }),mandatory:true),
+        _text('Registration / License No.','registration',
+          hint:'Enter registration or license number'),
+        _text('Year established','year',
+          hint:'e.g., 2010',numeric:true),
+        _text('Website','website',
+          hint:'https://www.yourschool.edu'),
+      ]),
+      _card('Primary Contact',Icons.person_outline,[
+        _text('Contact name','contactName',
+          hint:'Enter contact name',mandatory:true),
+        _text('Position / Role','contactPosition',
+          hint:'e.g., Principal, Administrator'),
+        _text('School contact email','contactEmail',
+          hint:'Enter school contact email',mandatory:true),
+        _text('Phone','contactPhone',
+          hint:'e.g., +1 234 567 8900'),
+      ],account:true),
+      _card('Location & Preferences',Icons.location_on_outlined,[
+        _choice('Country',countryCode,countries,
+          (v)=>setState(() { countryCode=v;dirty=true; }),mandatory:true),
+        if (countryCode=='OTHER')
+          _text('Country ISO code','otherCountry',
+            hint:'e.g., BT',mandatory:true),
+        _text('State / Province','region',
+          hint:'Enter state or province'),
+        _text('City','city',hint:'Enter city',mandatory:true),
+        _text('Address','address',hint:'Enter school address'),
+        _choice('Time zone',timezone,zones,
+          (v)=>setState(() { timezone=v??'UTC';dirty=true; })),
+        if (timezone=='OTHER')
+          _text('IANA time zone','otherZone',
+            hint:'e.g., Asia/Kabul'),
+        _choice('Preferred currency',currency,currencies,
+          (v)=>setState(() { currency=v??'USD';dirty=true; })),
+        if (currency=='OTHER')
+          _text('Currency ISO code','otherCurrency',hint:'e.g., BTN'),
+      ]),
+      _card('Academics & Capacity',Icons.layers_outlined,[
+        _text('Estimated students','students',
+          hint:'e.g., 1500',numeric:true,mandatory:true),
+        _text('Number of campuses','campuses',
+          hint:'e.g., 5',numeric:true,mandatory:true),
+        _text('Estimated teachers','teachers',
+          hint:'e.g., 120',numeric:true),
+        _text('Non-teaching staff','staff',
+          hint:'e.g., 30',numeric:true),
+        _text('Education board','board',
+          hint:'e.g., International Baccalaureate'),
+        _text('Curriculum','curriculum',
+          hint:'e.g., IB Diploma Programme'),
+        _choice('Lowest grade',lowestGrade,{
+          for(final g in grades)
+            g:g=='OTHER'?'Other grade':g,
+        },(v)=>setState(() { lowestGrade=v;dirty=true; })),
+        if(lowestGrade=='OTHER')
+          _text('Other lowest grade','otherLowest'),
+        _choice('Highest grade',highestGrade,{
+          for(final g in grades)
+            g:g=='OTHER'?'Other grade':g,
+        },(v)=>setState(() { highestGrade=v;dirty=true; })),
+        if(highestGrade=='OTHER')
+          _text('Other highest grade','otherHighest'),
+        _languageSelector(),
+      ]),
+    ];
+    return LayoutBuilder(builder:(context,bounds) {
+      if (bounds.maxWidth<900) {
+        return Column(children:[
+          for (final card in cards) ...[
+            card,const SizedBox(height:15),
+          ],
+        ]);
+      }
+      return Column(children:[
+        Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Expanded(child:cards[0]),
+          const SizedBox(width:16),
+          Expanded(child:cards[1]),
+        ]),
+        const SizedBox(height:16),
+        Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Expanded(child:cards[2]),
+          const SizedBox(width:16),
+          Expanded(child:cards[3]),
+        ]),
+      ]);
+    });
+  }
+
+  Widget _card(String title,IconData icon,List<Widget> items,
+      {bool account=false}) {
+    final colors=Theme.of(context).colorScheme;
+    final dark=Theme.of(context).brightness==Brightness.dark;
+    return Container(
+      padding:const EdgeInsets.all(18),
+      decoration:BoxDecoration(
+        color:dark?const Color(0xFF122D31):Colors.white,
+        borderRadius:BorderRadius.circular(16),
+        border:Border.all(color:colors.outlineVariant),
+        boxShadow:[
+          if (!dark) BoxShadow(
+            color:Colors.black.withValues(alpha:.035),
+            blurRadius:12,offset:const Offset(0,4)),
+        ],
+      ),
+      child:Column(
+        crossAxisAlignment:CrossAxisAlignment.stretch,
+        children:[
+          Row(children:[
+            CircleAvatar(
+              radius:20,
+              backgroundColor:colors.primaryContainer,
+              child:Icon(icon,color:colors.primary,size:22)),
+            const SizedBox(width:11),
+            Expanded(child:Text(title,style:const TextStyle(
+              fontSize:18,fontWeight:FontWeight.w800))),
+          ]),
+          const SizedBox(height:17),
+          if (account) ...[
+            _labelled('Signed-in account email',child:TextField(
+              key:const Key('school-account-email'),
+              enabled:false,
+              controller:TextEditingController(
+                text:widget.accountEmail??'Signed-in account'),
+              decoration:const InputDecoration(
+                prefixIcon:Icon(Icons.lock_outline),isDense:true,
+                contentPadding:EdgeInsets.symmetric(
+                  horizontal:12,vertical:12)))),
+            const SizedBox(height:13),
+          ],
+          LayoutBuilder(builder:(context,bounds) {
+            final columns=bounds.maxWidth>=450?2:1;
+            final fieldWidth=(bounds.maxWidth-(columns-1)*12)/columns;
+            return Wrap(spacing:12,runSpacing:14,children:[
+              for(final item in items)
+                SizedBox(width:fieldWidth,child:item),
+            ]);
+          }),
+        ],
+      ),
+    );
+  }
+
