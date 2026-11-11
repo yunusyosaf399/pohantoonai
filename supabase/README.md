@@ -120,3 +120,11 @@ Executed [transactional SQL security test](tests/08_payment_preferences_security
 ### Additional dashboard tests
 
 [09_school_logo_security.sql](tests/09_school_logo_security.sql): executed ROLLBACK-only tests; own logo path accepted and cross-account, wrong folder and SVG references rejected. The RLS-only test fixtures create no real Storage objects. The Storage byte upload and signed-read paths must still be verified on a signed-in device.
+
+
+## Module 02.2 — Development workspaces (2026-11-11)
+
+- [schema/12_dev_workspace_persistent_access.sql](schema/12_dev_workspace_persistent_access.sql): DEPLOYED migration 20261111140501, own-account development_preview status created only after valid school setup and selected active demo plan. No paid state, school membership or real tenant authorization.
+- [tests/12_dev_workspace_security.sql](tests/12_dev_workspace_security.sql): executed transaction-only test. Forged access and payment/school writes denied; rollback preserved existing users.
+- [Auth code email template sources](auth/templates/confirm_signup.html) and [Magic Link/OTP template](auth/templates/magic_link_otp.html): committed to repo but NOT installed in the Supabase hosted Authentication Email Templates settings. The Supabase project also needs SMTP configuration and leaked-password protection.
+- [Module 02.2 design](../docs/database/module_02_2_dashboard_auth_profiles.md) describes database, Flutter and Auth setup.
