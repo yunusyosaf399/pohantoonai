@@ -85,3 +85,9 @@ The live Postgres database was checked **without reading or exposing passwords o
 - [ ] Leaked password protection and authentication abuse controls enabled
 
 **Do not mark this module end-to-end complete while any of the last six boxes are unchecked.**
+
+## Live account-linkage RLS proof (2026-11-11)
+
+[Auth provider/workspace test SQL](../../supabase/tests/15_auth_provider_same_account_rls.sql) **passed** against the linked Supabase project under simulated authenticated Postgres roles with ROLLBACK. A verified account that already has both a Google identity and password can SELECT its own matched plan, ready draft and development workspace; another confirmed account cannot SELECT that workspace. This is stronger than a raw database join, but is **not** a real end-user Google/password sign-in or SMTP delivery test.
+
+External deployment blockers are tracked separately in [Auth SMTP/templates issue](https://github.com/yunusyosaf399/pohantoonai/issues/1) and [Flutter test/CI issue](https://github.com/yunusyosaf399/pohantoonai/issues/2).
