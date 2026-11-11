@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/settings/appearance_settings_button.dart';
 import '../../auth/presentation/school_campus_illustration.dart';
@@ -898,13 +899,22 @@ class _SchoolDashboardSetupPreviewState
       return Scaffold(
         backgroundColor:dark?const Color(0xFF071B23)
           :const Color(0xFFF3F7FB),
-        body:SafeArea(child:Row(children:[
-          if(!mobile)_sideBar(compact:compact),
-          Expanded(child:Column(children:[
-            _topBar(mobile),
-            Expanded(child:_dashboardBody(mobile)),
-          ])),
-        ])),
+        body:CallbackShortcuts(
+          bindings:{
+            const SingleActivator(LogicalKeyboardKey.keyK,control:true):
+              _openSearch,
+          },
+          child:Focus(
+            autofocus:true,
+            child:SafeArea(child:Row(children:[
+              if(!mobile)_sideBar(compact:compact),
+              Expanded(child:Column(children:[
+                _topBar(mobile),
+                Expanded(child:_dashboardBody(mobile)),
+              ])),
+            ])),
+          ),
+        ),
         bottomNavigationBar:mobile?NavigationBar(
           selectedIndex:0,
           onDestinationSelected:(i) {
