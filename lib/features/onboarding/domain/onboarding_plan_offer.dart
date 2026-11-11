@@ -38,6 +38,10 @@ class OnboardingPlanOffer {
 
   String amount(int? value) => value == null ? 'Unlimited' : '$value';
 
+  String capacity(int? value, String unit) =>
+      value == null ? 'Unlimited ' + unit
+          : 'Up to ' + value.toString() + ' ' + unit;
+
   String get summaryLimits =>
       '${amount(studentLimit)} students · ${amount(campusLimit)} campuses · '
       '${amount(staffLimit)} staff';
