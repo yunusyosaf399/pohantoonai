@@ -232,3 +232,21 @@ SaaS Control Panel
 - Added macOS user-selected read-only file entitlements and functional Ctrl+K demo search shortcut.
 - [Dashboard Flutter widget tests](../../test/dashboard/school_dashboard_test.dart) now include rotation every 10 seconds, hover pause/resume, full-screen trends, full activity lists, school profile editing.
 - **Build gate remains open:** new pinned file_selector 1.1.0 needs developer's flutter pub get to regenerate pubspec.lock, Flutter analyze/test and Windows/mobile/Web runtime validation.
+
+
+## Module 02.2 — Compact plans, returning dashboard & email/password auth (2026-11-11)
+
+| Task | Status | Evidence |
+|---|---|---|
+| Remove large empty spaces from plan cards | Code committed | [Step 2 plans](../../lib/features/onboarding/presentation/plan_selection_screen.dart) |
+| Save owner-only development dashboard entitlement after Step 3 | Deployed database & code | [SQL 12](../../supabase/schema/12_dev_workspace_persistent_access.sql); [repository](../../lib/features/onboarding/data/development_workspace_repository.dart) |
+| Return directly to same saved demo dashboard after Google/password sign-in | Code committed; runtime test pending | [App routing](../../lib/main.dart) |
+| Edit permitted school details/logo without onboarding | Code committed; runtime test pending | [Settings overlay](../../lib/features/dashboard/presentation/dashboard_profile_settings.dart) |
+| Edit owner display name + add/change Supabase Auth password | Code committed; runtime test pending | [Owner repository](../../lib/features/dashboard/data/dashboard_owner_profile_repository.dart), [Auth gateway](../../lib/features/auth/data/account_auth_gateway.dart) |
+| Email/password signup, OTP input, sign-in and recovery | Code committed; actual email template deployment pending | [Email credentials panel](../../lib/features/auth/presentation/email_credentials_panel.dart), [Recovery](../../lib/features/auth/presentation/password_recovery_dialog.dart) |
+| Hosted signup and OTP emails | **Template files committed, NOT enabled remotely** | [Confirm signup](../../supabase/auth/templates/confirm_signup.html), [OTP template](../../supabase/auth/templates/magic_link_otp.html) |
+| Tenant security and forged paid-state tests | SQL tests passed (rollback) | [SQL test](../../supabase/tests/12_dev_workspace_security.sql) |
+| Flutter compile, widget tests and cross-device UX | NOT RUN | Github Actions billing/spending restriction; local Flutter SDK needed |
+| Actual payment transactions, real school membership or provision | NOT implemented | Development_preview is never a paid subscription |
+
+[Full Module 02.2 contract](../database/module_02_2_dashboard_auth_profiles.md). No extra Supabase project or custom OTP Edge Function is needed.
