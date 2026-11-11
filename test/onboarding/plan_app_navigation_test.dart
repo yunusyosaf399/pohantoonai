@@ -9,6 +9,7 @@ import 'package:pohantoonai/features/onboarding/data/school_setup_repository.dar
 import 'package:pohantoonai/features/onboarding/data/review_confirmation_repository.dart';
 import 'package:pohantoonai/features/onboarding/data/onboarding_payment_preferences_repository.dart';
 import 'package:pohantoonai/features/onboarding/domain/onboarding_payment_preferences.dart';
+import 'package:pohantoonai/features/onboarding/data/development_workspace_repository.dart';
 import 'package:pohantoonai/main.dart';
 
 class TestAccount implements AccountAuthGateway {
@@ -88,7 +89,57 @@ class TestPaymentPreferences implements OnboardingPaymentPreferencesRepository {
   }
 }
 
+class TestDevelopmentWorkspace implements DevelopmentWorkspaceRepository {
+  bool enabled;
+  String? selectedPlan;
+  TestDevelopmentWorkspace({this.enabled=false});
+  @override
+  Future<bool> hasAccess(String planId) async =>
+      enabled && selectedPlan==planId;
+  @override
+  Future<void> enable(String planId) async {
+    enabled=true;
+    selectedPlan=planId;
+  }
+}
+
 void main() {
+  testWidgets('returning verified school owner restores dashboard directly',
+      (tester) async {
+    tester.view.physicalSize=const Size(1200,800);
+    tester.view.devicePixelRatio=1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final plans=TestPlans()..saved='growth-plan';
+    final drafts=TestSchoolDrafts();
+    drafts.saved=const SchoolSetupDraft(
+      schoolName:'Returning Academy',
+      contactName:'Returning Owner',
+      contactEmail:'school@example.invalid',
+      city:'Kabul',countryCode:'AF',
+      estimatedStudents:120,campusCount:1,
+      readyForReview:true,
+    );
+    final workspace=TestDevelopmentWorkspace(enabled:true)
+      ..selectedPlan='growth-plan';
+    await tester.pumpWidget(PohantoonAiApp(
+      authGateway:TestAccount(),
+      developmentWorkspaceRepository:workspace,
+      planRepository:plans,schoolSetupRepository:drafts,
+      paymentPreferencesRepository:TestPaymentPreferences(),
+      themeController:ThemeController(),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsOneWidget);
+    expect(find.text('Return to account sign-in?'),findsNothing);
+    expect(find.text('Complete Your Subscription Payment'),findsNothing);
+    expect(find.byKey(const Key('dashboard-not-provisioned-warning')),
+      findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
+
   testWidgets('signed-in applicant advances from plan to real Step 3 form',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
