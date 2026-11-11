@@ -260,6 +260,14 @@ Accepted implementation [░░░░░░░░░░░░░░░░░░�
 - **Build validation blocked:** Current GitHub Actions job reports failure without job steps or downloadable runner logs; Flutter SDK unavailable in this execution environment. Pin versions in `pubspec.yaml` and commit a resolved lockfile when the toolchain runs. Do not check implementation tasks as complete until verification passes.
 - **Existing `platform` tables:** 12 private tables intentionally keep zero policies; no general authenticated access to organizational records.
 
+## Module 01.5 execution evidence — 2026-11-11
+
+- [Step 5 Subscription Payment UI](../../lib/features/onboarding/presentation/school_payment_preview.dart) implements responsive reference layout, method/cycle/billing preferences, disabled real Pay Now, and active Skip for Now. [Step 6](../../lib/features/onboarding/presentation/school_dashboard_setup_preview.dart) is an explicit non-activated dashboard test preview.
+- Deployed [payment preference SQL](../../supabase/schema/08_onboarding_payment_preferences.sql) as migration 20261111122224 to the one existing project, with owner RLS, draft/plan review revision enforcement and a strictly unpaid skipped_for_testing state.
+- [DB security assertions](../../supabase/tests/08_payment_preferences_security.sql) passed within ROLLBACK; no fake transaction or preference row persisted. Flutter widget tests committed but not yet executed/compiled (GitHub Actions billing blocker).
+- No card numbers/CVV, no claims of actual price/discount, no checkout requests, no payment receipt or subscription entitlement, and no real tenant/school access.
+- Payment provider and operator approval sequencing must be explicitly designed prior to enabling a live charge or tenant provisioning.
+
 ## Module 01.4 execution evidence — 2026-11-11
 
 - [Responsive Step 4 Application Review](../../lib/features/onboarding/presentation/school_review_preview.dart) implemented with dynamic school information and selected plan, four Edit actions, required accuracy checkbox, **Go to Payment** button, and Step 5 safe preview.
