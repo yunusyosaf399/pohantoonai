@@ -162,3 +162,6 @@ Account creation → choose subscription plan → collect legal and operational 
 ### New Flutter dependency note (dashboard logo)
 
 This branch added pinned file_selector 1.1.0 to pubspec.yaml for cross-platform school-logo selection. The generated pubspec.lock has not yet been updated by a Flutter SDK in the remote environment. Run flutter pub get on your machine, commit the resulting pubspec.lock, and then run flutter analyze and flutter test. Mac desktop entitlements for sandboxed file selection are already committed. The main app retains the test-only/unpaid dashboard access boundary.
+
+
+**Owner profile:** The dashboard settings sheet now edits the signed-in owner's display name, phone, job title and Auth password, separate from editable school contact and identity details. The associated [owner-profile migration](supabase/schema/13_owner_profile_contact_details.sql) is deployed; [SQL negative tests](supabase/tests/13_owner_profile_security.sql) passed. The Auth sign-in email stays locked.
