@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include <string>
+#include <cwchar>
 
 // The app_links plugin (used internally by supabase_flutter) forwards a
 // second-instance OAuth URL to the first running Flutter window.
@@ -23,7 +24,7 @@ namespace {
 bool ForwardAuthLinkToExistingWindow(const wchar_t* command_line) {
   // Do not suppress ordinary launches or forward unrelated command lines.
   if (command_line == nullptr ||
-      wcsstr(command_line, L"pohantoonai://auth-callback") == nullptr) {
+      std::wcsstr(command_line, L"pohantoonai://auth-callback") == nullptr) {
     return false;
   }
 
