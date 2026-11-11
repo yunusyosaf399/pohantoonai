@@ -115,3 +115,8 @@ Executed [transactional SQL security test](tests/08_payment_preferences_security
 - RLS-protected, unpaid test-preview preferences: [schema/10_demo_dashboard_preferences.sql](schema/10_demo_dashboard_preferences.sql), migration 20261111125713; signed-in user must have an actual skipped_for_testing record.
 - Future real school and dashboard records: [schema/11_school_dashboard_foundation.sql](schema/11_school_dashboard_foundation.sql), migration 20261111125810. All six real tenant tables are **empty and read-only to clients**. School dashboard report SELECT policies require a real active owner/admin membership and an active school.
 - [All schema/UI/permission design decisions](../docs/database/module_02_school_dashboard.md).
+
+
+### Additional dashboard tests
+
+[09_school_logo_security.sql](tests/09_school_logo_security.sql): executed ROLLBACK-only tests; own logo path accepted and cross-account, wrong folder and SVG references rejected. The RLS-only test fixtures create no real Storage objects. The Storage byte upload and signed-read paths must still be verified on a signed-in device.
