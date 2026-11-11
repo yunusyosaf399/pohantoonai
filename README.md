@@ -53,6 +53,19 @@ The real School Setup form now follows the saved Step 2 plan. It matches the sup
 
 **Database tested and deployed. Flutter runtime tests are still pending** because GitHub Actions has an owner-account billing/spending-limit restriction preventing runner startup.
 
+## Step 4 — Review Your School Application / Go to Payment
+
+Following Step 3's secure Save Draft, users now see a real responsive review screen with four **Edit** actions, account-linked information, selected subscription plan, and a required accuracy checkbox. The action is **Go to Payment**, not "Submit Application". Clicking it writes a server-validated review confirmation tied to the **exact saved draft revision and selected plan**, then shows Step 5.
+
+- [Responsive review UI](lib/features/onboarding/presentation/school_review_preview.dart)
+- [Review confirmation repository](lib/features/onboarding/data/review_confirmation_repository.dart)
+- [Safe Step 5 payment-stage preview](lib/features/onboarding/presentation/school_payment_preview.dart)
+- [Deployed database schema](supabase/schema/06_onboarding_review_confirmation.sql)
+- [Executed RLS/revision security test](supabase/tests/06_review_confirmation_security.sql)
+- [Complete design, security and acceptance report](docs/database/module_01_application_review.md)
+
+**Payment is not active:** no charge, card collection, school provisioning or subscription activation. Before production, the payment provider, billing server, verified webhooks and operator-approval sequencing need implementation. Database tests passed; Flutter compilation/device tests are still pending due the GitHub Actions runner billing restriction.
+
 ## Run Flutter
 
 ```bash
@@ -97,6 +110,6 @@ Project planning: [table catalog](docs/architecture/table_catalog.md), [roadmap]
 
 ## Delivery order
 
-Account creation → choose subscription plan → collect legal and operational school details → operator review → verified payment or approved trial → protected school provisioning → student admissions → fees, teachers, attendance and later modules.
+Account creation → choose subscription plan → collect legal and operational school details → personal review and Go to Payment UI → **future verified checkout/approval workflow** → protected school provisioning → student admissions → fees, teachers, attendance and later modules.
 
 **Do not use real student data until the corresponding school-scoped RLS, workflows and cross-tenant denial tests have been implemented.**
