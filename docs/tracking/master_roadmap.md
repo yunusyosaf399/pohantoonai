@@ -1,3 +1,15 @@
+## Module 02.2 execution evidence — 2026-11-11
+
+- Step 2 plan cards compacted, leaving selected plan/state and backend product catalog intact.
+- Deployed [development workspace SQL 12](../../supabase/schema/12_dev_workspace_persistent_access.sql) as Supabase migration 20261111140501. Owner-only RLS and active demo plan+completed school draft checks; account-specific development_preview is NOT a financial or school-tenant entitlement. Existing dashboard preference rows preserved.
+- [Database security tests](../../supabase/tests/12_dev_workspace_security.sql) passed in ROLLBACK: unauthorized user, fake payment approval and school creation denied.
+- Flutter now restores same workspace after verified Google or email/password login; brand new demo completes Step 3 and opens dashboard without payments.
+- Added in-dashboard school/owner settings, with locked regulated fields and account email, plus password setup through Supabase Auth (never in SQL).
+- Added native Supabase Auth email/password signup, OTP verification, resend, login and recovery UI, with committed Auth email templates. **Hosted email templates and SMTP must still be configured by an authorized operator**; no custom Edge Function necessary.
+- [Implementation/verification contract](../database/module_02_2_dashboard_auth_profiles.md).
+- Flutter build/test/UX remains unverified due GitHub Actions billing restrictions and unavailable local Flutter SDK.
+
+
 # Master Migration Roadmap — Pohantoon AI
 
 > **Status:** [In Progress] · **Last updated:** 2026-11-10 · **Target:** `yunusyosaf399/pohantoonai` (`main`)  
