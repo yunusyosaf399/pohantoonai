@@ -469,13 +469,20 @@ class _SchoolPaymentPreviewState extends State<SchoolPaymentPreview> {
           ]),
         ),
         const SizedBox(height: 13),
-        TextField(
-          key: const Key('payment-coupon-disabled'),
-          enabled: false,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.local_offer_outlined),
-            hintText: 'Coupon codes available with real checkout',
-            isDense: true)),
+        Row(children: [
+          const Expanded(child: TextField(
+            key: Key('payment-coupon-disabled'),
+            enabled: false,
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.local_offer_outlined),
+              hintText: 'Coupon code (coming soon)',
+              isDense: true))),
+          const SizedBox(width: 9),
+          OutlinedButton(
+            key: const Key('payment-coupon-apply-disabled'),
+            onPressed: null,
+            child: const Text('Apply')),
+        ]),
         const SizedBox(height: 7),
         Text('Coupons cannot be applied until a trusted pricing '
           'and discount service is configured.',
@@ -539,6 +546,10 @@ class _SchoolPaymentPreviewState extends State<SchoolPaymentPreview> {
           'be presented when real checkout becomes available. '
           'Skipping does not accept these terms.',
           style: TextStyle(fontSize: 12, height: 1.45))),
+        Checkbox(
+          key: Key('payment-terms-disabled'),
+          value: false, onChanged: null,
+          semanticLabel: 'Payment terms not yet available'),
       ]),
     );
   }
