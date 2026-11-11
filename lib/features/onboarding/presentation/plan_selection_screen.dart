@@ -441,11 +441,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                 ]),
                 const SizedBox(height: 21),
                 _benefit(Icons.groups_outlined,
-                  'Up to ' + plan.amount(plan.studentLimit) + ' students'),
+                  plan.capacity(plan.studentLimit, 'students')),
                 _benefit(Icons.apartment_outlined,
-                  'Up to ' + plan.amount(plan.campusLimit) + ' campuses'),
+                  plan.capacity(plan.campusLimit, 'campuses')),
                 _benefit(Icons.badge_outlined,
-                  'Up to ' + plan.amount(plan.staffLimit) + ' staff'),
+                  plan.capacity(plan.staffLimit, 'staff')),
                 _benefit(Icons.calendar_month_outlined,
                   plan.trialDays.toString() + '-day demo trial configuration'),
                 if (fixedHeight) const Spacer()
@@ -529,17 +529,22 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         back, const SizedBox(width: 10), next,
       ]);
     }
-    return Column(children: [
-      Row(children: [
-        Expanded(flex: 2, child: back),
-        const SizedBox(width: 10),
-        Expanded(flex: 5, child: next),
-      ]),
+    return LayoutBuilder(builder: (context, size) => Column(children: [
+      if (size.maxWidth < 360) ...[
+        SizedBox(width: double.infinity, child: next),
+        const SizedBox(height: 10),
+        SizedBox(width: double.infinity, child: back),
+      ] else
+        Row(children: [
+          Expanded(flex: 2, child: back),
+          const SizedBox(width: 10),
+          Expanded(flex: 5, child: next),
+        ]),
       const SizedBox(height: 16),
       Text('You can review your plan before submitting your application.',
         textAlign: TextAlign.center,
         style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12)),
-    ]);
+    ]));
   }
 
   Widget _failureCard() => Card(child: Padding(
