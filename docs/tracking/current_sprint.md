@@ -101,3 +101,16 @@ SaaS Control Panel
 - **Outstanding:** No ability to inspect or mutate Supabase's Site URL/allowlist via currently connected management tool; no Flutter SDK available to run new test; latest GitHub Actions workflows also failed, so test acceptance is still open. Windows protocol handler is not yet implemented.
 - **Next verification:** complete one Google sign-in at `http://localhost:3000` and confirm the app receives Auth session, invokes `account-bootstrap` and transitions to Step 1 success UI.
 
+
+## Android mobile APK request — 2026-11-11
+
+| Task | Status | Evidence |
+|---|---|---|
+| Add GitHub Actions Android debug build | **[Completed — source committed]** | [Workflow](../../.github/workflows/android-apk.yml) installs Java 17 + Flutter, runs dependency resolution and APK build; upload artifact + optional prerelease |
+| Trigger GitHub-run build | **[Attempted — failed before steps]** | [Run 42956828072](https://github.com/yunusyosaf399/pohantoonai/actions/runs/42956828072) concluded failed in seconds; 0 steps and 0 APK artifacts |
+| Diagnose startup failure | **[External GitHub account/runner blocker]** | Previous Flutter Actions jobs also have no steps; exact GitHub run annotation not exposed by connector; account billing/Actions settings must be checked |
+| Provide mobile install instructions | **[Completed]** | [Android APK build guide](../flutter/android_apk_build.md) |
+| User installs test APK | **[Blocked — no APK]** | Requires a successful GitHub-hosted runner job |
+| Google sign-in mobile E2E | **[Blocked — APK]** | Then verify allowlisted `pohantoonai://auth-callback` and session callback |
+
+**Do not mark APK built or Flutter compilation verified until an artifact exists and checks succeed.** Debug-signed APK is development-only. Repo remains private and release assets require GitHub access.
