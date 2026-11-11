@@ -31,9 +31,22 @@ abstract class AccountAuthGateway {
   Future<void> signOut();
 }
 
+/// Optional email credential features. Kept separate from AccountAuthGateway
+/// so existing OAuth/mock implementations are backward compatible.
+abstract class AccountEmailCredentials {
+  Future<void> signUpWithPassword(String email,String password);
+  Future<void> verifyEmailCode(String email,String code,
+      {required bool isSignup});
+  Future<void> signInWithPassword(String email,String password);
+  Future<void> resendSignupCode(String email);
+  Future<void> setAccountPassword(String password);
+  Future<void> sendPasswordReset(String email);
+}
+
 /// User authentication is handled by Supabase Auth, not application-owned tables.
 /// Google provider configuration and email delivery must be configured in dashboard.
-class SupabaseAccountAuthGateway implements AccountAuthGateway {
+class SupabaseAccountAuthGateway
+    implements AccountAuthGateway,AccountEmailCredentials {
   SupabaseAccountAuthGateway(this._client);
 
   final SupabaseClient _client;
@@ -71,6 +84,55 @@ class SupabaseAccountAuthGateway implements AccountAuthGateway {
       emailRedirectTo: oauthRedirectForApp(isWeb: kIsWeb, currentUri: Uri.base),
     );
   }
+
+  @override
+  Future<void> signUpWithPassword(String email,String password) async {
+    final response=await _client.auth.signUp(
+      email:email.trim(),password:password,
+      emailRedirectTo:oauthRedirectForApp(isWeb:kIsWeb,
+        currentUri:Uri.base));
+    // A session without email confirmation is not a completed registration.
+    if(response.session!=null && response.user?.emailConfirmedAt==null) {
+      await _client.auth.signOut();
+    }
+  }
+
+  @override
+  Future<void> verifyEmailCode(String email,String code,
+      {required bool isSignup}) async {
+    final result=await _client.auth.verifyOTP(
+      email:email.trim(),token:code.trim(),
+      type:isSignup?OtpType.signup:OtpType.email);
+    if(result.session==null || result.user==null) {
+      throw const AuthException('Email verification could not finish.');
+    }
+  }
+
+  @override
+  Future<void> signInWithPassword(String email,String password) async {
+    await _client.auth.signInWithPassword(
+      email:email.trim(),password:password);
+  }
+
+  @override
+  Future<void> resendSignupCode(String email) async {
+    await _client.auth.resend(type:OtpType.signup,email:email.trim());
+  }
+
+  @override
+  Future<void> setAccountPassword(String password) async {
+    final user=_client.auth.currentUser;
+    if(user==null || user.emailConfirmedAt==null) {
+      throw const AuthException('Verify your email before setting a password.');
+    }
+    await _client.auth.updateUser(UserAttributes(password:password));
+  }
+
+  @override
+  Future<void> sendPasswordReset(String email) =>
+    _client.auth.resetPasswordForEmail(
+      email.trim(),
+      redirectTo:oauthRedirectForApp(isWeb:kIsWeb,currentUri:Uri.base));
 
   @override
   Future<void> signOut() => _client.auth.signOut();
