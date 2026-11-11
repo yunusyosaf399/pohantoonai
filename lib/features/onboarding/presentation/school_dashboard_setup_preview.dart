@@ -834,9 +834,9 @@ class _SchoolDashboardSetupPreviewState
         Icon(Icons.shield_outlined,size:20,color:colors.primary),
         const SizedBox(width:10),
         const Expanded(child:Text(
-          'DEMO DATA ONLY. Payment skipped for testing. '
-          'No subscription activated, school tenant created, '
-          'or access to real school records granted.',
+          'DEMO DATA ONLY. Payment is not required for this '
+          'development preview. No paid subscription, school tenant '
+          'or access to real school records has been granted.',
           style:TextStyle(fontSize:11,height:1.5))),
       ]),
     );
