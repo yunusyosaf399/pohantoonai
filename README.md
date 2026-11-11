@@ -25,7 +25,23 @@ After a valid Google/email account session, Flutter now opens a **responsive pla
 - [Supabase security smoke tests](supabase/tests/04_onboarding_plan_security.sql)
 - [Detailed design and status](docs/database/module_01_plan_selection.md)
 
-**Database deployed and security smoke-tested.** Source now has 3 published demo plans and only the account owner can save their draft choice; no subscription, payment, school or permission is created. Step 3 is currently an honest placeholder until we implement school legal/contact information. Flutter widget tests are written but **not yet run**: GitHub Actions jobs fail before starting because of account billing/spending restrictions.
+**Database deployed and security smoke-tested.** Source now has 3 published demo plans and only the account owner can save their draft choice; no subscription, payment, school or permission is created. Step 3 now provides the real school-information form and saves an applicant-owned draft. Flutter widget tests are written but **not yet run**: GitHub Actions jobs fail before starting because of account billing/spending restrictions.
+
+## Step 3 of 6 — Tell Us About Your School
+
+The real School Setup form now follows the saved Step 2 plan. It matches the supplied dark/light desktop, tablet and mobile designs with four cards: **School Identity**, **Primary Contact**, **Location & Preferences**, and **Academics & Capacity**. It uses the same System/Light/Dark appearance settings.
+
+**Save Draft** stores partial information; **Continue to Review** enforces required fields and plan student/campus/staff limits in Flutter **and independently in PostgreSQL**, then shows a read-only Step 4 review preview. No school, payment or subscription is created.
+
+- [Step 3 Flutter UI](lib/features/onboarding/presentation/school_setup_screen.dart)
+- [Draft model and validation](lib/features/onboarding/domain/school_setup_draft.dart)
+- [Authenticated draft repository](lib/features/onboarding/data/school_setup_repository.dart)
+- [Step 4 read-only review preview](lib/features/onboarding/presentation/school_review_preview.dart)
+- [Deployed database schema](supabase/schema/05_school_setup_drafts.sql)
+- [Executed RLS/plan-capacity tests](supabase/tests/05_school_setup_security.sql)
+- [Design, security and acceptance report](docs/database/module_01_school_setup.md)
+
+**Database tested and deployed. Flutter runtime tests are still pending** because GitHub Actions has an owner-account billing/spending-limit restriction preventing runner startup.
 
 ## Run Flutter
 
