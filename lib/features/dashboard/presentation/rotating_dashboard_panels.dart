@@ -80,7 +80,6 @@ class _RotatingAnalyticsPanelState extends State<RotatingAnalyticsPanel> {
               child: TrendChart(series: demoTrends[index])))),
           ]),
         ))),
-      ),
     );
     if (mounted) {
       setState(() => fullscreen = false);
