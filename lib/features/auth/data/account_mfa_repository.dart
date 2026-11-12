@@ -80,7 +80,11 @@ class SupabaseAccountMfaRepository implements AccountMfaRepository {
     );
     // A valid TOTP secret comes ONLY from Supabase Auth. Construct the
     // standards-compliant QR URI locally; never put it in URL logs.
-    final secret=response.totp.secret;
+    final totp=response.totp;
+    if(totp==null) {
+      throw const AuthException('Supabase did not return TOTP enrollment data.');
+    }
+    final secret=totp.secret;
     final email=client.auth.currentUser?.email ?? 'account';
     final otpauth='otpauth://totp/' +
       Uri.encodeComponent('Pohantoon AI') + ':' + Uri.encodeComponent(email) +
