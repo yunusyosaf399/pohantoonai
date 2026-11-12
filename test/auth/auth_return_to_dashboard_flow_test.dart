@@ -74,6 +74,8 @@ class SimulatedAuth
     final email=signedInEmail;
     if(email==null)throw StateError('Not signed in');
     passwords[email]=password;
+    // Supabase also emits userUpdated after updateUser(password).
+    changes.add(uid);
   }
   @override
   Future<void> signInWithPassword(String email,String password)async{
@@ -174,12 +176,14 @@ class UnpaidTestPreferences implements OnboardingPaymentPreferencesRepository{
 }
 
 Future<void> mountApp(WidgetTester tester,SimulatedAuth auth,
-    UserPlans plans,UserDrafts drafts,UserWorkspaces workspaces)async{
+    UserPlans plans,UserDrafts drafts,UserWorkspaces workspaces,
+    {bool initialRecovery=false})async{
   tester.view.physicalSize=const Size(1100,980);
   tester.view.devicePixelRatio=1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(PohantoonAiApp(
+    initialRecoveryRequested:initialRecovery,
     authGateway:auth,planRepository:plans,
     schoolSetupRepository:drafts,
     developmentWorkspaceRepository:workspaces,
@@ -210,6 +214,11 @@ void main(){
     expect(find.byKey(const Key('dashboard-test-preview-title')),
       findsOneWidget);
 
+    // An existing profile/menu route must also disappear when the
+    // password-reset link arrives.
+    await tester.tap(find.byKey(const Key('dashboard-profile-menu')));
+    await tester.pumpAndSettle();
+    expect(find.text('Owner & security settings'),findsOneWidget);
     // Recovery grants an Auth session; this must NOT be ordinary dashboard
     // authorization even when that user had saved school membership data.
     auth.startPasswordRecovery();
@@ -220,6 +229,7 @@ void main(){
       findsNothing);
     expect(find.byKey(const Key('dashboard-main-scroll')),findsNothing);
     expect(find.text('1,248'),findsNothing);
+    expect(find.text('Owner & security settings'),findsNothing);
 
     await tester.enterText(find.byKey(
       const Key('recovery-new-password')),'A-long-secure-reset-password');
@@ -235,6 +245,37 @@ void main(){
       findsNothing);
     expect(find.byKey(const Key('dashboard-test-preview-title')),
       findsNothing);
+    expect(find.byKey(const Key('continue-with-email')),findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('cold-start recovery intent blocks workspace restoration '
+      'even when Auth already has an existing session',(tester) async {
+    final auth=SimulatedAuth(uid:'owner-id')
+      ..emails['owner@school.edu']='owner-id';
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(
+        schoolName:'Private School',schoolType:'private',
+        contactName:'Owner',contactEmail:'owner@school.edu',
+        countryCode:'AF',city:'Kabul',
+        estimatedStudents:120,campusCount:1,readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+
+    await mountApp(tester,auth,plans,drafts,workspaces,
+      initialRecovery:true);
+    expect(find.byKey(const Key('password-recovery-only-screen')),
+      findsOneWidget);
+    expect(find.byKey(const Key('restoring-school-workspace')),
+      findsNothing);
+    expect(find.byKey(const Key('dashboard-main-scroll')),findsNothing);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    await tester.tap(find.byKey(const Key('recovery-cancel-and-signout')));
+    await tester.pumpAndSettle();
+    expect(auth.uid,isNull);
     expect(find.byKey(const Key('continue-with-email')),findsOneWidget);
     expect(tester.takeException(),isNull);
   });
