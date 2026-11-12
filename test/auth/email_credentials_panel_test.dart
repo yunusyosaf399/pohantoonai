@@ -26,7 +26,14 @@ class FakeEmailCredentials implements AccountEmailCredentials {
   @override
   Future<void> setAccountPassword(String password)async{}
   @override
-  Future<void> sendPasswordReset(String email)async{}
+  Future<void> sendPasswordReset(String email)async{
+    this.email=email;
+  }
+  @override
+  Future<void> verifyRecoveryOtp(String email,String code)async{
+    this.email=email;
+    lastCode=code;
+  }
 }
 
 Future<void> mount(WidgetTester tester,FakeEmailCredentials gateway)async{
