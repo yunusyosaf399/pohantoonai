@@ -373,3 +373,11 @@ After **every** accepted task: (1) change its checkbox; (2) set milestone status
 - Executed [auth identity/workspace RLS SQL 15](../../supabase/tests/15_auth_provider_same_account_rls.sql) successfully: one verified account with Google+password can read its matching owner-only development workspace, a second confirmed account cannot. Rolled back without changing data.
 - Hosted Auth templates/SMTP setup and real device tests remain tracked as [issue #1](https://github.com/yunusyosaf399/pohantoonai/issues/1) and [issue #2](https://github.com/yunusyosaf399/pohantoonai/issues/2). Full [acceptance runbook](../testing/auth_return_to_dashboard_acceptance.md).
 
+
+## Password-recovery UI isolation — 2026-11-12
+
+- Root cause: a verified Supabase password recovery callback creates an Auth session, and the former Flutter `showDialog` over the existing application allowed the school/student dashboard to remain visible beneath the reset prompt.
+- Committed exclusive recovery-only `MaterialApp.home` and isolated Navigator; prevents all normal school setup, dashboard and analytics widgets from rendering during a recovery session; stops ongoing restores and clears previous identity state. Sign-out is required on success/cancel and sign-out failures remain on the secure reset screen.
+- The callback now includes non-secret `auth_flow=password_recovery` and captures Web recovery intent before Supabase initialization. New exact redirect targets must be allowlisted in hosted Supabase Auth. `pohantoonai.com` must actually serve Flutter Web before adding it as a Web redirect.
+- [Code and security contract](../security/password_recovery_isolation.md); [auth widget test](../../test/auth/auth_return_to_dashboard_flow_test.dart); [URI classification test](../../test/auth/password_recovery_redirect_test.dart). Tests written but not run; GitHub runner blocked and no local Flutter SDK in connected environment. Database schema unchanged.
+
