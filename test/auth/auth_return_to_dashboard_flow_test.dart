@@ -25,6 +25,7 @@ class SimulatedAuth
   final passwords=<String,String>{};
   String? uid;
   String? pendingEmail;
+  String? pendingRecoveryEmail;
   bool failSignOut=false;
 
   SimulatedAuth({this.uid});
@@ -89,7 +90,15 @@ class SimulatedAuth
     enter(id);
   }
   @override
-  Future<void> sendPasswordReset(String email)async{}
+  Future<void> sendPasswordReset(String email)async{
+    pendingRecoveryEmail=email;
+  }
+  @override
+  Future<void> verifyRecoveryOtp(String email,String code)async{
+    if(pendingRecoveryEmail!=email || code!='123456' ||
+        !emails.containsKey(email))throw StateError('Bad recovery code');
+    enter(emails[email]);
+  }
   Future<void> dispose() async {
     await changes.close();
     await recoveryEvents.close();
