@@ -99,6 +99,9 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     });
   }
 
+  // Password-reset callbacks grant a temporary Auth session. They must never
+  // initialize or reveal a school/student dashboard.
+  bool _recoveringPassword = false;
   bool _signedIn = false;
   String? _authError;
   OnboardingPlanOffer? _schoolSetupPlan;
@@ -126,7 +129,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
 
   Future<void> _restoreWorkspace() async {
     final repository=_workspaces;
-    if(repository==null||!_signedIn)return;
+    if(repository==null||!_signedIn||_recoveringPassword)return;
     final generation=++_authGeneration;
     setState((){
       _restoringWorkspace=true;
@@ -153,7 +156,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             }
           }
           if(active && mounted && generation==_authGeneration &&
-              _signedIn) {
+              _signedIn && !_recoveringPassword) {
             setState((){
               _schoolSetupPlan=matching;
               _reviewDraft=draft;
@@ -211,10 +214,40 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   }
 
 
+  void _startPasswordRecovery() {
+    if(!mounted || _recoveringPassword)return;
+    setState((){
+      _recoveringPassword=true;
+      // Invalidate a potentially in-flight workspace restore, and remove
+      // the previous user's school from the entire widget tree immediately.
+      ++_authGeneration;
+      _restoringWorkspace=false;
+      _workspaceError=null;
+      _authError=null;
+      _schoolSetupPlan=null;
+      _reviewDraft=null;
+      _editSection=null;
+      _paymentStep=false;
+      _dashboardTestPreview=false;
+    });
+  }
+
+  Future<void> _exitPasswordRecovery() async {
+    // A Supabase recovery link issues a temporary Auth session. Do not
+    // let its success/cancel path turn that session into app access.
+    // If sign-out fails, keep the exclusive recovery screen visible.
+    await _signOut();
+    if(mounted)setState(()=>_recoveringPassword=false);
+  }
+
   @override
   void initState() {
     super.initState();
     _ownsTheme = widget.themeController == null;
+    // Web cold-start callback safety: the Auth SDK might already have
+    // exchanged the recovery link before the first widget subscribes.
+    // The marker never authorizes a password update on its own.
+    _recoveringPassword = isPasswordRecoveryCallback(Uri.base);
 
     if (widget.showOrganizationPreview) {
       _theme = widget.themeController ?? ThemeController();
@@ -233,14 +266,9 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       if(_auth is AccountEmailCredentials){
         final credentials=_auth as AccountEmailCredentials;
         _recoveryListener=credentials.passwordRecoveryEvents.listen((_) {
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            final navContext=_navigatorKey.currentContext;
-            if(!mounted||navContext==null)return;
-            await showDialog<bool>(
-              context:navContext,
-              barrierDismissible:false,
-              builder:(_)=>PasswordRecoveryDialog(auth:credentials));
-          });
+          // Never open a dialog above a signed-in dashboard. Replace the
+          // whole application home with the isolated reset screen instead.
+          _startPasswordRecovery();
         },onError:(Object _,StackTrace __){});
       }
       // The production Auth gateway emits the actual stable auth.users.id.
@@ -270,7 +298,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _dashboardTestPreview=false;
           }
         });
-        if (signedIn && (!wasSignedIn || changedUser)) {
+        if (signedIn && (!wasSignedIn || changedUser) &&
+            !_recoveringPassword) {
           _loadAccountPreferences();
           _restoreWorkspace();
         }
@@ -289,7 +318,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       // The storage plugin may not be available in isolated widget tests;
       // the app remains usable with system theme in that case.
       _theme.loadLocal().catchError((Object _) {});
-      if (_signedIn) {
+      if (_signedIn && !_recoveringPassword) {
         _loadAccountPreferences();
         // Delay until initState returns to avoid setState-during-build.
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -374,6 +403,13 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         themeMode: _theme.value,
         home: widget.showOrganizationPreview
             ? OrganizationControlPanel(repository: widget.repository)
+            : _recoveringPassword && _auth is AccountEmailCredentials
+                ? PasswordRecoveryScreen(
+                    key: const Key('isolated-password-recovery'),
+                    auth: _auth! as AccountEmailCredentials,
+                    onComplete: _exitPasswordRecovery,
+                    onCancel: _exitPasswordRecovery,
+                  )
             : !_signedIn
                 ? AccountWelcomeScreen(
                     auth: _auth!,
