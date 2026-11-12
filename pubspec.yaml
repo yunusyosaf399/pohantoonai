@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   supabase_flutter: 2.18.3
   shared_preferences: 2.5.5
+  # Android Keystore-backed encryption for persisted Supabase sessions.
+  flutter_secure_storage: 9.2.4
   # Cross-platform logo picker: Android, iOS, Windows, Linux, macOS, Web.
   file_selector: 1.1.0
   # Local, offline QR rendering for authenticator-app (TOTP) enrollment.
