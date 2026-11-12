@@ -5,8 +5,10 @@ import '../data/account_auth_gateway.dart';
 /// Built-in Supabase Auth code delivery, verification and password storage.
 /// Never use an app-owned table or Edge Function to keep OTPs or passwords.
 class EmailCredentialsPanel extends StatefulWidget {
-  const EmailCredentialsPanel({super.key,required this.auth});
+  const EmailCredentialsPanel({super.key,required this.auth,
+    this.onRecoveryCodeRequested});
   final AccountEmailCredentials auth;
+  final ValueChanged<String>? onRecoveryCodeRequested;
 
   @override
   State<EmailCredentialsPanel> createState() => _EmailCredentialsPanelState();
@@ -69,8 +71,13 @@ class _EmailCredentialsPanelState extends State<EmailCredentialsPanel> {
             email.text.trim(),code.text.trim(),isSignup:false);
         case 'forgot':
           await widget.auth.sendPasswordReset(email.text.trim());
-          if(mounted) setState(()=>feedback=
-            'If the email exists, a password-reset message will arrive.');
+          if(!mounted)return;
+          if(widget.onRecoveryCodeRequested!=null){
+            widget.onRecoveryCodeRequested!(email.text.trim());
+          }else{
+            setState(()=>feedback='If the email exists, check your inbox '
+              'for a password-recovery code.');
+          }
       }
     } catch (_) {
       if(mounted) setState(() => error = switch(mode) {
@@ -203,7 +210,7 @@ class _EmailCredentialsPanelState extends State<EmailCredentialsPanel> {
                   Icons.login),
                 label:Text(verifying?'Verify email and continue':
                   mode=='register'?'Create account & send code':
-                  mode=='forgot'?'Email password reset':
+                  mode=='forgot'?'Send recovery code':
                   'Sign in with password'),
               ),
               if(verifying) ...[
