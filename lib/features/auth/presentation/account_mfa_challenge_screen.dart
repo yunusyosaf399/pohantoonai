@@ -162,7 +162,7 @@ class _AccountMfaChallengeScreenState
                     color:colors.onSurfaceVariant)),
               ],
             ),
-          ))),
+          )),
         ),
       ))),
     );
