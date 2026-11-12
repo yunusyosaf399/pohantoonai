@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pohantoonai/core/settings/theme_controller.dart';
 import 'package:pohantoonai/features/auth/data/account_auth_gateway.dart';
+import 'package:pohantoonai/features/auth/data/account_mfa_repository.dart';
 import 'package:pohantoonai/features/dashboard/data/dashboard_owner_profile_repository.dart';
 import 'package:pohantoonai/features/onboarding/data/development_workspace_repository.dart';
 import 'package:pohantoonai/features/onboarding/data/onboarding_payment_preferences_repository.dart';
@@ -105,6 +106,33 @@ class SimulatedAuth
   }
 }
 
+class SimulatedMfa implements AccountMfaRepository {
+  bool enrolled=true,aal2=false;
+  int verifies=0;
+  @override
+  Future<AccountMfaStatus> status() async => AccountMfaStatus(
+    needsChallenge:enrolled&&!aal2,isAal2:aal2,
+    factors:enrolled ?const [
+      AccountTotpFactor(id:'factor-one',label:'Authenticator')] :const [],
+  );
+  @override
+  Future<AccountTotpEnrollment> enroll()async=>
+    const AccountTotpEnrollment(
+      factorId:'new-id',secret:'SAMPLEKEY',
+      otpauthUri:'otpauth://totp/test?secret=SAMPLEKEY');
+  @override
+  Future<void> verify(String factor,String code)async {
+    verifies++;
+    if(factor!='factor-one'||code!='654321')
+      throw StateError('wrong code');
+    aal2=true;
+  }
+  @override
+  Future<void> unenroll(String id)async{enrolled=false;}
+  @override
+  Future<void> cancelEnrollment(String id)async{}
+}
+
 class UserPlans implements OnboardingPlanRepository{
   UserPlans(this.auth);
   final SimulatedAuth auth;
@@ -190,14 +218,15 @@ class UnpaidTestPreferences implements OnboardingPaymentPreferencesRepository{
 
 Future<void> mountApp(WidgetTester tester,SimulatedAuth auth,
     UserPlans plans,UserDrafts drafts,UserWorkspaces workspaces,
-    {bool initialRecovery=false})async{
+    {bool initialRecovery=false,
+     AccountMfaRepository? mfaRepository})async{
   tester.view.physicalSize=const Size(1100,980);
   tester.view.devicePixelRatio=1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(PohantoonAiApp(
     initialRecoveryRequested:initialRecovery,
-    authGateway:auth,planRepository:plans,
+    authGateway:auth,mfaRepository:mfaRepository,planRepository:plans,
     schoolSetupRepository:drafts,
     developmentWorkspaceRepository:workspaces,
     ownerProfileRepository:UserOwnerProfile(auth),
@@ -208,6 +237,100 @@ Future<void> mountApp(WidgetTester tester,SimulatedAuth auth,
 }
 
 void main(){
+  testWidgets('email recovery code blocks dashboard until password change '
+      'and secure sign-out',(tester)async {
+    final auth=SimulatedAuth()
+      ..emails['owner@school.edu']='owner-id';
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(schoolName:'Secure Academy',
+        schoolType:'private',contactName:'Owner',
+        contactEmail:'owner@school.edu',countryCode:'AF',
+        city:'Kabul',estimatedStudents:100,campusCount:1,
+        readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+    await mountApp(tester,auth,plans,drafts,workspaces);
+    await tester.tap(find.byKey(const Key('continue-with-email')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('forgot-email-password')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('email-field')),
+      'owner@school.edu');
+    await tester.tap(find.byKey(const Key('email-reset-password')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('password-recovery-only-screen')),
+      findsOneWidget);
+    expect(find.byKey(const Key('recovery-email-otp')),findsOneWidget);
+    expect(find.byKey(const Key('dashboard-main-scroll')),findsNothing);
+    await tester.enterText(find.byKey(const Key('recovery-email-otp')),
+      '999999');
+    await tester.tap(find.byKey(const Key('recovery-verify-otp')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('recovery-error')),findsOneWidget);
+    expect(find.byKey(const Key('recovery-new-password')),findsNothing);
+    await tester.enterText(find.byKey(const Key('recovery-email-otp')),
+      '123456');
+    await tester.tap(find.byKey(const Key('recovery-verify-otp')));
+    await tester.pumpAndSettle();
+    expect(auth.uid,'owner-id');
+    expect(find.byKey(const Key('dashboard-main-scroll')),findsNothing);
+    expect(find.byKey(const Key('recovery-new-password')),findsOneWidget);
+    await tester.enterText(find.byKey(const Key('recovery-new-password')),
+      'A-secure-password-after-email-otp');
+    await tester.enterText(find.byKey(const Key('recovery-confirm-password')),
+      'A-secure-password-after-email-otp');
+    await tester.tap(find.byKey(const Key('recovery-save-password')));
+    await tester.pumpAndSettle();
+    expect(auth.uid,isNull);
+    expect(find.byKey(const Key('continue-with-email')),findsOneWidget);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),findsNothing);
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('enrolled 2FA requires authenticator code before dashboard',
+      (tester)async {
+    final auth=SimulatedAuth(uid:'owner-id')
+      ..emails['owner@school.edu']='owner-id';
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(schoolName:'Protected School',
+        schoolType:'private',contactName:'Owner',
+        contactEmail:'owner@school.edu',countryCode:'AF',
+        city:'Kabul',estimatedStudents:120,campusCount:1,
+        readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+    final mfa=SimulatedMfa();
+    await mountApp(tester,auth,plans,drafts,workspaces,
+      mfaRepository:mfa);
+    expect(find.byKey(const Key('mfa-login-challenge-screen')),
+      findsOneWidget);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    await tester.enterText(find.byKey(const Key('mfa-login-code')),
+      '111111');
+    await tester.tap(find.byKey(const Key('mfa-login-verify')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('mfa-login-error')),findsOneWidget);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    await tester.enterText(find.byKey(const Key('mfa-login-code')),
+      '654321');
+    await tester.tap(find.byKey(const Key('mfa-login-verify')));
+    await tester.pumpAndSettle();
+    expect(mfa.aal2,isTrue);
+    expect(find.byKey(const Key('mfa-login-challenge-screen')),findsNothing);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
+
   testWidgets('password recovery never renders the signed-in dashboard '
       'under the reset screen and forces logout on success',(tester) async {
     final auth=SimulatedAuth(uid:'owner-id')
