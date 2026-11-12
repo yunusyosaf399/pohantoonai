@@ -30,7 +30,7 @@ class _AccountMfaChallengeScreenState
     try{
       final s=await widget.repository.status();
       if(!mounted)return;
-      if(!s.needsChallenge&&s.isAal2){
+      if(!s.needsChallenge){
         await widget.onVerified();
         return;
       }
@@ -148,6 +148,15 @@ class _AccountMfaChallengeScreenState
                   label:const Text('Verify and continue'),
                 ),
                 const SizedBox(height:8),
+                if(error!=null&&factors.isEmpty)
+                  TextButton.icon(
+                    key:const Key('mfa-login-retry'),
+                    onPressed:busy?null:(){
+                      setState((){busy=true;error=null;});
+                      _load();
+                    },
+                    icon:const Icon(Icons.refresh),
+                    label:const Text('Retry security check')),
                 TextButton.icon(
                   key:const Key('mfa-login-sign-out'),
                   onPressed:busy?null:_signOut,
