@@ -52,9 +52,43 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
     super.dispose();
   }
 
-  Future<void> _verifyRecoveryCode()async{
+  Future<void> _verifyRecoveryCode() async {
     if(busy||widget.recoveryEmail==null)return;
-    if(!RegExp(r'^\d{6,8}
+    if(!RegExp(r'^\d{6,8}$').hasMatch(code.text.trim())) {
+      setState(()=>error='Enter the verification code sent to your email.');
+      return;
+    }
+    setState((){busy=true;error=null;});
+    try {
+      await widget.auth.verifyRecoveryOtp(
+        widget.recoveryEmail!,code.text.trim());
+      if(!mounted)return;
+      code.clear();
+      setState(()=>otpVerified=true);
+    }catch(_){
+      if(mounted)setState(()=>error='Invalid or expired recovery code. '
+        'Request a new code and try again.');
+    }finally{
+      if(mounted)setState(()=>busy=false);
+    }
+  }
+
+  Future<void> _resendCode() async {
+    if(busy||widget.recoveryEmail==null)return;
+    setState((){busy=true;error=null;});
+    try {
+      await widget.auth.sendPasswordReset(widget.recoveryEmail!);
+      if(mounted)setState(()=>error='If the address is registered, '
+        'a new recovery code was requested.');
+    }catch(_){
+      if(mounted)setState(()=>error='Could not request a new code. '
+        'Wait before trying again.');
+    }finally{
+      if(mounted)setState(()=>busy=false);
+    }
+  }
+
+  Future<void> _save() async {
     if(busy||!otpVerified)return;
     if(!updated && (password.text.length<12 ||
        password.text!=confirm.text)) {
@@ -66,21 +100,19 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       if(!updated) {
         await widget.auth.setAccountPassword(password.text);
         if(!mounted)return;
-        // The password update can emit userUpdated; the app stays locked
-        // in recovery mode until the temporary session is signed out.
+        // Temporary password-recovery sessions are never school logins.
         updated=true;
         password.clear();
         confirm.clear();
       }
       await widget.onComplete();
-    } catch (_) {
+    }catch(_){
       if(!mounted)return;
       setState(()=>error=updated
         ? 'Password updated, but secure sign-out could not finish. '
           'Retry closing the recovery session.'
-        : 'Could not update the password. The link may have expired. '
-          'Request another reset email.');
-    } finally {
+        : 'Could not update the password. Try a fresh recovery code.');
+    }finally{
       if(mounted)setState(()=>busy=false);
     }
   }
