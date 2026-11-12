@@ -104,7 +104,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 crossAxisAlignment:CrossAxisAlignment.stretch,
                 children:[
                   Row(children:[
-                    Icon(Icons.shield_lock_outlined,
+                    Icon(Icons.lock_outline,
                       size:35,color:scheme.primary),
                     const SizedBox(width:12),
                     const Expanded(child:Text('Pohantoon AI',
