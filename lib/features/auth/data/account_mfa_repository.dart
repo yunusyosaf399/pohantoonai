@@ -34,6 +34,7 @@ abstract class AccountMfaRepository {
   Future<AccountTotpEnrollment> enroll();
   Future<void> verify(String factorId,String code);
   Future<void> unenroll(String factorId);
+  Future<void> cancelEnrollment(String factorId);
 }
 
 /// Supabase Auth owns auth.mfa_factors, challenges and TOTP verification.
@@ -106,6 +107,15 @@ class SupabaseAccountMfaRepository implements AccountMfaRepository {
     if(!state.isAal2) {
       throw const AuthException('Two-factor verification was not completed.');
     }
+  }
+
+  @override
+  Future<void> cancelEnrollment(String factorId) async {
+    _uid();
+    if(factorId.isEmpty) return;
+    // Only the factor ID returned by this session's unverified enrollment
+    // should be passed here. Supabase Auth checks factor ownership.
+    await client.auth.mfa.unenroll(factorId);
   }
 
   @override
