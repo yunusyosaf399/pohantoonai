@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reset your password - Pohantoon AI</title>
+</head>
+<body style="margin:0;padding:32px 16px;background:#f1f7f6;font-family:Arial,Helvetica,sans-serif;color:#152b3b">
+  <main style="max-width:520px;margin:0 auto;border:1px solid #dceae7;border-radius:16px;overflow:hidden;background:#fff">
+    <header style="padding:25px;background:#006b5b;text-align:center">
+      <h1 style="margin:0;color:#fff;font-size:26px">Pohantoon AI</h1>
+      <p style="color:#c9eee5;font-size:13px;margin:8px 0 0">Smarter School Management, Powered by AI</p>
+    </header>
+    <section style="padding:30px 25px;text-align:center">
+      <h2 style="font-size:22px;margin:0 0 14px">Reset your password</h2>
+      <p style="font-size:15px;line-height:1.7;color:#536474">
+        You requested a password reset for your Pohantoon AI account.
+        Enter this one-time recovery code directly in the app.
+        You do not need to open a link or browser.
+      </p>
+      <div style="background:#eaf7f2;border:1px solid #b9e4d5;border-radius:12px;padding:20px;margin:22px 0">
+        <p style="margin:0 0 11px;font-size:12px;letter-spacing:1.5px;color:#087967">YOUR RECOVERY CODE</p>
+        <div style="font-size:34px;letter-spacing:7px;font-weight:700;color:#006b5b">{{ .Token }}</div>
+      </div>
+      <p style="font-size:13px;line-height:1.6;color:#536474">
+        Return to Pohantoon AI → Forgot password → enter this code.
+        It expires according to your Supabase Auth OTP settings.
+        Never share this code with anyone.
+      </p>
+      <p style="font-size:12px;color:#819099;margin-top:28px">
+        Didn't request a reset? Ignore this message. Your password has not been changed.
+      </p>
+    </section>
+    <footer style="padding:19px;text-align:center;background:#f6faf9;border-top:1px solid #e2eeea">
+      <p style="color:#617480;font-size:12px;margin:0">© Pohantoon AI · Account security</p>
+    </footer>
+  </main>
+</body>
+</html>
