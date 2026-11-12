@@ -203,9 +203,7 @@ class SupabaseAccountAuthGateway
   Future<void> verifyRecoveryOtp(String email,String code) async {
     final cleanEmail=email.trim();
     final cleanCode=code.trim();
-    if(!RegExp(r'^\d{6,8}
-}
-).hasMatch(cleanCode)) {
+    if(!RegExp(r'^\d{6,8}$').hasMatch(cleanCode)) {
       throw const FormatException('Enter a valid email recovery code.');
     }
     final response=await _client.auth.verifyOTP(
