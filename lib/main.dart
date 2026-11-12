@@ -30,11 +30,14 @@ import 'features/organization/presentation/organization_control_panel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Capture the callback intent BEFORE Supabase consumes/cleans the URL.
+  // A recovery session must not be interpreted as ordinary app sign-in.
+  final recoveryIntent=isPasswordRecoveryCallback(Uri.base);
   await Supabase.initialize(
     url: SupabaseConfiguration.url,
     publishableKey: SupabaseConfiguration.publishableKey,
   );
-  runApp(const PohantoonAiApp());
+  runApp(PohantoonAiApp(initialRecoveryRequested:recoveryIntent));
 }
 
 /// One Flutter app across Android, iOS, Windows, macOS, Linux and Web.
@@ -53,12 +56,16 @@ class PohantoonAiApp extends StatefulWidget {
     this.developmentWorkspaceRepository,
     this.ownerProfileRepository,
     this.showOrganizationPreview = false,
+    this.initialRecoveryRequested = false,
     this.authGateway,
     this.themeController,
   });
 
   /// Explicit test/developer preview only; never granted by sign-in.
   final bool showOrganizationPreview;
+  /// Safe cold-start callback intent (captured before Supabase.initialize).
+  /// This is a UI gate only; never a substitute for Auth link verification.
+  final bool initialRecoveryRequested;
   final OrganizationRepository? repository;
   /// Injectable for widget tests; otherwise live RLS-backed Supabase.
   final OnboardingPlanRepository? planRepository;
@@ -87,6 +94,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   String? _activeAuthUserId;
   StreamSubscription<void>? _recoveryListener;
   final GlobalKey<NavigatorState> _navigatorKey=GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> _recoveryNavigatorKey=
+    GlobalKey<NavigatorState>();
   final GlobalKey<ScaffoldMessengerState> _messengerKey=
     GlobalKey<ScaffoldMessengerState>();
 
@@ -247,7 +256,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     // Web cold-start callback safety: the Auth SDK might already have
     // exchanged the recovery link before the first widget subscribes.
     // The marker never authorizes a password update on its own.
-    _recoveringPassword = isPasswordRecoveryCallback(Uri.base);
+    _recoveringPassword = widget.initialRecoveryRequested ||
+      isPasswordRecoveryCallback(Uri.base);
 
     if (widget.showOrganizationPreview) {
       _theme = widget.themeController ?? ThemeController();
@@ -395,7 +405,11 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        navigatorKey:_navigatorKey,
+        // A separate navigator discards any existing modal sheet, dialog,
+        // or school route when recovery begins. No dashboard remains
+        // underneath the recovery screen.
+        navigatorKey:_recoveringPassword
+          ? _recoveryNavigatorKey : _navigatorKey,
         scaffoldMessengerKey:_messengerKey,
         title: 'Pohantoon AI',
         theme: PohantoonTheme.light,
