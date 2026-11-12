@@ -86,3 +86,11 @@ Then verify a real emailed reset link on Android and Windows:
 ## Important boundary
 
 Supabase's password recovery flow intentionally issues a temporary authenticated session after verifying the signed reset link. This fix prevents **the Flutter application UI and normal workspace restoration** from using that session as a regular dashboard login. It is **not** a general replacement for Supabase RLS, MFA or backend privilege checks: like any valid Auth session, a recovery session may carry an access token. Protect real student records with per-school RLS, short JWT/session lifetimes, and step-up authentication for high-risk operations. Do not claim that all REST API reads are blocked solely by the Flutter screen.
+
+## Later improvement — code-only email recovery and optional TOTP (2026-11-12)
+
+The earlier reset-link pathway is still supported for historical emails. New password resets can be completed entirely within Android and the Flutter Web/desktop UI using a Supabase-generated recovery email OTP instead of a browser link, after the project operator installs [code-only Reset Password template](../../supabase/auth/templates/recovery_otp.html).
+
+This uses the same exclusive root recovery gate, but starts in a Verify Email Code stage. Supabase Auth validates the recovery code; only then do the New/Confirm Password fields unlock. Signing out after a password change/cancellation remains mandatory.
+
+Opt-in MFA further protects school/profile data through [restricted AAL2 policies](../../supabase/schema/15_optional_mfa_aal2_enforcement.sql), not just a Flutter dialog. See [Module 02.3](module_02_3_email_otp_and_totp_2fa.md) for the complete implementation.
