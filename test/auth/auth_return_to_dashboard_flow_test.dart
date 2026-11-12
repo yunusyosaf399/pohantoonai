@@ -25,6 +25,7 @@ class SimulatedAuth
   final passwords=<String,String>{};
   String? uid;
   String? pendingEmail;
+  bool failSignOut=false;
 
   SimulatedAuth({this.uid});
   @override
@@ -46,7 +47,10 @@ class SimulatedAuth
   @override
   Future<void> signInWithGoogle() async { enter('owner-id'); }
   @override
-  Future<void> signOut() async { enter(null); }
+  Future<void> signOut() async {
+    if(failSignOut)throw StateError('Unable to revoke recovery session');
+    enter(null);
+  }
   @override
   Future<void> sendEmailLink(String email)async{}
   @override
@@ -274,6 +278,44 @@ void main(){
     expect(find.byKey(const Key('dashboard-test-preview-title')),
       findsNothing);
     await tester.tap(find.byKey(const Key('recovery-cancel-and-signout')));
+    await tester.pumpAndSettle();
+    expect(auth.uid,isNull);
+    expect(find.byKey(const Key('continue-with-email')),findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('failed recovery sign-out keeps all dashboards inaccessible',
+      (tester)async {
+    final auth=SimulatedAuth(uid:'owner-id')
+      ..emails['owner@school.edu']='owner-id'
+      ..failSignOut=true;
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(
+        schoolName:'Owner School',schoolType:'private',
+        contactName:'Owner',contactEmail:'owner@school.edu',
+        countryCode:'AF',city:'Kabul',estimatedStudents:100,
+        campusCount:1,readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+    await mountApp(tester,auth,plans,drafts,workspaces,
+      initialRecovery:true);
+    await tester.enterText(find.byKey(const Key('recovery-new-password')),
+      'A-strong-password-that-is-new');
+    await tester.enterText(find.byKey(const Key('recovery-confirm-password')),
+      'A-strong-password-that-is-new');
+    await tester.tap(find.byKey(const Key('recovery-save-password')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('password-recovery-only-screen')),
+      findsOneWidget);
+    expect(find.byKey(const Key('recovery-error')),findsOneWidget);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    expect(auth.uid,'owner-id');
+    // The completed password reset must not be submitted again on retry.
+    auth.failSignOut=false;
+    await tester.tap(find.byKey(const Key('recovery-save-password')));
     await tester.pumpAndSettle();
     expect(auth.uid,isNull);
     expect(find.byKey(const Key('continue-with-email')),findsOneWidget);
