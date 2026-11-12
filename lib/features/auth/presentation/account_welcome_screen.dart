@@ -13,6 +13,7 @@ class AccountWelcomeScreen extends StatefulWidget {
     required this.auth,
     this.authError,
     this.onAuthRetry,
+    this.onRecoveryCodeRequested,
     required this.themeMode,
     required this.onThemeChanged,
   });
@@ -21,6 +22,7 @@ class AccountWelcomeScreen extends StatefulWidget {
   /// Sanitized callback error from the auth-state stream.
   final String? authError;
   final VoidCallback? onAuthRetry;
+  final ValueChanged<String>? onRecoveryCodeRequested;
   final ThemeMode themeMode;
   final Future<void> Function(ThemeMode) onThemeChanged;
 
@@ -354,6 +356,7 @@ class _AccountWelcomeScreenState extends State<AccountWelcomeScreen> {
           EmailCredentialsPanel(
             key:const Key('email-credentials-panel'),
             auth:widget.auth as AccountEmailCredentials,
+            onRecoveryCodeRequested:widget.onRecoveryCodeRequested,
           )
         else if (_emailSent)
           Container(
