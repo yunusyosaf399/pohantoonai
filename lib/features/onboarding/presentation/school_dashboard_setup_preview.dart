@@ -9,6 +9,7 @@ import '../../dashboard/data/demo_dashboard_preferences_repository.dart';
 import '../../dashboard/data/dashboard_owner_profile_repository.dart';
 import '../../dashboard/presentation/dashboard_profile_settings.dart';
 import '../../auth/data/account_auth_gateway.dart';
+import '../../auth/data/account_mfa_repository.dart';
 import '../data/school_setup_repository.dart';
 import '../../dashboard/domain/dashboard_demo_data.dart';
 import '../../dashboard/presentation/rotating_dashboard_panels.dart';
@@ -33,6 +34,7 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
     this.schoolRepository,
     this.ownerRepository,
     this.credentials,
+    this.mfaRepository,
     this.onDraftSaved,
     this.onSignOut,
     this.preferencesRepository,
@@ -48,6 +50,7 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
   final SchoolSetupRepository? schoolRepository;
   final DashboardOwnerProfileRepository? ownerRepository;
   final AccountEmailCredentials? credentials;
+  final AccountMfaRepository? mfaRepository;
   final ValueChanged<SchoolSetupDraft>? onDraftSaved;
   final VoidCallback? onSignOut;
   final DemoDashboardPreferencesRepository? preferencesRepository;
@@ -175,6 +178,7 @@ class _SchoolDashboardSetupPreviewState
           ownerRepository:owner,
           logoRepository:widget.logoRepository,
           credentials:widget.credentials,
+          mfaRepository:widget.mfaRepository,
           initialTab:tab,
           onOwnerSaved:(name){
             if(mounted)setState(()=>ownerDisplayName=name);
