@@ -19,6 +19,8 @@ class SimulatedAuth
     implements AccountAuthGateway, AccountEmailCredentials,
         AccountSessionIdentity {
   final changes=StreamController<String?>.broadcast();
+  final recoveryEvents=StreamController<void>.broadcast();
+  void startPasswordRecovery() => recoveryEvents.add(null);
   final emails=<String,String>{};
   final passwords=<String,String>{};
   String? uid;
@@ -48,7 +50,7 @@ class SimulatedAuth
   @override
   Future<void> sendEmailLink(String email)async{}
   @override
-  Stream<void> get passwordRecoveryEvents=>const Stream<void>.empty();
+  Stream<void> get passwordRecoveryEvents=>recoveryEvents.stream;
   @override
   Future<void> signUpWithPassword(String email,String password)async{
     pendingEmail=email;
@@ -82,7 +84,10 @@ class SimulatedAuth
   }
   @override
   Future<void> sendPasswordReset(String email)async{}
-  Future<void> dispose()=>changes.close();
+  Future<void> dispose() async {
+    await changes.close();
+    await recoveryEvents.close();
+  }
 }
 
 class UserPlans implements OnboardingPlanRepository{
@@ -186,6 +191,81 @@ Future<void> mountApp(WidgetTester tester,SimulatedAuth auth,
 }
 
 void main(){
+  testWidgets('password recovery never renders the signed-in dashboard '
+      'under the reset screen and forces logout on success',(tester) async {
+    final auth=SimulatedAuth(uid:'owner-id')
+      ..emails['owner@school.edu']='owner-id';
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(
+        schoolName:'Owner School',schoolType:'private',
+        contactName:'Owner',contactEmail:'owner@school.edu',
+        countryCode:'AF',city:'Kabul',
+        estimatedStudents:120,campusCount:1,readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+
+    await mountApp(tester,auth,plans,drafts,workspaces);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsOneWidget);
+
+    // Recovery grants an Auth session; this must NOT be ordinary dashboard
+    // authorization even when that user had saved school membership data.
+    auth.startPasswordRecovery();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('password-recovery-only-screen')),
+      findsOneWidget);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    expect(find.byKey(const Key('dashboard-main-scroll')),findsNothing);
+    expect(find.text('1,248'),findsNothing);
+
+    await tester.enterText(find.byKey(
+      const Key('recovery-new-password')),'A-long-secure-reset-password');
+    await tester.enterText(find.byKey(
+      const Key('recovery-confirm-password')),'A-long-secure-reset-password');
+    await tester.tap(find.byKey(const Key('recovery-save-password')));
+    await tester.pumpAndSettle();
+
+    expect(auth.passwords['owner@school.edu'],
+      'A-long-secure-reset-password');
+    expect(auth.uid,isNull);
+    expect(find.byKey(const Key('password-recovery-only-screen')),
+      findsNothing);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    expect(find.byKey(const Key('continue-with-email')),findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('cancelling recovery signs out and never navigates to '
+      'dashboard',(tester) async {
+    final auth=SimulatedAuth(uid:'owner-id')
+      ..emails['owner@school.edu']='owner-id';
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(
+        schoolName:'Owner School',schoolType:'private',
+        contactName:'Owner',contactEmail:'owner@school.edu',
+        countryCode:'AF',city:'Kabul',
+        estimatedStudents:120,campusCount:1,readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+    await mountApp(tester,auth,plans,drafts,workspaces);
+    auth.startPasswordRecovery();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('recovery-cancel-and-signout')));
+    await tester.pumpAndSettle();
+    expect(auth.uid,isNull);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    expect(find.byKey(const Key('continue-with-email')),findsOneWidget);
+    expect(tester.takeException(),isNull);
+  });
+
+
   testWidgets(
       'Google owner adds password, signs out and returns to same dashboard; '
       'another user cannot reuse the visible workspace',
