@@ -150,7 +150,7 @@ Every database-owned artifact is stored under [`supabase/`](supabase/README.md).
 - [JWT-verified account bootstrap Edge Function](supabase/functions/account-bootstrap/index.ts)
 - [Source and test-data verification](supabase/tests/03_account_auth_smoke.sql)
 
-Project planning: [table catalog](docs/architecture/table_catalog.md), [roadmap](docs/tracking/master_roadmap.md), [sprint](docs/tracking/current_sprint.md), [session tasks](docs/tracking/independent_tasks.md).
+Product goals and approved decisions: [Pohantoon requirements & Q&A](docs/requirements/POHANTOON_PRODUCT_REQUIREMENTS_AND_DECISIONS.md), [requirements index](docs/requirements/README.md), and [unchanged EduSync source record](docs/requirements/EDUSYNC_ORIGINAL_REQUIREMENTS_AND_DECISIONS_2026-11-12.md).\n\nProject planning: [table catalog](docs/architecture/table_catalog.md), [roadmap](docs/tracking/master_roadmap.md), [sprint](docs/tracking/current_sprint.md), [session tasks](docs/tracking/independent_tasks.md).
 
 ## Delivery order
 
