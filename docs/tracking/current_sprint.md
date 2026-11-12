@@ -291,3 +291,19 @@ SaaS Control Panel
 | Run Flutter analyze/test and device link test | **Pending Flutter SDK / CI runner** | [Security runbook](../security/password_recovery_isolation.md) and [CI issue #2](https://github.com/yunusyosaf399/pohantoonai/issues/2) |
 
 **No SQL migration needed.** A recovery session is still a real Supabase Auth session at the API level; this fixes accidental Flutter UI/display/workspace restoration and must be complemented by existing RLS and step-up controls for sensitive school data.
+
+## Module 02.3 — Email OTP recovery + optional owner 2FA (2026-11-12)
+
+| Small task | Status | Evidence |
+|---|---|---|
+| Android code entry instead of browser reset link | Flutter code committed | [Recovery-only screen](../../lib/features/auth/presentation/password_recovery_dialog.dart), [Auth verifyRecoveryOtp](../../lib/features/auth/data/account_auth_gateway.dart) |
+| Code-only Resend Reset Password email | Template file committed; hosted install PENDING | [Template](../../supabase/auth/templates/recovery_otp.html) |
+| Optional authenticator TOTP setup + QR + manual key + backup | Flutter code committed | [MFA settings card](../../lib/features/auth/presentation/account_mfa_settings_card.dart) |
+| MFA AAL1 → AAL2 challenge prior to dashboard | Flutter code committed | [Exclusive challenge](../../lib/features/auth/presentation/account_mfa_challenge_screen.dart), [Root session checks](../../lib/main.dart) |
+| Server-enforced optional MFA RLS on school/profile data | DEPLOYED | [SQL 15](../../supabase/schema/15_optional_mfa_aal2_enforcement.sql), 14 restrictive owner/school policies plus private logos |
+| Confirm correct access before MFA, blocked AAL1 after enrollment, AAL2 allowed | PASSED rollback-only SQL | [DB test](../../supabase/tests/15_optional_mfa_aal2_security.sql); zero enrolled factors retained |
+| Flutter fake Auth/UI security regression tests | WRITTEN, not executed | [MFA widget tests](../../test/auth/account_mfa_ui_test.dart), [OTP + MFA root tests](../../test/auth/auth_return_to_dashboard_flow_test.dart) |
+| Flutter SDK, Android physical enrollment/email deliverability | PENDING | GitHub Actions billing issue; manually install hosted Reset Password template and run tests |
+| Supabase leaked-password protection | PENDING security advisor warning | Enable in project Auth settings |
+
+[Detailed module contract](../security/module_02_3_email_otp_and_totp_2fa.md). Keep TOTP secrets, QR images and recovery codes out of logs, SQL, GitHub and analytics.

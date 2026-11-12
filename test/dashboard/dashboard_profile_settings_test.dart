@@ -59,6 +59,8 @@ class FakeCredentials implements AccountEmailCredentials {
   Future<void> resendSignupCode(String e)async{}
   @override
   Future<void> sendPasswordReset(String e)async{}
+  @override
+  Future<void> verifyRecoveryOtp(String e,String code)async{}
 }
 
 const testDraft=SchoolSetupDraft(

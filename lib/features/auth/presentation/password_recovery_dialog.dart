@@ -14,11 +14,15 @@ class PasswordRecoveryScreen extends StatefulWidget {
     required this.auth,
     required this.onComplete,
     required this.onCancel,
+    this.recoveryEmail,
   });
 
   final AccountEmailCredentials auth;
   final Future<void> Function() onComplete;
   final Future<void> Function() onCancel;
+  /// Non-null only for the in-app email-code recovery path.
+  /// Null means Supabase already verified a signed recovery deep link.
+  final String? recoveryEmail;
 
   @override
   State<PasswordRecoveryScreen> createState() =>
@@ -28,19 +32,64 @@ class PasswordRecoveryScreen extends StatefulWidget {
 class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   final password=TextEditingController();
   final confirm=TextEditingController();
+  final code=TextEditingController();
+  bool otpVerified=false;
   bool busy=false;
   bool updated=false;
   String? error;
 
   @override
+  void initState() {
+    super.initState();
+    otpVerified=widget.recoveryEmail==null;
+  }
+
+  @override
   void dispose(){
     password.dispose();
     confirm.dispose();
+    code.dispose();
     super.dispose();
   }
 
+  Future<void> _verifyRecoveryCode() async {
+    if(busy||widget.recoveryEmail==null)return;
+    if(!RegExp(r'^\d{6,8}$').hasMatch(code.text.trim())) {
+      setState(()=>error='Enter the verification code sent to your email.');
+      return;
+    }
+    setState((){busy=true;error=null;});
+    try {
+      await widget.auth.verifyRecoveryOtp(
+        widget.recoveryEmail!,code.text.trim());
+      if(!mounted)return;
+      code.clear();
+      setState(()=>otpVerified=true);
+    }catch(_){
+      if(mounted)setState(()=>error='Invalid or expired recovery code. '
+        'Request a new code and try again.');
+    }finally{
+      if(mounted)setState(()=>busy=false);
+    }
+  }
+
+  Future<void> _resendCode() async {
+    if(busy||widget.recoveryEmail==null)return;
+    setState((){busy=true;error=null;});
+    try {
+      await widget.auth.sendPasswordReset(widget.recoveryEmail!);
+      if(mounted)setState(()=>error='If the address is registered, '
+        'a new recovery code was requested.');
+    }catch(_){
+      if(mounted)setState(()=>error='Could not request a new code. '
+        'Wait before trying again.');
+    }finally{
+      if(mounted)setState(()=>busy=false);
+    }
+  }
+
   Future<void> _save() async {
-    if(busy)return;
+    if(busy||!otpVerified)return;
     if(!updated && (password.text.length<12 ||
        password.text!=confirm.text)) {
       setState(()=>error='Enter matching passwords of at least 12 characters.');
@@ -51,21 +100,19 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
       if(!updated) {
         await widget.auth.setAccountPassword(password.text);
         if(!mounted)return;
-        // The password update can emit userUpdated; the app stays locked
-        // in recovery mode until the temporary session is signed out.
+        // Temporary password-recovery sessions are never school logins.
         updated=true;
         password.clear();
         confirm.clear();
       }
       await widget.onComplete();
-    } catch (_) {
+    }catch(_){
       if(!mounted)return;
       setState(()=>error=updated
         ? 'Password updated, but secure sign-out could not finish. '
           'Retry closing the recovery session.'
-        : 'Could not update the password. The link may have expired. '
-          'Request another reset email.');
-    } finally {
+        : 'Could not update the password. Try a fresh recovery code.');
+    }finally{
       if(mounted)setState(()=>busy=false);
     }
   }
@@ -112,19 +159,50 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                         fontWeight:FontWeight.w800))),
                   ]),
                   const SizedBox(height:24),
-                  Text(updated?'Password updated'
+                  Text(!otpVerified?'Verify recovery code'
+                      :updated?'Password updated'
                       :'Reset your password',
                     style:Theme.of(context).textTheme.headlineSmall
                       ?.copyWith(fontWeight:FontWeight.w800)),
                   const SizedBox(height:9),
-                  Text(updated
+                  Text(!otpVerified
+                    ? 'Enter the one-time code from the Pohantoon AI '
+                      'password reset email. No link or browser is required.'
+                    :updated
                     ? 'Your password was changed. Close this recovery '
                       'session to return to normal sign-in.'
                     : 'Set a new password to secure your account. '
                       'Your school dashboard is unavailable while '
                       'this recovery session is active.',
                     style:TextStyle(color:scheme.onSurfaceVariant)),
-                  if(!updated)...[
+                  if(!otpVerified)...[
+                    const SizedBox(height:19),
+                    TextField(
+                      key:const Key('recovery-email-otp'),
+                      controller:code,
+                      enabled:!busy,
+                      maxLength:8,
+                      keyboardType:TextInputType.number,
+                      autofillHints:const [AutofillHints.oneTimeCode],
+                      decoration:const InputDecoration(
+                        labelText:'Email recovery code',
+                        hintText:'Enter the code',
+                        prefixIcon:Icon(Icons.mail_outline),
+                        counterText:'',
+                      ),
+                    ),
+                    const SizedBox(height:8),
+                    FilledButton.icon(
+                      key:const Key('recovery-verify-otp'),
+                      onPressed:busy?null:_verifyRecoveryCode,
+                      icon:const Icon(Icons.verified_user_outlined),
+                      label:const Text('Verify recovery code')),
+                    TextButton(
+                      key:const Key('recovery-resend-otp'),
+                      onPressed:busy?null:_resendCode,
+                      child:const Text('Resend recovery code')),
+                  ],
+                  if(otpVerified&&!updated)...[
                     const SizedBox(height:19),
                     TextField(
                       key:const Key('recovery-new-password'),
@@ -156,7 +234,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                       style:TextStyle(color:scheme.error)),
                   ],
                   const SizedBox(height:19),
-                  FilledButton.icon(
+                  if(otpVerified)FilledButton.icon(
                     key:const Key('recovery-save-password'),
                     onPressed:busy?null:_save,
                     icon:busy
@@ -172,7 +250,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                     onPressed:busy?null:_cancel,
                     child:const Text('Cancel and sign out')),
                   const SizedBox(height:15),
-                  Text('For your security, using a password-reset link '
+                  Text('For your security, password recovery '
                     'never opens the school or student dashboard.',
                     textAlign:TextAlign.center,
                     style:TextStyle(fontSize:11,

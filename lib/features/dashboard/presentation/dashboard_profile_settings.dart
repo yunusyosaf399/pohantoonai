@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../auth/data/account_auth_gateway.dart';
+import '../../auth/data/account_mfa_repository.dart';
+import '../../auth/presentation/account_mfa_settings_card.dart';
 import '../../onboarding/data/school_logo_repository.dart';
 import '../../onboarding/data/school_setup_repository.dart';
 import '../../onboarding/domain/school_setup_draft.dart';
@@ -12,7 +14,7 @@ import '../data/dashboard_owner_profile_repository.dart';
 class DashboardProfileSettings extends StatefulWidget {
   const DashboardProfileSettings({super.key,required this.draft,
     required this.schoolRepository,required this.ownerRepository,
-    required this.onDraftSaved,this.onOwnerSaved,this.credentials,this.logoRepository,
+    required this.onDraftSaved,this.onOwnerSaved,this.credentials,this.mfaRepository,this.logoRepository,
     this.initialTab=0});
   final SchoolSetupDraft draft;
   final SchoolSetupRepository schoolRepository;
@@ -20,6 +22,7 @@ class DashboardProfileSettings extends StatefulWidget {
   final ValueChanged<SchoolSetupDraft> onDraftSaved;
   final ValueChanged<String>? onOwnerSaved;
   final AccountEmailCredentials? credentials;
+  final AccountMfaRepository? mfaRepository;
   final SchoolLogoRepository? logoRepository;
   final int initialTab;
   @override
@@ -241,6 +244,11 @@ class _DashboardProfileSettingsState extends State<DashboardProfileSettings>
         key:const Key('profile-add-password'),
         onPressed:busy?null:_setPassword,
         child:const Text('Save password')),
+      const SizedBox(height:20),
+      if(widget.mfaRepository!=null)
+        AccountMfaSettingsCard(
+          key:const Key('profile-two-factor-settings'),
+          repository:widget.mfaRepository!),
     ],
   );
 

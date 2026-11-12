@@ -381,3 +381,11 @@ After **every** accepted task: (1) change its checkbox; (2) set milestone status
 - The callback now includes non-secret `auth_flow=password_recovery` and captures Web recovery intent before Supabase initialization. New exact redirect targets must be allowlisted in hosted Supabase Auth. `pohantoonai.com` must actually serve Flutter Web before adding it as a Web redirect.
 - [Code and security contract](../security/password_recovery_isolation.md); [auth widget test](../../test/auth/auth_return_to_dashboard_flow_test.dart); [URI classification test](../../test/auth/password_recovery_redirect_test.dart). Tests written but not run; GitHub runner blocked and no local Flutter SDK in connected environment. Database schema unchanged.
 
+
+## Module 02.3 — Account security execution evidence (2026-11-12)
+
+- Added [OTP-first recovery](../../lib/features/auth/presentation/password_recovery_dialog.dart): reset emails are code-only after installing the hosted Supabase Reset Password template. OTP verification is performed by native Auth, not a custom Edge Function. On successful password reset the temporary session signs out; the dashboard never appears mid-recovery.
+- Added [TOTP enrollment](../../lib/features/auth/presentation/account_mfa_settings_card.dart) and [exclusive sign-in verification screen](../../lib/features/auth/presentation/account_mfa_challenge_screen.dart). App startup checks Supabase Auth session assurance before restoring a school workspace.
+- Deployed [optional MFA AAL2 RLS SQL 15](../../supabase/schema/15_optional_mfa_aal2_enforcement.sql), protecting account and school records and private logos without blocking users who have not enrolled 2FA. [Rollback-only SQL test](../../supabase/tests/15_optional_mfa_aal2_security.sql) passed.
+- New pinned local QR dependency qr_flutter 4.1.0; Flutter pub get/test needed, and hosted Reset Password email template must be installed by the project operator.
+- [Complete security/UX contract](../security/module_02_3_email_otp_and_totp_2fa.md).

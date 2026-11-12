@@ -186,3 +186,13 @@ Previously a Supabase password-reset email could open a reset dialog **over an a
 - [Security rationale, Supabase URL settings, device verification](docs/security/password_recovery_isolation.md)
 
 **Deployment configuration:** Add the actual recovery callback to Supabase Auth Redirect URLs, including `pohantoonai://auth-callback?auth_flow=password_recovery`, and the HTTPS Web app URL only if `pohantoonai.com` actually hosts Flutter Web. Recovery email templates must use `{{ .ConfirmationURL }}`. **Flutter build and real email/device verification remain pending** because the connected environment has no Flutter SDK and GitHub Actions runners are currently blocked.
+
+## Module 02.3 — Code-only password recovery and authenticator 2FA (2026-11-12)
+
+The Flutter app now uses a Resend/Supabase Auth recovery code instead of relying on the password-reset email link. From Welcome -> Continue with Email -> Sign in -> Forgot Password, users request a one-time email code, enter it inside the exclusive recovery screen, set a new password, and then securely sign out. Existing deep-link recovery emails remain supported as a backward-compatible fallback. The code-only recovery email template is committed as [recovery_otp.html](supabase/auth/templates/recovery_otp.html) and **must be installed in the project's hosted Supabase Auth Reset Password template editor**. One hosted template applies to Android and Web; separate device-specific emails are not configured.
+
+Owner & Security now offers an opt-in authenticator-app TOTP setup UI with local QR generation, manual setup key, six-digit code verification, backup authenticator support, and verified-AAL2 factor removal. Users who enroll MFA must complete an AAL2 challenge on subsequent sign-ins before the school dashboard appears. The QR key is not stored in app tables.
+
+[Optional MFA RLS migration](supabase/schema/15_optional_mfa_aal2_enforcement.sql) was deployed. Fourteen account/school tables and the private school logo bucket require AAL2 **only once the owner has a verified Auth factor**, so non-enrolled accounts continue normal logins. [Database security test](supabase/tests/15_optional_mfa_aal2_security.sql) passed in ROLLBACK. [Implementation/security contract](docs/security/module_02_3_email_otp_and_totp_2fa.md).
+
+**Build/testing:** Flutter source tests committed but not executed in the connected environment. New qr_flutter dependency requires flutter pub get and a generated lockfile; actual Android code-delivery and Auth enrollment need physical-device testing. Enable leaked-password protection in Supabase Auth before production use.

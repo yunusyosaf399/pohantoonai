@@ -85,6 +85,9 @@ abstract class AccountEmailCredentials {
   Future<void> resendSignupCode(String email);
   Future<void> setAccountPassword(String password);
   Future<void> sendPasswordReset(String email);
+  /// Verifies the code emailed by Supabase's Reset Password template.
+  /// This creates a temporary recovery session, NOT normal dashboard access.
+  Future<void> verifyRecoveryOtp(String email,String code);
 }
 
 /// User authentication is handled by Supabase Auth, not application-owned tables.
@@ -195,6 +198,24 @@ class SupabaseAccountAuthGateway
       email.trim(),
       redirectTo:passwordRecoveryRedirectForApp(
         isWeb:kIsWeb,currentUri:Uri.base));
+
+  @override
+  Future<void> verifyRecoveryOtp(String email,String code) async {
+    final cleanEmail=email.trim();
+    final cleanCode=code.trim();
+    if(!RegExp(r'^\d{6,8}$').hasMatch(cleanCode)) {
+      throw const FormatException('Enter a valid email recovery code.');
+    }
+    final response=await _client.auth.verifyOTP(
+      type:OtpType.recovery,
+      email:cleanEmail,
+      token:cleanCode,
+    );
+    if(response.session==null || response.user==null ||
+        response.user!.email?.toLowerCase()!=cleanEmail.toLowerCase()) {
+      throw const AuthException('Recovery code was not verified.');
+    }
+  }
 
   @override
   Future<void> signOut() => _client.auth.signOut();

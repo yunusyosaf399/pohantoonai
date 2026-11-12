@@ -8,6 +8,8 @@ import 'core/settings/appearance_settings_button.dart';
 import 'core/settings/theme_controller.dart';
 import 'core/ui/app_theme.dart';
 import 'features/auth/data/account_auth_gateway.dart';
+import 'features/auth/data/account_mfa_repository.dart';
+import 'features/auth/presentation/account_mfa_challenge_screen.dart';
 import 'features/auth/presentation/account_welcome_screen.dart';
 import 'features/auth/presentation/password_recovery_dialog.dart';
 import 'features/organization/data/organization_repository.dart';
@@ -61,6 +63,7 @@ class PohantoonAiApp extends StatefulWidget {
     this.showOrganizationPreview = false,
     this.initialRecoveryRequested = false,
     this.authGateway,
+    this.mfaRepository,
     this.themeController,
   });
 
@@ -83,6 +86,8 @@ class PohantoonAiApp extends StatefulWidget {
   final DevelopmentWorkspaceRepository? developmentWorkspaceRepository;
   final DashboardOwnerProfileRepository? ownerProfileRepository;
   final AccountAuthGateway? authGateway;
+  /// Testable MFA factor provider; real sessions use Supabase Auth.
+  final AccountMfaRepository? mfaRepository;
   final ThemeController? themeController;
 
   @override
@@ -114,6 +119,11 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   // Password-reset callbacks grant a temporary Auth session. They must never
   // initialize or reveal a school/student dashboard.
   bool _recoveringPassword = false;
+  String? _recoveryEmail;
+  bool _checkingMfa=false;
+  bool _mfaRequired=false;
+  int _mfaCheckGeneration=0;
+
   bool _signedIn = false;
   String? _authError;
   OnboardingPlanOffer? _schoolSetupPlan;
@@ -124,6 +134,76 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   bool _restoringWorkspace=false;
   String? _workspaceError;
   int _authGeneration=0;
+
+  AccountMfaRepository? get _mfa =>
+    widget.mfaRepository ??
+      (widget.authGateway==null
+        ? SupabaseAccountMfaRepository(Supabase.instance.client)
+        : null);
+
+  Future<void> _checkMfaAndRestore()async{
+    if(!mounted||!_signedIn||_recoveringPassword)return;
+    final repo=_mfa;
+    if(repo==null) {
+      _loadAccountPreferences();
+      _restoreWorkspace();
+      return;
+    }
+    final serial=++_mfaCheckGeneration;
+    // Prevent ANY signed-in dashboard frame before AAL is checked.
+    setState((){
+      _checkingMfa=true;
+      _mfaRequired=false;
+      ++_authGeneration;
+      ++_mfaCheckGeneration;
+      _checkingMfa=false;
+      _mfaRequired=false;
+      _restoringWorkspace=false;
+    });
+    try {
+      final status=await repo.status();
+      if(!mounted||serial!=_mfaCheckGeneration||
+          !_signedIn||_recoveringPassword)return;
+      if(status.needsChallenge) {
+        setState((){
+          _checkingMfa=false;
+          _mfaRequired=true;
+          _schoolSetupPlan=null;
+          _reviewDraft=null;
+          _dashboardTestPreview=false;
+          _paymentStep=false;
+        });
+      }else{
+        setState((){
+          _checkingMfa=false;
+          _mfaRequired=false;
+        });
+        _loadAccountPreferences();
+        _restoreWorkspace();
+      }
+    }catch(_){
+      if(mounted&&serial==_mfaCheckGeneration&&!_recoveringPassword){
+        // Fail CLOSED. No network error may fall through to the dashboard.
+        setState((){
+          _checkingMfa=false;
+          _mfaRequired=true;
+          _schoolSetupPlan=null;
+          _reviewDraft=null;
+          _dashboardTestPreview=false;
+        });
+      }
+    }
+  }
+
+  Future<void> _mfaVerified() async {
+    // AAL2 must be confirmed from Supabase, never from a local boolean.
+    await _checkMfaAndRestore();
+  }
+
+  void _startRecoveryWithEmail(String email) {
+    _startPasswordRecovery();
+    if(mounted)setState(()=>_recoveryEmail=email);
+  }
 
   DevelopmentWorkspaceRepository? get _workspaces =>
     widget.developmentWorkspaceRepository ??
@@ -230,6 +310,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     if(!mounted || _recoveringPassword)return;
     setState((){
       _recoveringPassword=true;
+      _recoveryEmail=null;
+      ++_mfaCheckGeneration;
+      _checkingMfa=false;
+      _mfaRequired=false;
       // Invalidate a potentially in-flight workspace restore, and remove
       // the previous user's school from the entire widget tree immediately.
       ++_authGeneration;
@@ -249,7 +333,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     // let its success/cancel path turn that session into app access.
     // If sign-out fails, keep the exclusive recovery screen visible.
     await _signOut();
-    if(mounted)setState(()=>_recoveringPassword=false);
+    if(mounted)setState((){
+      _recoveringPassword=false;
+      _recoveryEmail=null;
+    });
   }
 
   @override
@@ -300,9 +387,12 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         setState(() {
           _activeAuthUserId=userId;
           _signedIn=signedIn;
-          if (signedIn) _authError=null;
-          if (!signedIn || (wasSignedIn && changedUser)) {
+          if(signedIn)_authError=null;
+          if(!signedIn || (wasSignedIn && changedUser)){
             ++_authGeneration;
+            ++_mfaCheckGeneration;
+            _checkingMfa=false;
+            _mfaRequired=false;
             _restoringWorkspace=false;
             _schoolSetupPlan=null;
             _reviewDraft=null;
@@ -310,11 +400,15 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _paymentStep=false;
             _dashboardTestPreview=false;
           }
+          // Every new/refresh Auth session must be checked before a
+          // protected workspace can render. Recovery is exempt only
+          // because the exclusive recovery screen stays above everything.
+          if(signedIn&&!_recoveringPassword&&_mfa!=null){
+            _checkingMfa=true;
+          }
         });
-        if (signedIn && (!wasSignedIn || changedUser) &&
-            !_recoveringPassword) {
-          _loadAccountPreferences();
-          _restoreWorkspace();
+        if(signedIn&&!_recoveringPassword){
+          _checkMfaAndRestore();
         }
       }, onError: (Object error, StackTrace stack) {
         // Supabase emits OAuth code-exchange failures and network failures
@@ -331,11 +425,12 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       // The storage plugin may not be available in isolated widget tests;
       // the app remains usable with system theme in that case.
       _theme.loadLocal().catchError((Object _) {});
-      if (_signedIn && !_recoveringPassword) {
-        _loadAccountPreferences();
-        // Delay until initState returns to avoid setState-during-build.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if(mounted)_restoreWorkspace();
+      if(_signedIn&&!_recoveringPassword){
+        _checkingMfa=_mfa!=null;
+        // Cold-started sessions are not authorized to display the
+        // dashboard until factor assurance has been checked.
+        WidgetsBinding.instance.addPostFrameCallback((_){
+          if(mounted)_checkMfaAndRestore();
         });
       }
     }
@@ -426,15 +521,28 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                     auth: _auth! as AccountEmailCredentials,
                     onComplete: _exitPasswordRecovery,
                     onCancel: _exitPasswordRecovery,
+                    recoveryEmail:_recoveryEmail,
                   )
             : !_signedIn
                 ? AccountWelcomeScreen(
                     auth: _auth!,
                     authError: _authError,
                     onAuthRetry: () => setState(() => _authError = null),
+                    onRecoveryCodeRequested:_startRecoveryWithEmail,
                     themeMode: _theme.value,
                     onThemeChanged: _changeTheme,
                   )
+                : _checkingMfa
+                    ? const Scaffold(body:Center(
+                        child:CircularProgressIndicator(
+                          key:Key('checking-account-two-factor'))))
+                : _mfaRequired && _mfa!=null
+                    ? AccountMfaChallengeScreen(
+                        key:const Key('exclusive-mfa-gate'),
+                        repository:_mfa!,
+                        onVerified:_mfaVerified,
+                        onSignOut:_signOut,
+                      )
                 : _restoringWorkspace
                     ? const Scaffold(
                         body: Center(child: CircularProgressIndicator(
@@ -468,6 +576,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                                   : null),
                             credentials: _auth is AccountEmailCredentials
                                 ? _auth as AccountEmailCredentials : null,
+                            mfaRepository:_mfa,
                             onDraftSaved: (saved) => setState(() {
                               _reviewDraft=saved;
                             }),
