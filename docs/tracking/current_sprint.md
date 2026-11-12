@@ -276,3 +276,18 @@ SaaS Control Panel
 | Flutter analyze/test and Windows/Web/mobile end-to-end | BLOCKED: GitHub Actions jobs cannot start; Flutter SDK absent here | [GitHub issue #2](https://github.com/yunusyosaf399/pohantoonai/issues/2) |
 
 [Full acceptance runbook](../testing/auth_return_to_dashboard_acceptance.md) distinguishes mock tests, SQL tests, and pending real email/device testing. **Do not claim hosted Auth end-to-end complete.**
+
+## Security hotfix: password reset revealed dashboard behind modal — 2026-11-12
+
+| Atomic task | Status | Evidence |
+|---|---|---|
+| Confirm root cause: recovery Auth session and dashboard under modal | **Verified in source** | Previous `main.dart` opened `showDialog` while session stream restored workspace |
+| Replace reset dialog with exclusive full-screen recovery home | **Committed** | [Recovery-only screen](../../lib/features/auth/presentation/password_recovery_dialog.dart), [root routing](../../lib/main.dart) |
+| Clear open dashboard routes and block plan/draft restoration | **Committed** | Distinct navigator, async-generation invalidation and recovery restore guard |
+| Capture Web reset intent before Supabase initialization and mark outgoing callbacks | **Committed** | [Auth gateway](../../lib/features/auth/data/account_auth_gateway.dart), `auth_flow=password_recovery` |
+| Force sign-out after successful change and on Cancel; fail closed on error | **Committed** | Recovery screen callbacks and [App exit handler](../../lib/main.dart) |
+| Event-driven, cold-start, cancel, signout-failure, callback parsing tests | **Written, not run** | [Auth flow tests](../../test/auth/auth_return_to_dashboard_flow_test.dart), [URI tests](../../test/auth/password_recovery_redirect_test.dart) |
+| Confirm Supabase hosted recovery callback allowlist for native and pohantoonai.com Web | **Operator action pending** | [Security runbook](../security/password_recovery_isolation.md) |
+| Run Flutter analyze/test and device link test | **Pending Flutter SDK / CI runner** | [Security runbook](../security/password_recovery_isolation.md) and [CI issue #2](https://github.com/yunusyosaf399/pohantoonai/issues/2) |
+
+**No SQL migration needed.** A recovery session is still a real Supabase Auth session at the API level; this fixes accidental Flutter UI/display/workspace restoration and must be complemented by existing RLS and step-up controls for sensitive school data.
