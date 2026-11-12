@@ -109,12 +109,16 @@ class SimulatedAuth
 class SimulatedMfa implements AccountMfaRepository {
   bool enrolled=true,aal2=false;
   int verifies=0;
+  int statusChecks=0;
   @override
-  Future<AccountMfaStatus> status() async => AccountMfaStatus(
-    needsChallenge:enrolled&&!aal2,isAal2:aal2,
-    factors:enrolled ?const [
-      AccountTotpFactor(id:'factor-one',label:'Authenticator')] :const [],
-  );
+  Future<AccountMfaStatus> status() async {
+    statusChecks++;
+    return AccountMfaStatus(
+      needsChallenge:enrolled&&!aal2,isAal2:aal2,
+      factors:enrolled ?const [
+        AccountTotpFactor(id:'factor-one',label:'Authenticator')] :const [],
+    );
+  }
   @override
   Future<AccountTotpEnrollment> enroll()async=>
     const AccountTotpEnrollment(
@@ -237,6 +241,83 @@ Future<void> mountApp(WidgetTester tester,SimulatedAuth auth,
 }
 
 void main(){
+  testWidgets('saved account opens dashboard on restart without another '
+      'Google or password sign-in',(tester) async {
+    final auth=SimulatedAuth(uid:'owner-id')
+      ..emails['owner@school.edu']='owner-id';
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(
+        schoolName:'Saved School',schoolType:'private',
+        contactName:'Saved Owner',contactEmail:'owner@school.edu',
+        countryCode:'AF',city:'Kabul',estimatedStudents:100,campusCount:1,
+        readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+    final mfa=SimulatedMfa()..enrolled=false;
+    await mountApp(tester,auth,plans,drafts,workspaces,
+      mfaRepository:mfa);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsOneWidget);
+    final firstChecks=mfa.statusChecks;
+    expect(firstChecks,greaterThan(0));
+
+    // A refresh of a token for the SAME uid must preserve the dashboard
+    // and must not create duplicate MFA checks or restoration requests.
+    auth.enter('owner-id');
+    await tester.pumpAndSettle();
+    expect(mfa.statusChecks,firstChecks);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsOneWidget);
+
+    // Destroy the root widget tree, then re-create it with the persisted
+    // Auth identity and same RLS-backed account data; no login call occurs.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await mountApp(tester,auth,plans,drafts,workspaces,
+      mfaRepository:mfa);
+    expect(auth.uid,'owner-id');
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsOneWidget);
+    expect(find.byKey(const Key('continue-with-email')),findsNothing);
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('a saved account with 2FA requires assurance again on '
+      'a cold app restart',(tester) async {
+    final auth=SimulatedAuth(uid:'owner-id')
+      ..emails['owner@school.edu']='owner-id';
+    addTearDown(auth.dispose);
+    final plans=UserPlans(auth)..saved['owner-id']='growth-plan';
+    final drafts=UserDrafts(auth)..saved['owner-id']=
+      const SchoolSetupDraft(
+        schoolName:'Protected School',schoolType:'private',
+        contactName:'Owner',contactEmail:'owner@school.edu',
+        countryCode:'AF',city:'Kabul',estimatedStudents:110,campusCount:1,
+        readyForReview:true);
+    final workspaces=UserWorkspaces(auth,drafts,plans)
+      ..rows['owner-id']='growth-plan';
+    final mfa=SimulatedMfa();
+    await mountApp(tester,auth,plans,drafts,workspaces,
+      mfaRepository:mfa);
+    expect(find.byKey(const Key('mfa-login-challenge-screen')),
+      findsOneWidget);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await mountApp(tester,auth,plans,drafts,workspaces,
+      mfaRepository:mfa);
+    expect(find.byKey(const Key('mfa-login-challenge-screen')),
+      findsOneWidget);
+    expect(find.byKey(const Key('dashboard-test-preview-title')),
+      findsNothing);
+    expect(tester.takeException(),isNull);
+  });
+
+
   testWidgets('email recovery code blocks dashboard until password change '
       'and secure sign-out',(tester)async {
     final auth=SimulatedAuth()
