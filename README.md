@@ -173,3 +173,16 @@ This branch added pinned file_selector 1.1.0 to pubspec.yaml for cross-platform 
 Authentication now tracks the stable Supabase Auth user ID across Google and email/password sign-ins and clears previous dashboard state when accounts change. The [cross-provider and OTP workflow widget test](test/auth/auth_return_to_dashboard_flow_test.dart) is committed; [RLS test SQL 15](supabase/tests/15_auth_provider_same_account_rls.sql) passed in a rollback-only database transaction using real account/provider relationships. This confirms account-owned access, not an actual browser login or delivered email.
 
 [Hosted email/SMTP checklist](https://github.com/yunusyosaf399/pohantoonai/issues/1) and [Flutter SDK/CI execution checklist](https://github.com/yunusyosaf399/pohantoonai/issues/2) track the remaining external steps. [Full acceptance runbook](docs/testing/auth_return_to_dashboard_acceptance.md).
+
+## Security fix — isolated password recovery (2026-11-12)
+
+Previously a Supabase password-reset email could open a reset dialog **over an already authenticated school dashboard**, because the recovery link also issues an Auth session. Flutter now renders a **dedicated recovery-only screen** with a separate Navigator, blocks all workspace restoration while recovery is active, and always signs out the temporary session after Save or Cancel before showing normal Welcome/sign-in. If sign-out fails, the recovery gate stays closed and can retry. Startup Web recovery callbacks are marked and inspected before `Supabase.initialize` consumes the URL.
+
+- [Secure recovery routing](lib/main.dart)
+- [Recovery callback marker and recognition](lib/features/auth/data/account_auth_gateway.dart)
+- [Standalone reset UI](lib/features/auth/presentation/password_recovery_dialog.dart)
+- [Auth regression tests](test/auth/auth_return_to_dashboard_flow_test.dart)
+- [Redirect parsing tests](test/auth/password_recovery_redirect_test.dart)
+- [Security rationale, Supabase URL settings, device verification](docs/security/password_recovery_isolation.md)
+
+**Deployment configuration:** Add the actual recovery callback to Supabase Auth Redirect URLs, including `pohantoonai://auth-callback?auth_flow=password_recovery`, and the HTTPS Web app URL only if `pohantoonai.com` actually hosts Flutter Web. Recovery email templates must use `{{ .ConfirmationURL }}`. **Flutter build and real email/device verification remain pending** because the connected environment has no Flutter SDK and GitHub Actions runners are currently blocked.
