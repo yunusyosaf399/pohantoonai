@@ -307,3 +307,18 @@ SaaS Control Panel
 | Supabase leaked-password protection | PENDING security advisor warning | Enable in project Auth settings |
 
 [Detailed module contract](../security/module_02_3_email_otp_and_totp_2fa.md). Keep TOTP secrets, QR images and recovery codes out of logs, SQL, GitHub and analytics.
+
+## Module 02.4 — Keep signed in securely on Android (2026-11-12)
+
+| Atomic task | Status | Evidence |
+|---|---|---|
+| Fix MFA generation counter invalidating its own async result | **Code committed** | [main.dart](../../lib/main.dart) |
+| Avoid repeated same-user token-refresh rechecks and dashboard resets | **Code committed** | [main.dart](../../lib/main.dart) |
+| Keystore-backed encrypted Android Supabase refreshable session | **Code committed** | [secure_session_storage.dart](../../lib/features/auth/data/secure_session_storage.dart) |
+| One-time migrate existing prefs session without losing login | **Code committed** | [storage regression tests](../../test/auth/secure_session_storage_test.dart) |
+| Clear both session stores on explicit sign-out | **Code committed** | [secure_session_storage.dart](../../lib/features/auth/data/secure_session_storage.dart) |
+| Prevent Android backup of unusable device-bound encrypted tokens | **Code committed** | [AndroidManifest.xml](../../android/app/src/main/AndroidManifest.xml) |
+| Simulated restart, rotating same-user event, enrolled 2FA restart tests | **Written, not executed** | [Auth flow tests](../../test/auth/auth_return_to_dashboard_flow_test.dart) |
+| Flutter analyzer/tests + Moto G56 5G real device | **Pending** | No Flutter SDK in connected environment; GitHub CI billing restriction |
+
+No Supabase schema migration or Edge Function was needed. [Full threat model and device acceptance](../security/module_02_4_persistent_android_session.md).

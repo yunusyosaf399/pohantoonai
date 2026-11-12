@@ -196,3 +196,9 @@ Owner & Security now offers an opt-in authenticator-app TOTP setup UI with local
 [Optional MFA RLS migration](supabase/schema/15_optional_mfa_aal2_enforcement.sql) was deployed. Fourteen account/school tables and the private school logo bucket require AAL2 **only once the owner has a verified Auth factor**, so non-enrolled accounts continue normal logins. [Database security test](supabase/tests/15_optional_mfa_aal2_security.sql) passed in ROLLBACK. [Implementation/security contract](docs/security/module_02_3_email_otp_and_totp_2fa.md).
 
 **Build/testing:** Flutter source tests committed but not executed in the connected environment. New qr_flutter dependency requires flutter pub get and a generated lockfile; actual Android code-delivery and Auth enrollment need physical-device testing. Enable leaked-password protection in Supabase Auth before production use.
+
+## Android secure persistent login — 2026-11-12
+
+Closing Pohantoon AI no longer intentionally resets its authentication flow. A defect in the MFA restoration generation counter was corrected, and repeated Auth token refresh events no longer restart dashboard routing for the same user. Android now keeps Supabase's refreshable session in Keystore-backed encrypted storage, migrating an existing preferences session once and deleting the old plaintext copy only after a verified write. Sign out clears both stores.
+
+The app still checks TOTP/AAL2 before restoring a protected school dashboard and never saves a raw password or non-expiring JWT. See [Module 02.4 security design and test instructions](docs/security/module_02_4_persistent_android_session.md). New pinned flutter_secure_storage 9.2.4 requires flutter pub get and regenerated pubspec.lock. Flutter compilation/device tests are pending and are not claimed complete.

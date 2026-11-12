@@ -389,3 +389,12 @@ After **every** accepted task: (1) change its checkbox; (2) set milestone status
 - Deployed [optional MFA AAL2 RLS SQL 15](../../supabase/schema/15_optional_mfa_aal2_enforcement.sql), protecting account and school records and private logos without blocking users who have not enrolled 2FA. [Rollback-only SQL test](../../supabase/tests/15_optional_mfa_aal2_security.sql) passed.
 - New pinned local QR dependency qr_flutter 4.1.0; Flutter pub get/test needed, and hosted Reset Password email template must be installed by the project operator.
 - [Complete security/UX contract](../security/module_02_3_email_otp_and_totp_2fa.md).
+
+## Module 02.4 — Persistent Android sign-in (2026-11-12)
+
+- Fixed a concrete async MFA restoration defect: the generation counter was incremented twice, invalidating every result. Same-account token refresh no longer resets school navigation.
+- Added Keystore-backed Android Supabase session persistence with safe migration of older SharedPreferences session values and complete sign-out deletion. The SDK continues to rotate access/refresh tokens; expired/revoked sessions do not bypass Auth.
+- Updated Android manifest to disable backup of device-key encrypted preferences. Existing Web/desktop persistence is unchanged.
+- Added [storage/boot regression tests](../../test/auth/secure_session_storage_test.dart) and [signed-in-app restart tests](../../test/auth/auth_return_to_dashboard_flow_test.dart), written but not executed.
+- [Module 02.4 runbook](../security/module_02_4_persistent_android_session.md). No new Supabase tables or RLS grants.
+

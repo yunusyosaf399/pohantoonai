@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/config/supabase_configuration.dart';
@@ -8,6 +9,7 @@ import 'core/settings/appearance_settings_button.dart';
 import 'core/settings/theme_controller.dart';
 import 'core/ui/app_theme.dart';
 import 'features/auth/data/account_auth_gateway.dart';
+import 'features/auth/data/secure_session_storage.dart';
 import 'features/auth/data/account_mfa_repository.dart';
 import 'features/auth/presentation/account_mfa_challenge_screen.dart';
 import 'features/auth/presentation/account_welcome_screen.dart';
@@ -41,6 +43,16 @@ Future<void> main() async {
   await Supabase.initialize(
     url: SupabaseConfiguration.url,
     publishableKey: SupabaseConfiguration.publishableKey,
+    // Keep sessions refreshable across app restarts. Android stores the
+    // session encrypted with a Keystore-backed key and migrates prior
+    // SharedPreferences sessions once. Other platforms retain the existing
+    // Supabase Flutter local-storage behavior.
+    authOptions:FlutterAuthClientOptions(
+      persistSession:true,
+      autoRefreshToken:true,
+      localStorage:!kIsWeb && defaultTargetPlatform==TargetPlatform.android
+        ? AndroidSecureSessionStorage() : null,
+    ),
   );
   runApp(PohantoonAiApp(initialRecoveryRequested:recoveryIntent));
 }
@@ -150,15 +162,18 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       return;
     }
     final serial=++_mfaCheckGeneration;
-    // Prevent ANY signed-in dashboard frame before AAL is checked.
+    // Keep the gate visible until the actual MFA status request finishes.
+    // Previously this block incremented _mfaCheckGeneration a second time
+    // and cleared _checkingMfa, causing every result to be discarded.
     setState((){
       _checkingMfa=true;
       _mfaRequired=false;
       ++_authGeneration;
-      ++_mfaCheckGeneration;
-      _checkingMfa=false;
-      _mfaRequired=false;
       _restoringWorkspace=false;
+      _schoolSetupPlan=null;
+      _reviewDraft=null;
+      _dashboardTestPreview=false;
+      _paymentStep=false;
     });
     try {
       final status=await repo.status();
@@ -400,14 +415,17 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _paymentStep=false;
             _dashboardTestPreview=false;
           }
-          // Every new/refresh Auth session must be checked before a
-          // protected workspace can render. Recovery is exempt only
-          // because the exclusive recovery screen stays above everything.
-          if(signedIn&&!_recoveringPassword&&_mfa!=null){
+          // Gate new or changed accounts immediately. For token refresh
+          // of the same account, preserve the current screen and session.
+          if(signedIn&&(!wasSignedIn||changedUser)&&
+              !_recoveringPassword&&_mfa!=null){
             _checkingMfa=true;
           }
         });
-        if(signedIn&&!_recoveringPassword){
+        // Token refresh and userUpdated keep the SAME user. Never reset
+        // their dashboard or race another MFA query on those events.
+        if(signedIn && (!wasSignedIn||changedUser) &&
+            !_recoveringPassword){
           _checkMfaAndRestore();
         }
       }, onError: (Object error, StackTrace stack) {
@@ -547,6 +565,33 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                     ? const Scaffold(
                         body: Center(child: CircularProgressIndicator(
                           key: Key('restoring-school-workspace'))))
+                : _workspaceError!=null
+                    ? Scaffold(
+                        body:Center(child:ConstrainedBox(
+                          constraints:const BoxConstraints(maxWidth:400),
+                          child:Padding(
+                            padding:const EdgeInsets.all(24),
+                            child:Column(
+                              mainAxisSize:MainAxisSize.min,
+                              children:[
+                                const Icon(Icons.wifi_off_outlined,size:38),
+                                const SizedBox(height:12),
+                                Text(_workspaceError!,
+                                  key:const Key('session-restore-error'),
+                                  textAlign:TextAlign.center),
+                                const SizedBox(height:12),
+                                FilledButton.icon(
+                                  key:const Key('session-restore-retry'),
+                                  onPressed:_checkMfaAndRestore,
+                                  icon:const Icon(Icons.refresh),
+                                  label:const Text('Retry secure session')),
+                                TextButton(
+                                  onPressed:_signOut,
+                                  child:const Text('Sign out')),
+                              ],
+                            ),
+                          ),
+                        )))
                 : _schoolSetupPlan != null
                     ? _dashboardTestPreview
                         ? SchoolDashboardSetupPreview(
