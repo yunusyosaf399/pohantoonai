@@ -32,7 +32,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Capture the callback intent BEFORE Supabase consumes/cleans the URL.
   // A recovery session must not be interpreted as ordinary app sign-in.
-  final recoveryIntent=isPasswordRecoveryCallback(Uri.base);
+  final platformRoute=Uri.tryParse(
+    WidgetsBinding.instance.platformDispatcher.defaultRouteName);
+  final recoveryIntent=isPasswordRecoveryCallback(Uri.base) ||
+    (platformRoute!=null && isPasswordRecoveryCallback(platformRoute));
   await Supabase.initialize(
     url: SupabaseConfiguration.url,
     publishableKey: SupabaseConfiguration.publishableKey,
