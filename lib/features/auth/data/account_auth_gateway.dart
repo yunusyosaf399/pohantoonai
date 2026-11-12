@@ -21,6 +21,41 @@ String oauthRedirectForApp({
   return currentUri.origin + path;
 }
 
+/// Password recovery uses the same registered app callback with an explicit
+/// non-secret flow marker. On Web this also protects a cold-start deep link
+/// that was exchanged for a session before widget listeners were attached.
+///
+/// The marker is NOT proof of identity. Supabase Auth must still verify the
+/// signed recovery link and provide a valid authenticated session.
+String passwordRecoveryRedirectForApp({
+  required bool isWeb,
+  required Uri currentUri,
+}) {
+  final base=Uri.parse(oauthRedirectForApp(
+    isWeb:isWeb,currentUri:currentUri));
+  return base.replace(queryParameters:{
+    'auth_flow':'password_recovery',
+  }).toString();
+}
+
+/// An explicit URL intent is a UI safety gate, never an authorization grant.
+/// Don't print query strings/fragments: they can contain OAuth credentials.
+bool isPasswordRecoveryCallback(Uri uri) {
+  final query=uri.queryParameters;
+  if(query['auth_flow']=='password_recovery' ||
+      query['type']=='recovery') return true;
+  final fragment=uri.fragment;
+  if(fragment.isEmpty)return false;
+  // Supabase implicit-link fragments contain query-form parameters.
+  // Do not parse/log any token; inspect only the known flow discriminator.
+  try {
+    final fields=Uri.splitQueryString(
+      fragment.startsWith('?')?fragment.substring(1):fragment);
+    return fields['auth_flow']=='password_recovery' ||
+        fields['type']=='recovery';
+  } catch (_) {return false;}
+}
+
 abstract class AccountAuthGateway {
   bool get signedIn;
   String? get signedInEmail;
@@ -158,7 +193,8 @@ class SupabaseAccountAuthGateway
   Future<void> sendPasswordReset(String email) =>
     _client.auth.resetPasswordForEmail(
       email.trim(),
-      redirectTo:oauthRedirectForApp(isWeb:kIsWeb,currentUri:Uri.base));
+      redirectTo:passwordRecoveryRedirectForApp(
+        isWeb:kIsWeb,currentUri:Uri.base));
 
   @override
   Future<void> signOut() => _client.auth.signOut();
