@@ -91,3 +91,13 @@ The live Postgres database was checked **without reading or exposing passwords o
 [Auth provider/workspace test SQL](../../supabase/tests/15_auth_provider_same_account_rls.sql) **passed** against the linked Supabase project under simulated authenticated Postgres roles with ROLLBACK. A verified account that already has both a Google identity and password can SELECT its own matched plan, ready draft and development workspace; another confirmed account cannot SELECT that workspace. This is stronger than a raw database join, but is **not** a real end-user Google/password sign-in or SMTP delivery test.
 
 External deployment blockers are tracked separately in [Auth SMTP/templates issue](https://github.com/yunusyosaf399/pohantoonai/issues/1) and [Flutter test/CI issue](https://github.com/yunusyosaf399/pohantoonai/issues/2).
+
+## Password reset must never display school dashboard — 2026-11-12
+
+A Supabase Auth password-recovery link creates a temporary signed-in session. The previous Flutter reset dialog was layered over the normal dashboard. Fixed in [app routing](../../lib/main.dart) and [standalone recovery UI](../../lib/features/auth/presentation/password_recovery_dialog.dart): an exclusive recovery screen replaces the full navigation stack; the dashboard is not built during recovery; any async workspace restore is invalidated; both Save and Cancel sign out. If sign-out fails, the secure recovery screen stays active.
+
+- [Cold-start callback recognition](../../lib/features/auth/data/account_auth_gateway.dart) and [URI tests](../../test/auth/password_recovery_redirect_test.dart)
+- [Regression tests](../../test/auth/auth_return_to_dashboard_flow_test.dart), including active dashboard popup, recovery on app launch and failed signout
+- [Redirect URL, recovery email and manual-device checklist](../security/password_recovery_isolation.md)
+
+**Pending:** Supabase Hosted Auth Redirect URLs must include the exact new reset callback(s) with `auth_flow=password_recovery` and actual Web deployment host. Real Resend link and Android/Windows/Web end-to-end tests are not yet executed because of the previously reported Flutter CI runner restriction.
