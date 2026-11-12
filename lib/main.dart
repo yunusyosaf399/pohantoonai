@@ -591,7 +591,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                               ],
                             ),
                           ),
-                        ))))
+                        )))
                 : _schoolSetupPlan != null
                     ? _dashboardTestPreview
                         ? SchoolDashboardSetupPreview(
