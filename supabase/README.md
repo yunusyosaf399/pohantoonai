@@ -138,3 +138,10 @@ Executed [transactional SQL security test](tests/08_payment_preferences_security
 ### Required school completion validation (migration 14)
 
 [14_dev_workspace_required_fields.sql](schema/14_dev_workspace_required_fields.sql): deployed additional workspace INSERT policy and trigger checks for school name, contact name/email, school type, location, student/campus estimates and plan limits, independent of Flutter UI. [Security test](tests/14_dev_workspace_required_fields_security.sql) passed with rollback.
+
+## Module 02.3 — Native Auth TOTP and server-enforced AAL2 (2026-11-12)
+
+- [schema/15_optional_mfa_aal2_enforcement.sql](schema/15_optional_mfa_aal2_enforcement.sql): **deployed** migration optional_mfa_aal2_school_security. Uses a private SECURITY DEFINER boolean check against only the current signed-in user's verified factor, plus restrictive RLS on 14 owner/school tables and the school-logos bucket. Existing policies remain intact. Does not grant client SELECT to auth.mfa_factors.
+- [tests/15_optional_mfa_aal2_security.sql](tests/15_optional_mfa_aal2_security.sql): **PASSED** rollback-only test, verifying non-MFA AAL1 access, verified-factor AAL1 denial and AAL2 access with no persistent Auth factor created.
+- [auth/templates/recovery_otp.html](auth/templates/recovery_otp.html): prepared **code-only** Reset Password email template; **not automatically installed** in hosted Supabase Auth. Must be pasted manually under Authentication -> Email Templates -> Reset Password.
+- [Design and threat model](../docs/security/module_02_3_email_otp_and_totp_2fa.md).
