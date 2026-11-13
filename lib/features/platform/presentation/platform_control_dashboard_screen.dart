@@ -202,14 +202,17 @@ class _PlatformControlDashboardScreenState
 
   @override
   Widget build(BuildContext context){
-    final scheme=Theme.of(context).colorScheme;
     return LayoutBuilder(builder:(context,layout){
       final wide=layout.maxWidth>=860;
       return Scaffold(
         appBar:AppBar(
           title:Row(mainAxisSize:MainAxisSize.min,children:[
-            Icon(Icons.admin_panel_settings_outlined,
-              color:scheme.primary,size:27),
+            ClipRRect(
+              borderRadius:BorderRadius.circular(7),
+              child:Image.asset(
+                'assets/app_logo/app_icon.jpeg',
+                width:30,height:30,fit:BoxFit.cover),
+            ),
             const SizedBox(width:10),
             const Flexible(child:Text('PohantoonAI • Platform Control',
               overflow:TextOverflow.ellipsis)),
@@ -321,7 +324,7 @@ class _PlatformControlDashboardScreenState
         layout.maxWidth<980?3:4,
       crossAxisSpacing:11,
       mainAxisSpacing:11,
-      childAspectRatio:layout.maxWidth<520?1.35:1.4,
+      childAspectRatio:layout.maxWidth<520?1.05:1.4,
       physics:const NeverScrollableScrollPhysics(),
       shrinkWrap:true,
       children:items,
