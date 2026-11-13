@@ -15,6 +15,17 @@ class FakeAdmissionsRepository implements SchoolAdmissionsRepository {
   Future<List<AdmissionsSchool>> availableSchools() async=>allowed;
 
   @override
+  Future<AdmissionsSummary> summary(String schoolId) async {
+    final rows=data[schoolId]??const <SchoolAdmission>[];
+    return AdmissionsSummary(
+      total:rows.length,
+      pending:rows.where((r)=>r.status=='pending').length,
+      admitted:rows.where((r)=>r.status=='admitted').length,
+      rejected:rows.where((r)=>r.status=='rejected').length,
+    );
+  }
+
+  @override
   Future<List<SchoolAdmission>> load(String schoolId) async {
     lastSchoolRead=schoolId;
     return data[schoolId]??const [];
