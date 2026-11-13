@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -646,7 +647,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         theme: PohantoonTheme.light,
         darkTheme: PohantoonTheme.dark,
         themeMode: _theme.value,
-        home: widget.showOrganizationPreview
+        home: widget.showOrganizationPreview && kDebugMode
             ? OrganizationControlPanel(repository: widget.repository)
             : _recoveringPassword && _auth is AccountEmailCredentials
                 ? PasswordRecoveryScreen(
