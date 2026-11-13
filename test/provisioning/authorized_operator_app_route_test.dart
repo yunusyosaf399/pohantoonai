@@ -41,7 +41,9 @@ class _OperatorRepository implements SchoolActivationRepository {
   @override
   Future<String> submitRequest() async=>'none';
   @override
-  Future<List<SchoolActivationReview>> operatorQueue() async=>const [];
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  }) async=>const [];
   @override
   Future<String> approve({
     required String requestId,required String activationBasis,
