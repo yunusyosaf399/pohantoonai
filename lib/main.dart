@@ -171,7 +171,8 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     if(!mounted||!_signedIn||_recoveringPassword)return;
     final repo=_admissions;
     if(repo==null) {
-      await _resolveRealSchoolOrPreview();
+      _loadAccountPreferences();
+      _restoreWorkspace();
       return;
     }
     final serial=++_authGeneration;
@@ -217,8 +218,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     if(!mounted||!_signedIn||_recoveringPassword)return;
     final repo=_mfa;
     if(repo==null) {
-      _loadAccountPreferences();
-      _restoreWorkspace();
+      await _resolveRealSchoolOrPreview();
       return;
     }
     final serial=++_mfaCheckGeneration;
