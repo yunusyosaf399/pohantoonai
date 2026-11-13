@@ -47,6 +47,9 @@ BEGIN
   SELECT count(*) INTO seen FROM public.school_admissions
     WHERE school_id=school_a AND id=admission_a;
   IF seen<>1 THEN RAISE EXCEPTION 'Admin A cannot see own admission'; END IF;
+  SELECT total_applications INTO seen FROM public.school_admission_counts
+    WHERE school_id=school_a;
+  IF seen<>1 THEN RAISE EXCEPTION 'Authorized aggregate must include own admission'; END IF;
   SELECT count(*) INTO seen FROM public.school_admissions WHERE school_id=school_b;
   IF seen<>0 THEN RAISE EXCEPTION 'Admin A can see another school'; END IF;
 
@@ -81,6 +84,9 @@ BEGIN
     json_build_object('sub',admin_b,'role','authenticated','aal','aal2')::text,true);
   SELECT count(*) INTO seen FROM public.school_admissions WHERE id=admission_a;
   IF seen<>0 THEN RAISE EXCEPTION 'Admin B sees school A student'; END IF;
+  SELECT count(*) INTO seen FROM public.school_admission_counts
+    WHERE school_id=school_a;
+  IF seen<>0 THEN RAISE EXCEPTION 'Aggregate leaked another school'; END IF;
 
   -- Revoke B's school membership, even a matching requested school_id must fail.
   EXECUTE 'RESET ROLE';
