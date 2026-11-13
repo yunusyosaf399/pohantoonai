@@ -7,10 +7,14 @@ import '../data/school_activation_repository.dart';
 class SchoolProvisioningOperatorScreen extends StatefulWidget {
   const SchoolProvisioningOperatorScreen({
     super.key,required this.repository,required this.onSignOut,
+    this.embedded=false,this.onReviewCompleted,
   });
 
   final SchoolActivationRepository repository;
   final VoidCallback onSignOut;
+  /// Used when the review queue is a tab inside the real platform console.
+  final bool embedded;
+  final VoidCallback? onReviewCompleted;
 
   @override
   State<SchoolProvisioningOperatorScreen> createState() =>
@@ -84,6 +88,7 @@ class _SchoolProvisioningOperatorScreenState
           ? 'School provisioned and owner membership granted.'
           : 'School request rejected with an audit record.')));
       await _load();
+      widget.onReviewCompleted?.call();
     }catch(_){
       if(mounted)ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         const SnackBar(content:Text(
@@ -100,7 +105,7 @@ class _SchoolProvisioningOperatorScreenState
     final pending=requests.where((r)=>r.status=='submitted'||
       r.status=='in_review').length;
     return Scaffold(
-      appBar:AppBar(
+      appBar:widget.embedded?null:AppBar(
         title:const Text('PohantoonAI • School approvals'),
         actions:[
           IconButton(
