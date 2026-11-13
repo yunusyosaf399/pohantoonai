@@ -271,33 +271,45 @@ class _SchoolAdmissionsScreenState extends State<SchoolAdmissionsScreen> {
         ]);
       }),
       const SizedBox(height:17),
-      Wrap(spacing:10,runSpacing:10,crossAxisAlignment:WrapCrossAlignment.center,
-        children:[
-          SizedBox(width:320,child:TextField(
-            key:const Key('admissions-search'),
-            onChanged:(value)=>setState(()=>search=value),
-            decoration:const InputDecoration(
-              isDense:true,prefixIcon:Icon(Icons.search),
-              labelText:'Search student, grade or guardian',
-              border:OutlineInputBorder(),
-            ),
-          )),
-          if(!widget.studentsOnly)SizedBox(width:160,child:
-            DropdownButtonFormField<String>(
-              key:const Key('admissions-filter'),
-              value:filter,
+      LayoutBuilder(builder:(context,constraints){
+        // Search and status controls must fit narrow Android/tablet widths.
+        // Expanded status text avoids horizontal RenderFlex overflows.
+        final searchWidth=constraints.maxWidth<320.0
+          ? constraints.maxWidth : 320.0;
+        final filterWidth=constraints.maxWidth<220.0
+          ? constraints.maxWidth : 220.0;
+        return Wrap(
+          spacing:10,runSpacing:10,
+          crossAxisAlignment:WrapCrossAlignment.center,
+          children:[
+            SizedBox(width:searchWidth,child:TextField(
+              key:const Key('admissions-search'),
+              onChanged:(value)=>setState(()=>search=value),
               decoration:const InputDecoration(
-                isDense:true,labelText:'Status',border:OutlineInputBorder()),
-              items:const [
-                DropdownMenuItem(value:'all',child:Text('All')),
-                DropdownMenuItem(value:'pending',child:Text('Pending')),
-                DropdownMenuItem(value:'admitted',child:Text('Admitted')),
-                DropdownMenuItem(value:'rejected',child:Text('Rejected')),
-              ],
-              onChanged:(v)=>setState(()=>filter=v??'all'),
+                isDense:true,prefixIcon:Icon(Icons.search),
+                labelText:'Search student, grade or guardian',
+                border:OutlineInputBorder(),
+              ),
             )),
-        ],
-      ),
+            if(!widget.studentsOnly)SizedBox(width:filterWidth,
+              child:DropdownButtonFormField<String>(
+                key:const Key('admissions-filter'),
+                isExpanded:true,
+                initialValue:filter,
+                decoration:const InputDecoration(
+                  isDense:true,labelText:'Status',border:OutlineInputBorder()),
+                items:const [
+                  DropdownMenuItem(value:'all',child:Text('All')),
+                  DropdownMenuItem(value:'pending',child:Text('Pending')),
+                  DropdownMenuItem(value:'admitted',child:Text('Admitted')),
+                  DropdownMenuItem(value:'rejected',child:Text('Rejected')),
+                ],
+                onChanged:(v)=>setState(()=>filter=v??'all'),
+              ),
+            ),
+          ],
+        );
+      }),
       const SizedBox(height:15),
       if(visible.isEmpty)
         Card(child:Padding(
