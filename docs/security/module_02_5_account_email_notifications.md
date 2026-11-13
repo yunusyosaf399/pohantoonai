@@ -4,7 +4,7 @@ Status as of 2026-11-13: **DB schema deployed and Edge Function `account-auth-em
 
 ## Approved behavior embodied in code
 
-- Sender: `PohantoonAI Security <no_reply@pohantoonai.com>`.
+- Sender: `PohantoonAI Security <no-reply@pohantoonai.com>`.
 - First **verified** account session after registration (new accounts created *after* DB migration activation): one welcome email. This supports Google OAuth and verified email/OTP accounts.
 - Subsequent **new Auth sessions**: a sign-in activity alert with UTC time from `auth.sessions.created_at`, parsed device from `auth.sessions.user_agent`, and best-effort approximate location derived from `auth.sessions.ip`.
 - The app invokes notification delivery after MFA verification (or after Supabase confirms MFA is not required). Recovery-only sessions are excluded. New sign-in notification delivery **never** blocks login, workspace restoration, or session persistence.
@@ -30,7 +30,7 @@ The Edge Function verifies the caller's bearer token with Supabase Auth first, t
 4. The ledger migration and MFA-assurance patch have **already been applied** to Supabase project `umlzqlbakfwzgadafhyy`. The complete reproducible schema is retained in `supabase/schema/16_account_auth_email_notifications.sql`. Do **not** reapply without checking migration history.
 5. `supabase/functions/account-auth-email/index.ts` is **already deployed** as `account-auth-email` with **verify_jwt=true**. `SUPABASE_URL`, `SUPABASE_ANON_KEY` (or publishable key), and `SUPABASE_SERVICE_ROLE_KEY` are Supabase runtime secrets; do not expose the service key to the app.
 6. Review and merge the Flutter change, then publish the app to invoke the function after the MFA gate.
-7. Separately configure [Supabase Auth custom SMTP](https://supabase.com/dashboard/project/umlzqlbakfwzgadafhyy/auth/smtp) using Resend SMTP and sender `no_reply@pohantoonai.com`. This controls Supabase's own OTP, confirmation and password-recovery messages; the Edge Function only handles welcome and sign-in alerts.
+7. Separately configure [Supabase Auth custom SMTP](https://supabase.com/dashboard/project/umlzqlbakfwzgadafhyy/auth/smtp) using Resend SMTP and sender `no-reply@pohantoonai.com`. This controls Supabase's own OTP, confirmation and password-recovery messages; the Edge Function only handles welcome and sign-in alerts.
 8. If the sender is not properly configured, the function returns `503 email_provider_not_configured`; the app still signs in successfully.
 
 ### Security advisors
