@@ -105,12 +105,12 @@ function emailContent(item: Reservation, location: string) {
       </div>
     </section>
     <footer style="padding:18px 30px;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px;line-height:1.5">
-      PohantoonAI account notification · Sent automatically from no_reply@pohantoonai.com.
+      PohantoonAI account notification · Sent automatically from no-reply@pohantoonai.com.
       Never share your password or verification code. This email contains no sign-in links.
     </footer>
   </main>
 </body></html>`;
-  const text = `${title}\n\n${intro}\n\nDate & time: ${time}\nDevice: ${device}\nApproximate location: ${location}\n\nWas this not you?\n${safety}\n\nPohantoonAI security · no_reply@pohantoonai.com`;
+  const text = `${title}\n\n${intro}\n\nDate & time: ${time}\nDevice: ${device}\nApproximate location: ${location}\n\nWas this not you?\n${safety}\n\nPohantoonAI security · no-reply@pohantoonai.com`;
   return { subject, html, text };
 }
 
@@ -184,7 +184,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
       "Idempotency-Key": `pohantoonai/account-auth/${item.notification_id}`,
     },
     body: JSON.stringify({
-      from: "PohantoonAI Security <no_reply@pohantoonai.com>",
+      from: "PohantoonAI Security <no-reply@pohantoonai.com>",
       to: [item.recipient_email],
       ...message,
     }),
