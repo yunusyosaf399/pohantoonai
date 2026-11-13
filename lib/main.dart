@@ -157,6 +157,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     if(!mounted||!_signedIn||_recoveringPassword)return;
     final repo=_mfa;
     if(repo==null) {
+      _notifyAuthEmail();
       _loadAccountPreferences();
       _restoreWorkspace();
       return;
@@ -193,6 +194,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           _checkingMfa=false;
           _mfaRequired=false;
         });
+        // Only after the MFA gate passes. The server deduplicates by the
+        // newly issued Supabase Auth session ID; persistent app restarts and
+        // token refreshes do not produce additional security emails.
+        _notifyAuthEmail();
         _loadAccountPreferences();
         _restoreWorkspace();
       }
@@ -207,6 +212,24 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           _dashboardTestPreview=false;
         });
       }
+    }
+  }
+
+  // Security notifications must never block a valid sign-in or expose a
+  // secret in logs. The function verifies JWT and queries auth.sessions itself.
+  // This is a no-op with injected auth gateways used by Flutter widget tests.
+  void _notifyAuthEmail() {
+    if (!mounted || !_signedIn || _recoveringPassword ||
+        widget.authGateway != null) return;
+    unawaited(_notifyAuthEmailBestEffort());
+  }
+
+  Future<void> _notifyAuthEmailBestEffort() async {
+    try {
+      await Supabase.instance.client.functions.invoke('account-auth-email');
+    } catch (_) {
+      // Email delivery is independent of authentication and the MFA gate.
+      debugPrint('Could not deliver account notification email.');
     }
   }
 
