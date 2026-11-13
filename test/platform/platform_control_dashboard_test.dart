@@ -48,7 +48,9 @@ class _FakeActivation implements SchoolActivationRepository {
   @override Future<String> operatorRole() async=>'authorized';
   @override Future<SchoolActivationStatus?> ownRequest() async=>null;
   @override Future<String> submitRequest() async=>'unused';
-  @override Future<List<SchoolActivationReview>> operatorQueue() async=>requests;
+  @override Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  }) async=>requests.skip(offset).take(limit).toList();
   @override
   Future<String> approve({
     required String requestId,required String activationBasis,
