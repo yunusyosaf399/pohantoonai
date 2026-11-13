@@ -61,7 +61,9 @@ abstract class SchoolActivationRepository {
   Future<String> operatorRole();
   Future<SchoolActivationStatus?> ownRequest();
   Future<String> submitRequest();
-  Future<List<SchoolActivationReview>> operatorQueue();
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  });
   Future<String> approve({
     required String requestId,
     required String activationBasis,
@@ -98,11 +100,13 @@ class SupabaseSchoolActivationRepository implements SchoolActivationRepository {
   }
 
   @override
-  Future<List<SchoolActivationReview>> operatorQueue() async {
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  }) async {
     // Unlike the older queue, this includes legacy submissions without a
     // verified owner snapshot. Their activationReady flag stays false.
     final response=await client.rpc('platform_control_review_queue',params:{
-      'p_limit':100,'p_offset':0,
+      'p_limit':limit,'p_offset':offset,
     });
     return (response as List).map((value)=>
       SchoolActivationReview.fromJson(
