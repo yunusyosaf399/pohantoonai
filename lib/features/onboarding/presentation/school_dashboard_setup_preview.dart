@@ -2,6 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../admissions/data/school_admissions_repository.dart';
+import '../../admissions/presentation/school_admissions_screen.dart';
 
 import '../../../core/settings/appearance_settings_button.dart';
 import '../../auth/presentation/school_campus_illustration.dart';
@@ -158,6 +162,32 @@ class _SchoolDashboardSetupPreviewState
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(title + ' is not available in demo preview. '
         'It will open after school provisioning and permissions are implemented.')));
+  }
+
+  // The surrounding Step 6 dashboard is still DEMO. This route is real
+  // and remains locked until a school is provisioned with active membership.
+  void _openAdmissions({bool studentsOnly=false}) {
+    try {
+      final client=Supabase.instance.client;
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder:(context)=>SchoolAdmissionsScreen(
+          repository:SupabaseSchoolAdmissionsRepository(client),
+          studentsOnly:studentsOnly,
+        ),
+      ));
+    } catch (_) {
+      _unavailable('Admissions');
+    }
+  }
+
+  void _navigate(String title) {
+    if(title=='Admissions'){
+      _openAdmissions();
+    }else if(title=='Students'){
+      _openAdmissions(studentsOnly:true);
+    }else if(title!='Dashboard'){
+      _unavailable(title);
+    }
   }
 
   Future<void> _editProfile(int tab) async {
@@ -373,7 +403,7 @@ class _SchoolDashboardSetupPreviewState
               title:Text(item.$1),
               onTap:(){
                 Navigator.pop(ctx);
-                if(item.$1!='Dashboard')_unavailable(item.$1);
+                _navigate(item.$1);
               }),
         ],
       )));
@@ -447,7 +477,7 @@ class _SchoolDashboardSetupPreviewState
                   contentPadding:EdgeInsets.symmetric(
                     horizontal:compact?16:11),
                   onTap:() {
-                    if (item.$1 != 'Dashboard') _unavailable(item.$1);
+                    _navigate(item.$1);
                   },
                 )),
             ),
@@ -743,7 +773,10 @@ class _SchoolDashboardSetupPreviewState
               return InkWell(
                 key:Key('dashboard-quick-' + action.$1),
                 borderRadius:BorderRadius.circular(11),
-                onTap:()=>_unavailable(action.$2),
+                onTap:()=>action.$1=='new_admission' ||
+                   action.$1=='add_student'
+                   ? _openAdmissions()
+                   : _unavailable(action.$2),
                 child:Container(
                   decoration:BoxDecoration(
                     color:colors.surfaceContainerLowest,
@@ -977,7 +1010,7 @@ class _SchoolDashboardSetupPreviewState
             if(i==3) {
               _openNavSheet();
             } else if(i!=0) {
-              _unavailable(i==1 ? 'Students' : 'Admissions');
+              _openAdmissions(studentsOnly:i==1);
             }
           },
           destinations:const [
