@@ -51,6 +51,11 @@ class _OperatorRepository implements SchoolActivationRepository {
   Future<void> reject({
     required String requestId,required String reason,
   }) async=>throw StateError('Not a live test');
+  @override
+  Future<void> requestInformation({
+    required String requestId,required String reason,
+  }) async {}
+
 }
 
 void main(){
