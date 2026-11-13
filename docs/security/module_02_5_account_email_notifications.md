@@ -1,6 +1,6 @@
 # Module 02.5 — Account welcome emails and new sign-in alerts
 
-Status: **implementation on feature branch; delivery needs verified pohantoonai.com + Resend configuration.** No production delivery claim without an inbox test.
+Status as of 2026-11-13: **DB schema deployed and Edge Function `account-auth-email` ACTIVE with `verify_jwt=true`; Flutter code remains on a review branch.** Delivery still needs verified `pohantoonai.com`, `RESEND_API_KEY`, and a real inbox test. Two server migrations applied: `account_auth_email_notification_ledger` and `account_auth_email_require_mfa_assurance`. The read-only SQL permissions smoke test passed.
 
 ## Approved behavior embodied in code
 
@@ -20,18 +20,22 @@ Status: **implementation on feature branch; delivery needs verified pohantoonai.
 
 `public.reserve_account_auth_email(user_id, session_id)`: private-to-service-role SECURITY DEFINER RPC, checks that the session belongs to the user, is recent, and the account email is verified. Neither this RPC nor the tables are accessible to `anon` or `authenticated`.
 
-The Edge Function verifies the caller's bearer token with Supabase Auth first, then extracts the cryptographically protected `sub`/`session_id` claims. Only these verified values are passed to the privileged RPC. There is **no email sender endpoint accepting an arbitrary recipient**.
+The Edge Function verifies the caller's bearer token with Supabase Auth first, then extracts the cryptographically protected `sub`/`session_id` claims. The SQL function also checks `auth.sessions.aal='aal2'` if the user has a verified MFA factor, preventing a direct caller from bypassing the Flutter-side MFA notification gate. Only these verified values are passed to the privileged RPC. There is **no email sender endpoint accepting an arbitrary recipient**.
 
 ### Setup — required before enabling delivery
 
 1. Verify `pohantoonai.com` at [Resend Domains](https://resend.com/domains) with the DNS records Resend supplies. Configure SPF, DKIM and DMARC; do not send until the domain is verified. Prefer a real monitored support contact elsewhere for security incidents.
 2. Create a sending-only Resend API key. Store the **secret in Supabase Edge Function secrets** as `RESEND_API_KEY`, not in Flutter, GitHub or chat.
 3. **Optional**: if approximate city/region/country is required, configure an IPinfo account and add `IPINFO_TOKEN` as a Supabase secret. This sends the sign-in session IP to IPinfo for lookup, so document that processing in privacy information. Otherwise the location field intentionally says `Location unavailable`. Geo-IP can be wrong when using VPNs/mobile networks.
-4. Apply `supabase/schema/16_account_auth_email_notifications.sql` once to the single PohantoonAI project through a reviewed migration.
-5. Deploy `supabase/functions/account-auth-email/index.ts` as `account-auth-email` with **verify_jwt=true**. `SUPABASE_URL`, `SUPABASE_ANON_KEY` (or publishable key), and `SUPABASE_SERVICE_ROLE_KEY` are Supabase runtime secrets; do not expose the service key to the app.
-6. Publish the Flutter change to invoke the function after the MFA gate.
+4. The ledger migration and MFA-assurance patch have **already been applied** to Supabase project `umlzqlbakfwzgadafhyy`. The complete reproducible schema is retained in `supabase/schema/16_account_auth_email_notifications.sql`. Do **not** reapply without checking migration history.
+5. `supabase/functions/account-auth-email/index.ts` is **already deployed** as `account-auth-email` with **verify_jwt=true**. `SUPABASE_URL`, `SUPABASE_ANON_KEY` (or publishable key), and `SUPABASE_SERVICE_ROLE_KEY` are Supabase runtime secrets; do not expose the service key to the app.
+6. Review and merge the Flutter change, then publish the app to invoke the function after the MFA gate.
 7. Separately configure [Supabase Auth custom SMTP](https://supabase.com/dashboard/project/umlzqlbakfwzgadafhyy/auth/smtp) using Resend SMTP and sender `no_reply@pohantoonai.com`. This controls Supabase's own OTP, confirmation and password-recovery messages; the Edge Function only handles welcome and sign-in alerts.
 8. If the sender is not properly configured, the function returns `503 email_provider_not_configured`; the app still signs in successfully.
+
+### Security advisors
+
+The post-deployment security advisor lists these two server-only tables as `RLS Enabled No Policy` (INFO). This is **intentional**: they are service-only, and access-grant checks passed. It also reports that Supabase Auth **Leaked Password Protection** is disabled (WARN); the project owner should enable this separately from the email notifications.
 
 ### Important limitation — failed sign-in alerts
 
