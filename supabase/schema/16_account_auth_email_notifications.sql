@@ -73,6 +73,16 @@ BEGIN
       AND (email_confirmed_at IS NOT NULL OR confirmed_at IS NOT NULL);
   IF NOT FOUND THEN RETURN; END IF;
 
+  -- Enrolled MFA must be completed at AAL2, including for direct
+  -- invocations that bypass the official Flutter UI.
+  IF (v_session.aal IS NULL OR v_session.aal::text <> 'aal2')
+    AND EXISTS (
+      SELECT 1 FROM auth.mfa_factors
+      WHERE user_id=p_user_id AND status::text='verified'
+    ) THEN
+    RETURN;
+  END IF;
+
   SELECT activated_at INTO v_activation FROM public.account_auth_email_config
     WHERE singleton = true;
   IF v_activation IS NULL THEN RETURN; END IF;
