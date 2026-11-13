@@ -42,6 +42,23 @@ class _LiveSchoolDashboardScreenState extends State<LiveSchoolDashboardScreen> {
     _reload();
   }
 
+  @override
+  void didUpdateWidget(covariant LiveSchoolDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Revoked membership or a changed school selection invalidates all
+    // previously rendered PII immediately, before the next network query.
+    if(!widget.schools.any((s)=>s.id==schoolId)) {
+      schoolId=widget.schools.first.id;
+      summary=AdmissionsSummary.empty;
+      recent=const [];
+      busy=true;
+      ++requestId;
+      WidgetsBinding.instance.addPostFrameCallback((_){
+        if(mounted)_reload();
+      });
+    }
+  }
+
   Future<void> _reload() async {
     final seq=++requestId;
     setState((){
