@@ -199,6 +199,12 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         return;
       }
       _loadAccountPreferences();
+      if(_workspaces==null) {
+        // Isolated widget tests may supply an admissions fake without
+        // development-workspace storage. Do not leave an endless spinner.
+        setState(()=>_restoringWorkspace=false);
+        return;
+      }
       _restoreWorkspace();
     }catch(_){
       if(!mounted||serial!=_authGeneration)return;
