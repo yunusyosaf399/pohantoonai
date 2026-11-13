@@ -47,6 +47,11 @@ class FakeActivation implements SchoolActivationRepository {
     return 'school-id-created-by-backend';
   }
   @override
+  Future<void> requestInformation({
+    required String requestId,required String reason,
+  }) async {}
+
+  @override
   Future<void> reject({required String requestId,required String reason})
     async {
     rejectedId=requestId;
