@@ -36,6 +36,24 @@ class SchoolAdmission {
     );
 }
 
+class AdmissionsSummary {
+  const AdmissionsSummary({
+    required this.total,required this.pending,
+    required this.admitted,required this.rejected,
+  });
+  final int total,pending,admitted,rejected;
+  static const empty=AdmissionsSummary(
+    total:0,pending:0,admitted:0,rejected:0);
+
+  factory AdmissionsSummary.fromJson(Map<String,dynamic> row) =>
+    AdmissionsSummary(
+      total:(row['total_applications'] as num).toInt(),
+      pending:(row['pending_applications'] as num).toInt(),
+      admitted:(row['admitted_students'] as num).toInt(),
+      rejected:(row['rejected_applications'] as num).toInt(),
+    );
+}
+
 class NewSchoolAdmission {
   const NewSchoolAdmission({
     required this.firstName, required this.lastName,
@@ -53,6 +71,7 @@ class NewSchoolAdmission {
 abstract class SchoolAdmissionsRepository {
   Future<List<AdmissionsSchool>> availableSchools();
   Future<List<SchoolAdmission>> load(String schoolId);
+  Future<AdmissionsSummary> summary(String schoolId);
   Future<void> create(String schoolId, NewSchoolAdmission admission);
   Future<void> decide(String schoolId, String admissionId, String outcome);
 }
@@ -95,6 +114,19 @@ class SupabaseSchoolAdmissionsRepository implements SchoolAdmissionsRepository {
       .limit(200);
     return rows.map((row)=>SchoolAdmission.fromJson(row))
       .toList(growable:false);
+  }
+
+  @override
+  Future<AdmissionsSummary> summary(String schoolId) async {
+    // security_invoker=true on the view means underlying RLS still checks
+    // membership, school lifecycle, and enrolled AAL2 for every count.
+    final row=await client.from('school_admission_counts')
+      .select('total_applications,pending_applications,'
+        'admitted_students,rejected_applications')
+      .eq('school_id',schoolId)
+      .maybeSingle();
+    return row==null?AdmissionsSummary.empty:
+      AdmissionsSummary.fromJson(row);
   }
 
   @override
