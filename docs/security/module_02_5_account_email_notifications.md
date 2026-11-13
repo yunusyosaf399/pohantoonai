@@ -22,6 +22,14 @@ Status as of 2026-11-13: **DB schema deployed and Edge Function `account-auth-em
 
 The Edge Function verifies the caller's bearer token with Supabase Auth first, then extracts the cryptographically protected `sub`/`session_id` claims. The SQL function also checks `auth.sessions.aal='aal2'` if the user has a verified MFA factor, preventing a direct caller from bypassing the Flutter-side MFA notification gate. Only these verified values are passed to the privileged RPC. There is **no email sender endpoint accepting an arbitrary recipient**.
 
+### Password-changed alerts — managed by Supabase Auth (not this Edge Function)
+
+**Recommended and required for the product:** enable the native **Password changed** security notification under the hosted [Supabase Auth Email Templates](https://supabase.com/dashboard/project/umlzqlbakfwzgadafhyy/auth/templates) page, Security Notifications section. It is disabled unless explicitly enabled at project level. The project's Resend-backed SMTP then sends the confirmation message after Auth actually changes the password, whether the change originated from the OTP recovery flow, owner settings, or another Auth client. A *request* for a reset OTP does not count as a completed password change.
+
+Do **not** implement a parallel password-change email in Flutter or the account-auth-email function: that would create duplicates and miss changes made outside the app. Supabase native password-changed template can be branded using the approved sender `no-reply@pohantoonai.com`. The Supabase template does not natively contain a client's precise IP/location; reserve best-effort device/time/location for fresh-session alerts.
+
+Verification: after enabling and saving the template, use a new OTP, successfully save a *new password*, and check Resend Emails for **a second separate email** with subject like 'Your PohantoonAI password was changed'. Verify no alert is issued from requesting/entering an invalid OTP alone.
+
 ### Setup — required before enabling delivery
 
 1. Verify `pohantoonai.com` at [Resend Domains](https://resend.com/domains) with the DNS records Resend supplies. Configure SPF, DKIM and DMARC; do not send until the domain is verified. Prefer a real monitored support contact elsewhere for security incidents.
