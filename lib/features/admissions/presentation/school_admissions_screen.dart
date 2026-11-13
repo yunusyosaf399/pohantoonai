@@ -22,6 +22,7 @@ class SchoolAdmissionsScreen extends StatefulWidget {
 class _SchoolAdmissionsScreenState extends State<SchoolAdmissionsScreen> {
   List<AdmissionsSchool> schools=const [];
   List<SchoolAdmission> admissions=const [];
+  AdmissionsSummary summary=AdmissionsSummary.empty;
   String? schoolId;
   String? error;
   String filter='all';
@@ -42,6 +43,7 @@ class _SchoolAdmissionsScreenState extends State<SchoolAdmissionsScreen> {
     setState((){
       loading=true;error=null;
       admissions=const [];
+      summary=AdmissionsSummary.empty;
     });
     try {
       final available=await widget.repository.availableSchools();
@@ -68,12 +70,14 @@ class _SchoolAdmissionsScreenState extends State<SchoolAdmissionsScreen> {
       loading=true;error=null;
       schoolId=id;
       admissions=const [];
+      summary=AdmissionsSummary.empty;
     });
     try {
       final items=await widget.repository.load(id);
+      final totals=await widget.repository.summary(id);
       if(mounted&&request==revision){
         setState((){
-          admissions=items;loading=false;
+          admissions=items;summary=totals;loading=false;
         });
       }
     } catch (_) {
@@ -230,9 +234,9 @@ class _SchoolAdmissionsScreenState extends State<SchoolAdmissionsScreen> {
     ));
     final selected=schools.firstWhere((s)=>s.id==schoolId,
       orElse:()=>schools.first);
-    final pending=admissions.where((a)=>a.status=='pending').length;
-    final admitted=admissions.where((a)=>a.status=='admitted').length;
-    final rejected=admissions.where((a)=>a.status=='rejected').length;
+    final pending=summary.pending;
+    final admitted=summary.admitted;
+    final rejected=summary.rejected;
     return ListView(children:[
       Text(widget.studentsOnly?'Admitted students':'Student admissions',
         style:const TextStyle(fontSize:25,fontWeight:FontWeight.w800)),
