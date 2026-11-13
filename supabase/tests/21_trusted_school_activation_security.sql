@@ -103,6 +103,12 @@ BEGIN
     true) INTO v_school;
   IF v_school IS NULL THEN RAISE EXCEPTION 'No school provisioned'; END IF;
 
+  -- Platform admins have operator permission, not school membership:
+  -- school-scoped RLS must still hide this tenant from the reviewer.
+  SELECT count(*) INTO v_count FROM public.schools WHERE id=v_school;
+  IF v_count<>0 THEN RAISE EXCEPTION 'Reviewer can read a school without membership'; END IF;
+
+  EXECUTE 'RESET ROLE';
   SELECT count(*) INTO v_count FROM public.schools
     WHERE id=v_school AND lifecycle_status='active';
   IF v_count<>1 THEN RAISE EXCEPTION 'Provisioning missed real schools row'; END IF;
@@ -110,6 +116,7 @@ BEGIN
     WHERE school_id=v_school AND user_id=v_applicant
       AND role='school_owner' AND membership_status='active';
   IF v_count<>1 THEN RAISE EXCEPTION 'Owner membership missing'; END IF;
+  EXECUTE 'SET LOCAL ROLE authenticated';
 
   SELECT public.approve_school_activation(
     v_request,'approved_pilot',
@@ -119,6 +126,7 @@ BEGIN
     RAISE EXCEPTION 'Retry did not return same school';
   END IF;
 
+  EXECUTE 'RESET ROLE';
   SELECT count(*) INTO v_count FROM platform.school_onboarding_reviews
     WHERE onboarding_request_id=v_request AND decision='approve';
   IF v_count<>1 THEN RAISE EXCEPTION 'Duplicate review audit on retry'; END IF;
