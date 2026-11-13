@@ -26,6 +26,8 @@ import 'features/onboarding/data/onboarding_payment_preferences_repository.dart'
 import 'features/onboarding/data/school_logo_repository.dart';
 import 'features/dashboard/data/demo_dashboard_preferences_repository.dart';
 import 'features/dashboard/data/dashboard_owner_profile_repository.dart';
+import 'features/dashboard/presentation/live_school_dashboard_screen.dart';
+import 'features/admissions/data/school_admissions_repository.dart';
 import 'features/onboarding/data/development_workspace_repository.dart';
 import 'features/onboarding/presentation/school_setup_screen.dart';
 import 'features/onboarding/presentation/school_review_preview.dart';
@@ -72,6 +74,7 @@ class PohantoonAiApp extends StatefulWidget {
     this.demoDashboardPreferencesRepository,
     this.developmentWorkspaceRepository,
     this.ownerProfileRepository,
+    this.admissionsRepository,
     this.showOrganizationPreview = false,
     this.initialRecoveryRequested = false,
     this.authGateway,
@@ -97,6 +100,8 @@ class PohantoonAiApp extends StatefulWidget {
   final DemoDashboardPreferencesRepository? demoDashboardPreferencesRepository;
   final DevelopmentWorkspaceRepository? developmentWorkspaceRepository;
   final DashboardOwnerProfileRepository? ownerProfileRepository;
+  /// Optional secure admissions backend for tests; live uses RLS Supabase.
+  final SchoolAdmissionsRepository? admissionsRepository;
   final AccountAuthGateway? authGateway;
   /// Testable MFA factor provider; real sessions use Supabase Auth.
   final AccountMfaRepository? mfaRepository;
@@ -143,6 +148,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   String? _editSection;
   bool _paymentStep = false;
   bool _dashboardTestPreview = false;
+  List<AdmissionsSchool> _liveSchools=const [];
   bool _restoringWorkspace=false;
   String? _workspaceError;
   int _authGeneration=0;
@@ -152,6 +158,60 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       (widget.authGateway==null
         ? SupabaseAccountMfaRepository(Supabase.instance.client)
         : null);
+
+  SchoolAdmissionsRepository? get _admissions =>
+    widget.admissionsRepository ??
+      (widget.authGateway==null
+        ? SupabaseSchoolAdmissionsRepository(Supabase.instance.client)
+        : null);
+
+  // After passing the MFA gate, first check ACTIVE database membership.
+  // Never use school_setup_drafts or development preview as authorization.
+  Future<void> _resolveRealSchoolOrPreview() async {
+    if(!mounted||!_signedIn||_recoveringPassword)return;
+    final repo=_admissions;
+    if(repo==null) {
+      await _resolveRealSchoolOrPreview();
+      return;
+    }
+    final serial=++_authGeneration;
+    setState((){
+      _restoringWorkspace=true;
+      _workspaceError=null;
+      _liveSchools=const [];
+    });
+    try {
+      final available=await repo.availableSchools();
+      if(!mounted||serial!=_authGeneration||!_signedIn||
+          _recoveringPassword)return;
+      if(available.isNotEmpty) {
+        // Authenticated school administration takes priority over onboarding.
+        setState((){
+          _liveSchools=available;
+          _restoringWorkspace=false;
+          _schoolSetupPlan=null;
+          _reviewDraft=null;
+          _dashboardTestPreview=false;
+          _paymentStep=false;
+        });
+        _loadAccountPreferences();
+        return;
+      }
+      _loadAccountPreferences();
+      _restoreWorkspace();
+    }catch(_){
+      if(!mounted||serial!=_authGeneration)return;
+      // Fail closed when school access cannot be verified; never treat
+      // network errors as an invitation to bypass provisioning.
+      setState((){
+        _liveSchools=const [];
+        _restoringWorkspace=false;
+        _workspaceError='Could not verify your authorized schools. '
+          'Check the connection and retry.';
+      });
+      _showWorkspaceMessage();
+    }
+  }
 
   Future<void> _checkMfaAndRestore()async{
     if(!mounted||!_signedIn||_recoveringPassword)return;
@@ -170,6 +230,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _mfaRequired=false;
       ++_authGeneration;
       _restoringWorkspace=false;
+      _liveSchools=const [];
       _schoolSetupPlan=null;
       _reviewDraft=null;
       _dashboardTestPreview=false;
@@ -193,8 +254,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
           _checkingMfa=false;
           _mfaRequired=false;
         });
-        _loadAccountPreferences();
-        _restoreWorkspace();
+        await _resolveRealSchoolOrPreview();
       }
     }catch(_){
       if(mounted&&serial==_mfaCheckGeneration&&!_recoveringPassword){
@@ -340,6 +400,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _editSection=null;
       _paymentStep=false;
       _dashboardTestPreview=false;
+      _liveSchools=const [];
     });
   }
 
@@ -409,6 +470,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _checkingMfa=false;
             _mfaRequired=false;
             _restoringWorkspace=false;
+            _liveSchools=const [];
             _schoolSetupPlan=null;
             _reviewDraft=null;
             _editSection=null;
@@ -483,6 +545,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _editSection = null;
       _paymentStep = false;
       _dashboardTestPreview = false;
+      _liveSchools=const [];
     });
   }
 
@@ -592,6 +655,15 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                             ),
                           ),
                         )))
+                : _liveSchools.isNotEmpty && _admissions!=null
+                    ? LiveSchoolDashboardScreen(
+                        key:ValueKey('live-school-${_activeAuthUserId??''}'),
+                        schools:_liveSchools,
+                        repository:_admissions!,
+                        themeMode:_theme.value,
+                        onThemeChanged:_changeTheme,
+                        onSignOut:()=>_signOut(),
+                      )
                 : _schoolSetupPlan != null
                     ? _dashboardTestPreview
                         ? SchoolDashboardSetupPreview(
