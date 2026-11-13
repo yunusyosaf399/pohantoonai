@@ -27,6 +27,9 @@ class _SchoolProvisioningOperatorScreenState
   bool saving=false;
   String? error;
   String filter='pending';
+  int reviewOffset=0;
+  int queueSequence=0;
+  static const reviewPageSize=50;
   List<SchoolActivationReview> requests=const [];
 
   @override
@@ -37,22 +40,32 @@ class _SchoolProvisioningOperatorScreenState
 
   Future<void> _load() async {
     if(!mounted)return;
+    final sequence=++queueSequence;
     setState((){
       loading=true;error=null;requests=const [];
     });
     try {
-      final rows=await widget.repository.operatorQueue();
-      if(mounted)setState((){
+      final rows=await widget.repository.operatorQueue(
+        offset:reviewOffset,limit:reviewPageSize);
+      if(mounted&&sequence==queueSequence)setState((){
         requests=rows;
         loading=false;
       });
     }catch(_){
-      if(mounted)setState((){
+      if(mounted&&sequence==queueSequence)setState((){
         loading=false;
         error='Could not verify operator access or load school requests. '
           'Use an active platform owner/admin account with completed 2FA.';
       });
     }
+  }
+
+  void _changePage(int direction){
+    if(loading||saving)return;
+    setState((){
+      reviewOffset=(reviewOffset+direction*reviewPageSize).clamp(0,100000);
+    });
+    _load();
   }
 
   List<SchoolActivationReview> get visible => requests.where((r) =>
@@ -148,7 +161,7 @@ class _SchoolProvisioningOperatorScreenState
                 Expanded(child:Column(
                   crossAxisAlignment:CrossAxisAlignment.start,
                   children:[
-                    Text('$pending awaiting review',
+                    Text('$pending awaiting review (this page)',
                       style:const TextStyle(
                         fontWeight:FontWeight.w800,fontSize:18)),
                     const Text('Every approval is audited; no demo '
@@ -266,6 +279,22 @@ class _SchoolProvisioningOperatorScreenState
                   ),
                 ),
               ),
+            if(!loading&&error==null)Row(
+              mainAxisAlignment:MainAxisAlignment.end,
+              children:[
+                Text('Page ${reviewOffset~/reviewPageSize+1}'),
+                const SizedBox(width:8),
+                IconButton(
+                  tooltip:'Previous review page',
+                  onPressed:reviewOffset==0?null:()=>_changePage(-1),
+                  icon:const Icon(Icons.chevron_left)),
+                IconButton(
+                  tooltip:'Next review page',
+                  onPressed:requests.length<reviewPageSize
+                    ?null:()=>_changePage(1),
+                  icon:const Icon(Icons.chevron_right)),
+              ],
+            ),
           ],
         ),
       ))),
