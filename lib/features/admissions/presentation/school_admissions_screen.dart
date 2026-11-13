@@ -181,7 +181,7 @@ class _SchoolAdmissionsScreenState extends State<SchoolAdmissionsScreen> {
         ? FloatingActionButton.extended(
             key:const Key('admissions-new'),
             onPressed:saving?null:_addAdmission,
-            icon:const Icon(Icons.person_add_alt_1_outlined),
+            icon:const Icon(Icons.person_add_alt_outlined),
             label:const Text('New admission'))
         :null,
       body:SafeArea(
@@ -472,7 +472,44 @@ class _NewAdmissionFormState extends State<_NewAdmissionForm> {
                 validator:(value){
                   final text=(value??'').trim();
                   if(text.isEmpty)return null;
-                  if(!RegExp(r'^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$')
+                  if(!RegExp(r'^[^ @]+@[^ @]+[.][^ @]+)
+                      .hasMatch(text))return 'Enter a valid email.';
+                  return null;
+                },
+              )),
+            TextFormField(
+              controller:notes,maxLength:1000,maxLines:3,
+              decoration:const InputDecoration(
+                labelText:'Notes (optional)',
+                border:OutlineInputBorder()),
+            ),
+            const SizedBox(height:17),
+            FilledButton.icon(
+              key:const Key('admissions-save'),
+              icon:const Icon(Icons.save_outlined),
+              onPressed:_submit,
+              label:const Text('Save pending admission'),
+            ),
+          ],
+        )),
+      ),
+    ),
+  );
+
+  Widget _field(TextEditingController controller,String label,
+      {required int maxLength,int min=2}) =>
+    Padding(
+      padding:const EdgeInsets.only(bottom:13),
+      child:TextFormField(
+        controller:controller,
+        maxLength:maxLength,
+        decoration:InputDecoration(labelText:label,
+          border:const OutlineInputBorder(),counterText:''),
+        validator:(value)=>_required(value,min:min),
+      ),
+    );
+}
+)
                       .hasMatch(text))return 'Enter a valid email.';
                   return null;
                 },
