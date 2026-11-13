@@ -68,8 +68,8 @@ SchoolAdmission applicant({
 );
 
 Future<void> mount(WidgetTester tester,FakeAdmissionsRepository repository,
-    {bool studentsOnly=false}) async {
-  tester.view.physicalSize=const Size(950,900);
+    {bool studentsOnly=false,double width=950}) async {
+  tester.view.physicalSize=Size(width,900);
   tester.view.devicePixelRatio=1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -121,6 +121,18 @@ void main(){
     expect(find.byKey(const Key('admissions-new')),findsNothing);
     expect(find.text('ADMITTED'),findsOneWidget);
     expect(find.text('PENDING'),findsNothing);
+  });
+
+  testWidgets('admissions status filter fits a narrow mobile viewport',
+      (tester)async{
+    final repo=FakeAdmissionsRepository()
+      ..allowed=[schoolOne]
+      ..data['school-one']=[applicant(schoolId:'school-one')];
+    await mount(tester,repo,width:360);
+    expect(find.byKey(const Key('admissions-filter')),findsOneWidget);
+    expect(find.text('Student One'),findsOneWidget);
+    // RenderFlex overflows are reported as Flutter test exceptions.
+    expect(tester.takeException(),isNull);
   });
 
   testWidgets('new admission saves with verified school scope', (tester)async {
