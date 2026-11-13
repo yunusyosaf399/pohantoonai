@@ -28,6 +28,8 @@ import 'features/dashboard/data/demo_dashboard_preferences_repository.dart';
 import 'features/dashboard/data/dashboard_owner_profile_repository.dart';
 import 'features/dashboard/presentation/live_school_dashboard_screen.dart';
 import 'features/admissions/data/school_admissions_repository.dart';
+import 'features/provisioning/data/school_activation_repository.dart';
+import 'features/provisioning/presentation/school_provisioning_operator_screen.dart';
 import 'features/onboarding/data/development_workspace_repository.dart';
 import 'features/onboarding/presentation/school_setup_screen.dart';
 import 'features/onboarding/presentation/school_review_preview.dart';
@@ -75,6 +77,7 @@ class PohantoonAiApp extends StatefulWidget {
     this.developmentWorkspaceRepository,
     this.ownerProfileRepository,
     this.admissionsRepository,
+    this.activationRepository,
     this.showOrganizationPreview = false,
     this.initialRecoveryRequested = false,
     this.authGateway,
@@ -102,6 +105,7 @@ class PohantoonAiApp extends StatefulWidget {
   final DashboardOwnerProfileRepository? ownerProfileRepository;
   /// Optional secure admissions backend for tests; live uses RLS Supabase.
   final SchoolAdmissionsRepository? admissionsRepository;
+  final SchoolActivationRepository? activationRepository;
   final AccountAuthGateway? authGateway;
   /// Testable MFA factor provider; real sessions use Supabase Auth.
   final AccountMfaRepository? mfaRepository;
@@ -149,6 +153,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
   bool _paymentStep = false;
   bool _dashboardTestPreview = false;
   List<AdmissionsSchool> _liveSchools=const [];
+  bool _platformOperator=false;
   bool _restoringWorkspace=false;
   String? _workspaceError;
   int _authGeneration=0;
@@ -165,12 +170,19 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         ? SupabaseSchoolAdmissionsRepository(Supabase.instance.client)
         : null);
 
+  SchoolActivationRepository? get _activation =>
+    widget.activationRepository ??
+      (widget.authGateway==null
+        ? SupabaseSchoolActivationRepository(Supabase.instance.client)
+        : null);
+
   // After passing the MFA gate, first check ACTIVE database membership.
   // Never use school_setup_drafts or development preview as authorization.
   Future<void> _resolveRealSchoolOrPreview() async {
     if(!mounted||!_signedIn||_recoveringPassword)return;
     final repo=_admissions;
-    if(repo==null) {
+    final provisioning=_activation;
+    if(repo==null&&provisioning==null) {
       _loadAccountPreferences();
       _restoreWorkspace();
       return;
@@ -180,9 +192,29 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _restoringWorkspace=true;
       _workspaceError=null;
       _liveSchools=const [];
+      _platformOperator=false;
     });
     try {
-      final available=await repo.availableSchools();
+      // Operator authorization comes from platform.organization_memberships
+      // and Supabase AAL2, never from editable account metadata.
+      final platformRole=provisioning==null
+        ? 'none' : await provisioning.operatorRole();
+      if(!mounted||serial!=_authGeneration||!_signedIn||
+          _recoveringPassword)return;
+      if(platformRole=='authorized') {
+        setState((){
+          _platformOperator=true;
+          _restoringWorkspace=false;
+          _schoolSetupPlan=null;
+          _reviewDraft=null;
+          _dashboardTestPreview=false;
+          _paymentStep=false;
+        });
+        _loadAccountPreferences();
+        return;
+      }
+      final available=repo==null
+        ? const <AdmissionsSchool>[] : await repo.availableSchools();
       if(!mounted||serial!=_authGeneration||!_signedIn||
           _recoveringPassword)return;
       if(available.isNotEmpty) {
@@ -237,6 +269,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       ++_authGeneration;
       _restoringWorkspace=false;
       _liveSchools=const [];
+      _platformOperator=false;
       _schoolSetupPlan=null;
       _reviewDraft=null;
       _dashboardTestPreview=false;
@@ -407,6 +440,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _paymentStep=false;
       _dashboardTestPreview=false;
       _liveSchools=const [];
+      _platformOperator=false;
     });
   }
 
@@ -477,6 +511,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
             _mfaRequired=false;
             _restoringWorkspace=false;
             _liveSchools=const [];
+            _platformOperator=false;
             _schoolSetupPlan=null;
             _reviewDraft=null;
             _editSection=null;
@@ -552,6 +587,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
       _paymentStep = false;
       _dashboardTestPreview = false;
       _liveSchools=const [];
+      _platformOperator=false;
     });
   }
 
@@ -661,6 +697,12 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                             ),
                           ),
                         )))
+                : _platformOperator && _activation!=null
+                    ? SchoolProvisioningOperatorScreen(
+                        key:ValueKey('platform-operator-${_activeAuthUserId??''}'),
+                        repository:_activation!,
+                        onSignOut:()=>_signOut(),
+                      )
                 : _liveSchools.isNotEmpty && _admissions!=null
                     ? LiveSchoolDashboardScreen(
                         key:ValueKey('live-school-${_activeAuthUserId??''}'),
@@ -700,6 +742,10 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                             credentials: _auth is AccountEmailCredentials
                                 ? _auth as AccountEmailCredentials : null,
                             mfaRepository:_mfa,
+                            activationRepository:_activation,
+                            onActivationProvisioned:(){
+                              _checkMfaAndRestore();
+                            },
                             onDraftSaved: (saved) => setState(() {
                               _reviewDraft=saved;
                             }),
