@@ -32,6 +32,20 @@ jobs:
       # Existing style/deprecation lints are recorded but must not prevent
       # compilation and widget-test verification. Analyzer errors still fail CI.
       - name: Analyze Dart (errors blocking; existing lints reported)
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.log
       - name: Widget tests
-        run: flutter test
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee flutter-test.log
+      - name: Upload short-lived Flutter diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-diagnostics
+          path: |
+            analyze.log
+            flutter-test.log
+          if-no-files-found: ignore
+          retention-days: 1
