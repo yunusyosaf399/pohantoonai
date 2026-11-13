@@ -643,7 +643,9 @@ class _PlatformControlDashboardScreenState
         else for(final event in history)Card(
           child:ListTile(
             leading:Icon(event.decision=='approve'
-              ? Icons.check_circle_outline:Icons.cancel_outlined),
+              ? Icons.check_circle_outline
+              : event.decision=='request_information'
+                ? Icons.info_outline:Icons.cancel_outlined),
             title:Text('${event.schoolName} • ${event.decision}'),
             subtitle:Column(crossAxisAlignment:CrossAxisAlignment.start,
               children:[
