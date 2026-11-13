@@ -34,7 +34,8 @@ BEGIN
       'Admissions Security Test B','active') RETURNING id INTO school_b;
   INSERT INTO public.school_memberships(school_id,user_id,role,membership_status)
     VALUES (school_a,admin_a,'school_admin','active'),
-      (school_b,admin_b,'school_admin','active');
+      (school_b,admin_b,'school_admin','active'),
+      (school_a,admin_b,'teacher','active');
 
   PERFORM set_config('request.jwt.claims',
     json_build_object('sub',admin_a,'role','authenticated','aal','aal2')::text,true);
@@ -83,7 +84,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims',
     json_build_object('sub',admin_b,'role','authenticated','aal','aal2')::text,true);
   SELECT count(*) INTO seen FROM public.school_admissions WHERE id=admission_a;
-  IF seen<>0 THEN RAISE EXCEPTION 'Admin B sees school A student'; END IF;
+  IF seen<>0 THEN RAISE EXCEPTION 'Teacher B sees school A student'; END IF;
   SELECT count(*) INTO seen FROM public.school_admission_counts
     WHERE school_id=school_a;
   IF seen<>0 THEN RAISE EXCEPTION 'Aggregate leaked another school'; END IF;
