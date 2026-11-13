@@ -357,7 +357,9 @@ class _ReviewDialogState extends State<_ReviewDialog> {
               : widget.requestInfo
                 ? 'This request cannot be approved until a verified owner '
                   'submits a current confirmed application. Record what '
-                  'the applicant needs to provide or verify.'
+                  'the applicant needs to provide or verify. This step '
+                  'records an internal review action; it does not '
+                  'automatically email the applicant.'
                 : 'A rejection is recorded permanently for audit.'),
             const SizedBox(height:12),
             if(widget.approve)CheckboxListTile(
