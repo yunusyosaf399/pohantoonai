@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../admissions/data/school_admissions_repository.dart';
 import '../../admissions/presentation/school_admissions_screen.dart';
+import '../../provisioning/data/school_activation_repository.dart';
+import '../../provisioning/presentation/school_activation_request_card.dart';
 
 import '../../../core/settings/appearance_settings_button.dart';
 import '../../auth/presentation/school_campus_illustration.dart';
@@ -43,6 +45,8 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
     this.onSignOut,
     this.preferencesRepository,
     this.logoRepository,
+    this.activationRepository,
+    this.onActivationProvisioned,
   });
 
   final OnboardingPlanOffer plan;
@@ -59,6 +63,8 @@ class SchoolDashboardSetupPreview extends StatefulWidget {
   final VoidCallback? onSignOut;
   final DemoDashboardPreferencesRepository? preferencesRepository;
   final SchoolLogoRepository? logoRepository;
+  final SchoolActivationRepository? activationRepository;
+  final VoidCallback? onActivationProvisioned;
 
   @override
   State<SchoolDashboardSetupPreview> createState() =>
@@ -951,6 +957,13 @@ class _SchoolDashboardSetupPreviewState
             _toolbar(),
             const SizedBox(height:17),
             _demoWarning(),
+            if(widget.activationRepository!=null)...[
+              const SizedBox(height:12),
+              SchoolActivationRequestCard(
+                repository:widget.activationRepository!,
+                onRefreshSchoolAccess:widget.onActivationProvisioned,
+              ),
+            ],
             const SizedBox(height:17),
             _metrics(),
             const SizedBox(height:16),
