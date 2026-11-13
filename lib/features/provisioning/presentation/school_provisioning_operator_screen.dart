@@ -63,7 +63,7 @@ class _SchoolProvisioningOperatorScreenState
   void _changePage(int direction){
     if(loading||saving)return;
     setState((){
-      reviewOffset=(reviewOffset+direction*reviewPageSize).clamp(0,100000);
+      reviewOffset=(reviewOffset+direction*reviewPageSize).clamp(0,100000).toInt();
     });
     _load();
   }
