@@ -31,7 +31,9 @@ class FakeActivation implements SchoolActivationRepository {
     return own!.requestId;
   }
   @override
-  Future<List<SchoolActivationReview>> operatorQueue() async=>reviews;
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  }) async=>reviews;
   @override
   Future<String> approve({
     required String requestId,
