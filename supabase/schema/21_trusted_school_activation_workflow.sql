@@ -244,7 +244,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
 AS $fn$
 BEGIN
-  IF (SELECT auth.uid()) IS NULL OR (SELECT auth.jwt()->>'aal') <> 'aal2' THEN
+  IF (SELECT auth.uid()) IS NULL OR (SELECT auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN
     RAISE EXCEPTION 'Platform review requires two-factor authentication'
       USING ERRCODE='42501';
   END IF;
@@ -281,7 +281,7 @@ DECLARE
   v_school uuid;
   v_slug text;
 BEGIN
-  IF v_actor IS NULL OR (SELECT auth.jwt()->>'aal') <> 'aal2' THEN
+  IF v_actor IS NULL OR (SELECT auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN
     RAISE EXCEPTION 'Operator must complete two-factor authentication'
       USING ERRCODE='42501';
   END IF;
@@ -290,7 +290,7 @@ BEGIN
     RAISE EXCEPTION 'Record verified identity and detailed approval evidence'
       USING ERRCODE='23514';
   END IF;
-  IF p_basis NOT IN ('approved_pilot','verified_subscription') THEN
+  IF p_basis IS NULL OR p_basis NOT IN ('approved_pilot','verified_subscription') THEN
     RAISE EXCEPTION 'Unknown approval basis' USING ERRCODE='23514';
   END IF;
 
@@ -406,7 +406,7 @@ DECLARE
   v_actor uuid := (SELECT auth.uid());
   v_request platform.school_onboarding_requests%ROWTYPE;
 BEGIN
-  IF v_actor IS NULL OR (SELECT auth.jwt()->>'aal') <> 'aal2' THEN
+  IF v_actor IS NULL OR (SELECT auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN
     RAISE EXCEPTION 'Operator must complete two-factor authentication'
       USING ERRCODE='42501';
   END IF;
