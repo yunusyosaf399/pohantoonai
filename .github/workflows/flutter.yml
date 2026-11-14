@@ -20,6 +20,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Record CI startup
+        run: |
+          echo "Flutter CI startup; runner=$RUNNER_OS; ref=$GITHUB_REF; sha=$GITHUB_SHA" | tee ci-start.log
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Flutter stable
@@ -45,7 +48,8 @@ jobs:
         with:
           name: flutter-diagnostics
           path: |
+            ci-start.log
             analyze.log
             flutter-test.log
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 1
