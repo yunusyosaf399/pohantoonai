@@ -4,6 +4,7 @@ import 'package:pohantoonai/core/settings/theme_controller.dart';
 import 'package:pohantoonai/features/auth/data/account_auth_gateway.dart';
 import 'package:pohantoonai/features/auth/data/account_mfa_repository.dart';
 import 'package:pohantoonai/features/provisioning/data/school_activation_repository.dart';
+import 'package:pohantoonai/features/platform/data/platform_monitoring_repository.dart';
 import 'package:pohantoonai/main.dart';
 
 class _SignedInOperator implements AccountAuthGateway,AccountSessionIdentity {
@@ -60,6 +61,18 @@ class _OperatorRepository implements SchoolActivationRepository {
 
 }
 
+class _EmptyPlatformMonitoring implements PlatformMonitoringRepository {
+  @override Future<PlatformSummary> overview() async=>PlatformSummary.empty;
+  @override Future<List<PlatformTrend>> trends() async=>const [];
+  @override Future<List<PlatformSchool>> schools({
+    required int offset,int limit=50,
+  }) async=>const [];
+  @override Future<List<PlatformSchoolAccount>> accounts({
+    required int offset,int limit=50,
+  }) async=>const [];
+  @override Future<List<PlatformReviewEvent>> history() async=>const [];
+}
+
 void main(){
   testWidgets('MFA-passed audited platform operator routes to real review console',
     (tester)async{
@@ -71,11 +84,17 @@ void main(){
       authGateway:_SignedInOperator(),
       mfaRepository:_PassedMfa(),
       activationRepository:_OperatorRepository(),
+      platformMonitoringRepository:_EmptyPlatformMonitoring(),
       themeController:ThemeController(),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Provisioning review'),findsOneWidget);
-    expect(find.textContaining('0 awaiting review'),findsOneWidget);
+    expect(find.text('Platform overview'),findsOneWidget);
+    expect(find.text('Provisioned schools'),findsOneWidget);
     expect(find.text('DEMO DATA'),findsNothing);
+    expect(tester.takeException(),isNull);
+    await tester.tap(find.byKey(const Key('platform-review-requests')));
+    await tester.pumpAndSettle();
+    expect(find.text('Provisioning review'),findsOneWidget);
+    expect(tester.takeException(),isNull);
   });
 }
