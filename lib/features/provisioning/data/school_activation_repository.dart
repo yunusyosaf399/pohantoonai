@@ -29,11 +29,14 @@ class SchoolActivationReview {
     required this.applicantEmail,required this.planCode,
     required this.isDemo,required this.status,
     required this.submittedAt,this.legalName,
+    this.activationReady=true,
   });
 
   final String id,organizationId,schoolName,applicantEmail;
   final String planCode,status;
   final bool isDemo;
+  /// Legacy/unlinked submissions are visible, but cannot be approved.
+  final bool activationReady;
   final DateTime submittedAt;
   final String? legalName;
 
@@ -45,6 +48,7 @@ class SchoolActivationReview {
       applicantEmail:value['requester_email'] as String,
       planCode:value['plan_code'] as String,
       isDemo:value['plan_is_demo'] as bool,
+      activationReady:value['activation_ready'] as bool? ?? false,
       status:value['status'] as String,
       submittedAt:DateTime.parse(value['submitted_at'] as String).toLocal(),
       legalName:value['school_legal_name'] as String?,
@@ -57,7 +61,9 @@ abstract class SchoolActivationRepository {
   Future<String> operatorRole();
   Future<SchoolActivationStatus?> ownRequest();
   Future<String> submitRequest();
-  Future<List<SchoolActivationReview>> operatorQueue();
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  });
   Future<String> approve({
     required String requestId,
     required String activationBasis,
@@ -65,6 +71,9 @@ abstract class SchoolActivationRepository {
     required bool identityVerified,
   });
   Future<void> reject({required String requestId,required String reason});
+  Future<void> requestInformation({
+    required String requestId,required String reason,
+  });
 }
 
 class SupabaseSchoolActivationRepository implements SchoolActivationRepository {
@@ -91,8 +100,14 @@ class SupabaseSchoolActivationRepository implements SchoolActivationRepository {
   }
 
   @override
-  Future<List<SchoolActivationReview>> operatorQueue() async {
-    final response=await client.rpc('list_school_activation_reviews');
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  }) async {
+    // Unlike the older queue, this includes legacy submissions without a
+    // verified owner snapshot. Their activationReady flag stays false.
+    final response=await client.rpc('platform_control_review_queue',params:{
+      'p_limit':limit,'p_offset':offset,
+    });
     return (response as List).map((value)=>
       SchoolActivationReview.fromJson(
         Map<String,dynamic>.from(value as Map))).toList(growable:false);
@@ -123,4 +138,14 @@ class SupabaseSchoolActivationRepository implements SchoolActivationRepository {
       'p_reason':reason,
     });
   }
+  @override
+  Future<void> requestInformation({
+    required String requestId,required String reason,
+  }) async {
+    await client.rpc('request_school_activation_information',params:{
+      'p_request_id':requestId,
+      'p_reason':reason,
+    });
+  }
+
 }

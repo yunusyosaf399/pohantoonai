@@ -4,6 +4,7 @@ import 'package:pohantoonai/core/settings/theme_controller.dart';
 import 'package:pohantoonai/features/auth/data/account_auth_gateway.dart';
 import 'package:pohantoonai/features/auth/data/account_mfa_repository.dart';
 import 'package:pohantoonai/features/provisioning/data/school_activation_repository.dart';
+import 'package:pohantoonai/features/platform/data/platform_monitoring_repository.dart';
 import 'package:pohantoonai/main.dart';
 
 class _SignedInOperator implements AccountAuthGateway,AccountSessionIdentity {
@@ -41,7 +42,9 @@ class _OperatorRepository implements SchoolActivationRepository {
   @override
   Future<String> submitRequest() async=>'none';
   @override
-  Future<List<SchoolActivationReview>> operatorQueue() async=>const [];
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  }) async=>const [];
   @override
   Future<String> approve({
     required String requestId,required String activationBasis,
@@ -51,6 +54,23 @@ class _OperatorRepository implements SchoolActivationRepository {
   Future<void> reject({
     required String requestId,required String reason,
   }) async=>throw StateError('Not a live test');
+  @override
+  Future<void> requestInformation({
+    required String requestId,required String reason,
+  }) async {}
+
+}
+
+class _EmptyPlatformMonitoring implements PlatformMonitoringRepository {
+  @override Future<PlatformSummary> overview() async=>PlatformSummary.empty;
+  @override Future<List<PlatformTrend>> trends() async=>const [];
+  @override Future<List<PlatformSchool>> schools({
+    required int offset,int limit=50,
+  }) async=>const [];
+  @override Future<List<PlatformSchoolAccount>> accounts({
+    required int offset,int limit=50,
+  }) async=>const [];
+  @override Future<List<PlatformReviewEvent>> history() async=>const [];
 }
 
 void main(){
@@ -64,11 +84,17 @@ void main(){
       authGateway:_SignedInOperator(),
       mfaRepository:_PassedMfa(),
       activationRepository:_OperatorRepository(),
+      platformMonitoringRepository:_EmptyPlatformMonitoring(),
       themeController:ThemeController(),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Provisioning review'),findsOneWidget);
-    expect(find.textContaining('0 awaiting review'),findsOneWidget);
+    expect(find.text('Platform overview'),findsOneWidget);
+    expect(find.text('Provisioned schools'),findsOneWidget);
     expect(find.text('DEMO DATA'),findsNothing);
+    expect(tester.takeException(),isNull);
+    await tester.tap(find.byKey(const Key('platform-review-requests')));
+    await tester.pumpAndSettle();
+    expect(find.text('Provisioning review'),findsOneWidget);
+    expect(tester.takeException(),isNull);
   });
 }

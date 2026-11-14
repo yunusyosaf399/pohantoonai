@@ -7,10 +7,14 @@ import '../data/school_activation_repository.dart';
 class SchoolProvisioningOperatorScreen extends StatefulWidget {
   const SchoolProvisioningOperatorScreen({
     super.key,required this.repository,required this.onSignOut,
+    this.embedded=false,this.onReviewCompleted,
   });
 
   final SchoolActivationRepository repository;
   final VoidCallback onSignOut;
+  /// Used when the review queue is a tab inside the real platform console.
+  final bool embedded;
+  final VoidCallback? onReviewCompleted;
 
   @override
   State<SchoolProvisioningOperatorScreen> createState() =>
@@ -23,6 +27,9 @@ class _SchoolProvisioningOperatorScreenState
   bool saving=false;
   String? error;
   String filter='pending';
+  int reviewOffset=0;
+  int queueSequence=0;
+  static const reviewPageSize=50;
   List<SchoolActivationReview> requests=const [];
 
   @override
@@ -33,17 +40,19 @@ class _SchoolProvisioningOperatorScreenState
 
   Future<void> _load() async {
     if(!mounted)return;
+    final sequence=++queueSequence;
     setState((){
       loading=true;error=null;requests=const [];
     });
     try {
-      final rows=await widget.repository.operatorQueue();
-      if(mounted)setState((){
+      final rows=await widget.repository.operatorQueue(
+        offset:reviewOffset,limit:reviewPageSize);
+      if(mounted&&sequence==queueSequence)setState((){
         requests=rows;
         loading=false;
       });
     }catch(_){
-      if(mounted)setState((){
+      if(mounted&&sequence==queueSequence)setState((){
         loading=false;
         error='Could not verify operator access or load school requests. '
           'Use an active platform owner/admin account with completed 2FA.';
@@ -51,22 +60,36 @@ class _SchoolProvisioningOperatorScreenState
     }
   }
 
+  void _changePage(int direction){
+    if(loading||saving)return;
+    setState((){
+      reviewOffset=(reviewOffset+direction*reviewPageSize).clamp(0,100000).toInt();
+    });
+    _load();
+  }
+
   List<SchoolActivationReview> get visible => requests.where((r) =>
     filter=='all' || (filter=='pending'
-      ? r.status=='submitted'||r.status=='in_review'
+      ? r.status=='submitted'||r.status=='in_review'||
+          r.status=='more_information'
       : r.status==filter)).toList(growable:false);
 
   Future<void> _review(SchoolActivationReview record,
-      {required bool approve}) async {
+      {required bool approve,bool requestInfo=false}) async {
     if(saving||record.status!='submitted'&&record.status!='in_review')return;
+    if(!record.activationReady&&!requestInfo)return;
     final decision=await showDialog<_OperatorDecision>(
       context:context,
-      builder:(ctx)=>_ReviewDialog(record:record,approve:approve),
+      builder:(ctx)=>_ReviewDialog(
+        record:record,approve:approve,requestInfo:requestInfo),
     );
     if(decision==null||!mounted)return;
     setState(()=>saving=true);
     try {
-      if(approve){
+      if(requestInfo){
+        await widget.repository.requestInformation(
+          requestId:record.id,reason:decision.reason);
+      }else if(approve){
         await widget.repository.approve(
           requestId:record.id,
           activationBasis:record.isDemo
@@ -80,10 +103,13 @@ class _SchoolProvisioningOperatorScreenState
       }
       if(!mounted)return;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-        content:Text(approve
-          ? 'School provisioned and owner membership granted.'
-          : 'School request rejected with an audit record.')));
+        content:Text(requestInfo
+          ? 'Additional information requested and recorded for audit.'
+          : approve
+            ? 'School provisioned and owner membership granted.'
+            : 'School request rejected with an audit record.')));
       await _load();
+      widget.onReviewCompleted?.call();
     }catch(_){
       if(mounted)ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         const SnackBar(content:Text(
@@ -98,9 +124,9 @@ class _SchoolProvisioningOperatorScreenState
   Widget build(BuildContext context) {
     final colors=Theme.of(context).colorScheme;
     final pending=requests.where((r)=>r.status=='submitted'||
-      r.status=='in_review').length;
+      r.status=='in_review'||r.status=='more_information').length;
     return Scaffold(
-      appBar:AppBar(
+      appBar:widget.embedded?null:AppBar(
         title:const Text('PohantoonAI • School approvals'),
         actions:[
           IconButton(
@@ -136,7 +162,7 @@ class _SchoolProvisioningOperatorScreenState
                 Expanded(child:Column(
                   crossAxisAlignment:CrossAxisAlignment.start,
                   children:[
-                    Text('$pending awaiting review',
+                    Text('$pending awaiting review (this page)',
                       style:const TextStyle(
                         fontWeight:FontWeight.w800,fontSize:18)),
                     const Text('Every approval is audited; no demo '
@@ -217,26 +243,59 @@ class _SchoolProvisioningOperatorScreenState
                       Text('Submitted: ${record.submittedAt.toLocal()}',
                         style:TextStyle(fontSize:12,
                           color:colors.onSurfaceVariant)),
+                      if(!record.activationReady)...[
+                        const SizedBox(height:8),
+                        const Text(
+                          'Verification required: this application has no '
+                          'trusted owner submission snapshot. It cannot be '
+                          'approved until the owner completes and confirms '
+                          'the current school setup using a verified account.',
+                          style:TextStyle(fontWeight:FontWeight.w600)),
+                      ],
                       if(record.status=='submitted'||
                         record.status=='in_review')...[
                         const SizedBox(height:13),
-                        Wrap(spacing:9,runSpacing:8,children:[
-                          FilledButton.icon(
-                            key:Key('approve-school-${record.id}'),
-                            onPressed:saving?null:()=>_review(record,approve:true),
-                            icon:const Icon(Icons.verified_user_outlined),
-                            label:Text(record.isDemo
-                              ? 'Approve pilot':'Approve verified school')),
-                          OutlinedButton.icon(
-                            onPressed:saving?null:()=>_review(record,approve:false),
-                            icon:const Icon(Icons.block_outlined),
-                            label:const Text('Reject')),
-                        ]),
+                        if(record.activationReady)
+                          Wrap(spacing:9,runSpacing:8,children:[
+                            FilledButton.icon(
+                              key:Key('approve-school-${record.id}'),
+                              onPressed:saving?null:()=>_review(record,approve:true),
+                              icon:const Icon(Icons.verified_user_outlined),
+                              label:Text(record.isDemo
+                                ? 'Approve pilot':'Approve verified school')),
+                            OutlinedButton.icon(
+                              onPressed:saving?null:()=>_review(record,approve:false),
+                              icon:const Icon(Icons.block_outlined),
+                              label:const Text('Reject')),
+                          ])
+                        else OutlinedButton.icon(
+                          key:Key('request-information-${record.id}'),
+                          onPressed:saving?null:()=>_review(
+                            record,approve:false,requestInfo:true),
+                          icon:const Icon(Icons.info_outline),
+                          label:const Text('Request verified resubmission'),
+                        ),
                       ],
                     ],
                   ),
                 ),
               ),
+            if(!loading&&error==null)Row(
+              mainAxisAlignment:MainAxisAlignment.end,
+              children:[
+                Text('Page ${reviewOffset~/reviewPageSize+1}'),
+                const SizedBox(width:8),
+                IconButton(
+                  tooltip:'Previous review page',
+                  onPressed:reviewOffset==0?null:()=>_changePage(-1),
+                  icon:const Icon(Icons.chevron_left)),
+                IconButton(
+                  tooltip:'Next review page',
+                  onPressed:requests.length<reviewPageSize
+                    ?null:()=>_changePage(1),
+                  icon:const Icon(Icons.chevron_right)),
+              ],
+            ),
           ],
         ),
       ))),
@@ -251,9 +310,12 @@ class _OperatorDecision {
 }
 
 class _ReviewDialog extends StatefulWidget {
-  const _ReviewDialog({required this.record,required this.approve});
+  const _ReviewDialog({
+    required this.record,required this.approve,this.requestInfo=false,
+  });
   final SchoolActivationReview record;
   final bool approve;
+  final bool requestInfo;
 
   @override
   State<_ReviewDialog> createState()=>_ReviewDialogState();
@@ -270,8 +332,9 @@ class _ReviewDialogState extends State<_ReviewDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final minimum=widget.approve?20:15;
-    final title=widget.approve?'Approve school activation':'Reject school request';
+    final minimum=widget.approve||widget.requestInfo?20:15;
+    final title=widget.requestInfo?'Request verified resubmission':
+      widget.approve?'Approve school activation':'Reject school request';
     final isValid=reason.text.trim().length>=minimum &&
       (!widget.approve||identityVerified);
     return AlertDialog(
@@ -292,7 +355,13 @@ class _ReviewDialogState extends State<_ReviewDialog> {
                   'it does not establish a paid subscription.'
                 : 'Requires a separate verified subscription on the server. '
                   'A pending or skipped checkout is not sufficient.'
-              : 'A rejection is recorded permanently for audit.'),
+              : widget.requestInfo
+                ? 'This request cannot be approved until a verified owner '
+                  'submits a current confirmed application. Record what '
+                  'the applicant needs to provide or verify. This step '
+                  'records an internal review action; it does not '
+                  'automatically email the applicant.'
+                : 'A rejection is recorded permanently for audit.'),
             const SizedBox(height:12),
             if(widget.approve)CheckboxListTile(
               contentPadding:EdgeInsets.zero,
@@ -309,9 +378,11 @@ class _ReviewDialogState extends State<_ReviewDialog> {
               onChanged:(_)=>setState((){}),
               maxLines:4,maxLength:2000,
               decoration:InputDecoration(
-                labelText:widget.approve
-                  ? 'Approval evidence and justification'
-                  : 'Rejection reason',
+                labelText:widget.requestInfo
+                  ? 'Information required from the applicant'
+                  : widget.approve
+                    ? 'Approval evidence and justification'
+                    : 'Rejection reason',
                 border:const OutlineInputBorder(),
                 helperText:'At least $minimum characters',
               ),
@@ -328,7 +399,8 @@ class _ReviewDialogState extends State<_ReviewDialog> {
           onPressed:isValid?()=>Navigator.pop(context,
             _OperatorDecision(reason.text.trim(),
               verifiedIdentity:identityVerified)):null,
-          child:Text(widget.approve?'Approve and provision':'Reject request')),
+          child:Text(widget.requestInfo?'Request information':
+            widget.approve?'Approve and provision':'Reject request')),
       ],
     );
   }

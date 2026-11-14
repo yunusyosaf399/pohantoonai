@@ -31,7 +31,9 @@ class FakeActivation implements SchoolActivationRepository {
     return own!.requestId;
   }
   @override
-  Future<List<SchoolActivationReview>> operatorQueue() async=>reviews;
+  Future<List<SchoolActivationReview>> operatorQueue({
+    int offset=0,int limit=50,
+  }) async=>reviews;
   @override
   Future<String> approve({
     required String requestId,
@@ -46,6 +48,11 @@ class FakeActivation implements SchoolActivationRepository {
     reviews=[];
     return 'school-id-created-by-backend';
   }
+  @override
+  Future<void> requestInformation({
+    required String requestId,required String reason,
+  }) async {}
+
   @override
   Future<void> reject({required String requestId,required String reason})
     async {

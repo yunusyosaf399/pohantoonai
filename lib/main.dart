@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -30,6 +31,8 @@ import 'features/dashboard/presentation/live_school_dashboard_screen.dart';
 import 'features/admissions/data/school_admissions_repository.dart';
 import 'features/provisioning/data/school_activation_repository.dart';
 import 'features/provisioning/presentation/school_provisioning_operator_screen.dart';
+import 'features/platform/data/platform_monitoring_repository.dart';
+import 'features/platform/presentation/platform_control_dashboard_screen.dart';
 import 'features/onboarding/data/development_workspace_repository.dart';
 import 'features/onboarding/presentation/school_setup_screen.dart';
 import 'features/onboarding/presentation/school_review_preview.dart';
@@ -78,6 +81,7 @@ class PohantoonAiApp extends StatefulWidget {
     this.ownerProfileRepository,
     this.admissionsRepository,
     this.activationRepository,
+    this.platformMonitoringRepository,
     this.showOrganizationPreview = false,
     this.initialRecoveryRequested = false,
     this.authGateway,
@@ -106,6 +110,7 @@ class PohantoonAiApp extends StatefulWidget {
   /// Optional secure admissions backend for tests; live uses RLS Supabase.
   final SchoolAdmissionsRepository? admissionsRepository;
   final SchoolActivationRepository? activationRepository;
+  final PlatformMonitoringRepository? platformMonitoringRepository;
   final AccountAuthGateway? authGateway;
   /// Testable MFA factor provider; real sessions use Supabase Auth.
   final AccountMfaRepository? mfaRepository;
@@ -174,6 +179,12 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
     widget.activationRepository ??
       (widget.authGateway==null
         ? SupabaseSchoolActivationRepository(Supabase.instance.client)
+        : null);
+
+  PlatformMonitoringRepository? get _platformMonitoring =>
+    widget.platformMonitoringRepository ??
+      (widget.authGateway==null
+        ? SupabasePlatformMonitoringRepository(Supabase.instance.client)
         : null);
 
   // After passing the MFA gate, first check ACTIVE database membership.
@@ -636,7 +647,7 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
         theme: PohantoonTheme.light,
         darkTheme: PohantoonTheme.dark,
         themeMode: _theme.value,
-        home: widget.showOrganizationPreview
+        home: widget.showOrganizationPreview && kDebugMode
             ? OrganizationControlPanel(repository: widget.repository)
             : _recoveringPassword && _auth is AccountEmailCredentials
                 ? PasswordRecoveryScreen(
@@ -698,11 +709,18 @@ class _PohantoonAiAppState extends State<PohantoonAiApp> {
                           ),
                         )))
                 : _platformOperator && _activation!=null
-                    ? SchoolProvisioningOperatorScreen(
-                        key:ValueKey('platform-operator-${_activeAuthUserId??''}'),
-                        repository:_activation!,
-                        onSignOut:()=>_signOut(),
-                      )
+                    ? _platformMonitoring!=null
+                      ? PlatformControlDashboardScreen(
+                          key:ValueKey('platform-control-${_activeAuthUserId??''}'),
+                          monitoring:_platformMonitoring!,
+                          activation:_activation!,
+                          onSignOut:()=>_signOut(),
+                        )
+                      : SchoolProvisioningOperatorScreen(
+                          key:ValueKey('platform-operator-${_activeAuthUserId??''}'),
+                          repository:_activation!,
+                          onSignOut:()=>_signOut(),
+                        )
                 : _liveSchools.isNotEmpty && _admissions!=null
                     ? LiveSchoolDashboardScreen(
                         key:ValueKey('live-school-${_activeAuthUserId??''}'),
