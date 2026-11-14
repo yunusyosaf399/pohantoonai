@@ -70,7 +70,8 @@ class _SchoolProvisioningOperatorScreenState
 
   List<SchoolActivationReview> get visible => requests.where((r) =>
     filter=='all' || (filter=='pending'
-      ? r.status=='submitted'||r.status=='in_review'
+      ? r.status=='submitted'||r.status=='in_review'||
+          r.status=='more_information'
       : r.status==filter)).toList(growable:false);
 
   Future<void> _review(SchoolActivationReview record,
@@ -123,7 +124,7 @@ class _SchoolProvisioningOperatorScreenState
   Widget build(BuildContext context) {
     final colors=Theme.of(context).colorScheme;
     final pending=requests.where((r)=>r.status=='submitted'||
-      r.status=='in_review').length;
+      r.status=='in_review'||r.status=='more_information').length;
     return Scaffold(
       appBar:widget.embedded?null:AppBar(
         title:const Text('PohantoonAI • School approvals'),
