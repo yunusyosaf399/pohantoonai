@@ -324,7 +324,10 @@ class _PlatformControlDashboardScreenState
         layout.maxWidth<980?3:4,
       crossAxisSpacing:11,
       mainAxisSpacing:11,
-      childAspectRatio:layout.maxWidth<520?1.05:1.4,
+      // Tall cards prevent RenderFlex overflow on 320–420px Android screens
+      // with accessibility text scaling.
+      childAspectRatio:layout.maxWidth<520?0.72:
+        layout.maxWidth<980?1.15:1.4,
       physics:const NeverScrollableScrollPhysics(),
       shrinkWrap:true,
       children:items,
@@ -396,7 +399,7 @@ class _PlatformControlDashboardScreenState
               OutlinedButton.icon(
                 onPressed:()=>_selectTab(2),
                 icon:const Icon(Icons.account_balance_outlined),
-                label:const Text('Manage school overview')),
+                label:const Text('View schools')),
               OutlinedButton.icon(
                 onPressed:()=>_selectTab(4),
                 icon:const Icon(Icons.shield_outlined),
