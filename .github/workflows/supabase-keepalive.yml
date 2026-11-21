@@ -1,0 +1,56 @@
+# Keeps the shared Pohantoon AI Supabase database active without touching school data.
+# Required repository secret: SUPABASE_KEEPALIVE_DATABASE_URL
+# Use the Supabase Session pooler (IPv4-compatible, port 5432).
+# Prefer a dedicated login with CONNECT permission and no table privileges.
+name: Keep Supabase Database Active
+
+on:
+  schedule:
+    - cron: '17 */8 * * *' # 00:17, 08:17 and 16:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping-database:
+    name: Read-only database keep-alive
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_KEEPALIVE_DATABASE_URL: ${{ secrets.SUPABASE_KEEPALIVE_DATABASE_URL }}
+      PGSSLMODE: require
+      PGCONNECT_TIMEOUT: '15'
+    steps:
+      - name: Check database connection secret
+        shell: bash
+        run: |
+          if [[ -z "$SUPABASE_KEEPALIVE_DATABASE_URL" ]]; then
+            echo "::error::Configure SUPABASE_KEEPALIVE_DATABASE_URL in repository Actions secrets."
+            exit 1
+          fi
+
+      - name: Ensure PostgreSQL client is available
+        shell: bash
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends postgresql-client
+          fi
+
+      - name: Execute a safe database query
+        shell: bash
+        run: |
+          result="$(psql "$SUPABASE_KEEPALIVE_DATABASE_URL" \
+            --no-psqlrc --tuples-only --no-align \
+            --set=ON_ERROR_STOP=1 --command='SELECT 1;')"
+
+          if [[ "$result" != '1' ]]; then
+            echo "::error::Supabase did not return the expected response."
+            exit 1
+          fi
+
+          echo "Supabase PostgreSQL responded to the keep-alive query."
